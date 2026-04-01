@@ -16,6 +16,7 @@ struct JournalContainerView: View {
     let onNavigateToCapture: () -> Void
 
     @State private var selectedTab: FilmTab = .film
+    @State private var isFilmFeedAtTop: Bool = true
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -34,7 +35,15 @@ struct JournalContainerView: View {
                 Group {
                     switch selectedTab {
                     case .film:
-                        FilmFeedView(container: container)
+                        FilmFeedView(
+                            container: container,
+                            onScrollTopChanged: { isAtTop in
+                                isFilmFeedAtTop = isAtTop
+                            },
+                            onPullDownToDismiss: {
+                                onNavigateToCapture()
+                            }
+                        )
                     case .vault:
                         VaultView(container: container)
                     case .settings:
@@ -57,7 +66,8 @@ struct JournalContainerView: View {
             DragGesture(minimumDistance: 40)
                 .onEnded { value in
                     if value.translation.height > 60
-                        && abs(value.translation.height) > abs(value.translation.width) {
+                        && abs(value.translation.height) > abs(value.translation.width)
+                        && (selectedTab != .film || isFilmFeedAtTop) {
                         onNavigateToCapture()
                     }
                 }

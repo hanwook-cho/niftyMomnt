@@ -8,13 +8,18 @@
 
 import NiftyCore
 import SwiftUI
+import UIKit
 
 struct FilmFeedView: View {
     let container: AppContainer
+    let onScrollTopChanged: (Bool) -> Void
+    let onPullDownToDismiss: () -> Void
 
     @State private var moments: [Moment] = Moment.filmPreviews
     @State private var selectedMoment: Moment? = nil
     @State private var isGridLayout: Bool = false
+    @State private var topSafeArea: CGFloat = 59
+    @State private var isAtTop: Bool = true
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -22,13 +27,23 @@ struct FilmFeedView: View {
 
             if moments.isEmpty {
                 emptyState
+                    .onAppear { onScrollTopChanged(true) }
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: NiftySpacing.lg) {
+                        GeometryReader { geo in
+                            Color.clear
+                                .preference(
+                                    key: FilmFeedScrollOffsetPreferenceKey.self,
+                                    value: geo.frame(in: .named("FilmFeedScrollView")).minY
+                                )
+                        }
+                        .frame(height: 0)
+
                         // Header (inline, not a navigation bar)
                         filmHeader
                             .padding(.horizontal, NiftySpacing.lg)
-                            .padding(.top, NiftySpacing.md)
+                            .padding(.top, topSafeArea) //NiftySpacing.md)
 
                         // Sectioned card feed
                         ForEach(groupedMoments, id: \.0) { (sectionLabel, dayMoments) in
@@ -52,11 +67,38 @@ struct FilmFeedView: View {
                         Spacer().frame(height: 80)
                     }
                 }
+                .coordinateSpace(name: "FilmFeedScrollView")
+                .onPreferenceChange(FilmFeedScrollOffsetPreferenceKey.self) { offset in
+                    let atTop = offset >= -1
+                    isAtTop = atTop
+                    onScrollTopChanged(atTop)
+                }
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 40)
+                        .onEnded { value in
+                            if isAtTop
+                                && value.translation.height > 60
+                                && abs(value.translation.height) > abs(value.translation.width) {
+                                onPullDownToDismiss()
+                            }
+                        }
+                )
+                .onAppear {
+                    isAtTop = true
+                    onScrollTopChanged(true)
+                }
             }
         }
         .sheet(item: $selectedMoment) { moment in
             MomentDetailView(moment: moment, container: container)
         }
+        .onAppear { readWindowSafeArea() }
+    }
+
+    private func readWindowSafeArea() {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first(where: { $0.isKeyWindow }) else { return }
+        topSafeArea = window.safeAreaInsets.top
     }
 
     // MARK: - Film Header
@@ -197,6 +239,14 @@ struct FilmFeedView: View {
         case .raw, .dreamy: return Color(hex: "#FF6B6B")
         default: return Color(hex: "#E8A020")
         }
+    }
+}
+
+private struct FilmFeedScrollOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
