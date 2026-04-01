@@ -1,0 +1,107 @@
+# niftyMomnt SwiftLint configuration
+# SRS §11.2: Zero errors in CI. Violations block merge.
+
+included:
+  - NiftyCore/Sources
+  - NiftyData/Sources
+  - Apps/niftyMomnt/niftyMomnt
+  - Apps/niftyMomntLite
+
+excluded:
+  - NiftyCore/Tests
+  - NiftyData/Tests
+  - .build
+
+# ── Enabled rules ─────────────────────────────────────────────────────────────
+opt_in_rules:
+  - array_init
+  - closure_spacing
+  - empty_count
+  - explicit_init
+  - fallthrough
+  - fatal_error_message
+  - first_where
+  - implicit_return
+  - joined_default_parameter
+  - literal_expression_end_indentation
+  - missing_docs
+  - modifier_order
+  - multiline_arguments
+  - multiline_parameters
+  - operator_usage_whitespace
+  - overridden_super_call
+  - prefer_self_type_over_type_of_self
+  - redundant_nil_coalescing
+  - sorted_imports
+  - toggle_bool
+  - trailing_closure
+  - unneeded_parentheses_in_closure_argument
+  - unused_import
+  - vertical_parameter_alignment_on_call
+  - yoda_condition
+
+disabled_rules:
+  - todo  # TODOs are expected in scaffold — re-enable pre-ship
+
+# ── Custom rules — enforce Clean Architecture layer boundaries ─────────────────
+custom_rules:
+  no_platform_imports_in_niftycore:
+    name: "No Platform Imports in NiftyCore"
+    message: "NiftyCore/Sources must never import UIKit, SwiftUI, AVFoundation, CoreML, or CoreData. Move platform code to NiftyData."
+    regex: "^import (UIKit|SwiftUI|AVFoundation|CoreML|CoreData|Vision|SoundAnalysis|Speech|WeatherKit|MusicKit|CoreLocation|CoreImage|Metal)"
+    match_kinds:
+      - identifier
+    included: "NiftyCore/Sources/.*\\.swift"
+    severity: error
+
+  no_uikit_in_niftydata:
+    name: "No UIKit in NiftyData"
+    message: "NiftyData must never import UIKit or SwiftUI. Use platform frameworks only."
+    regex: "^import (UIKit|SwiftUI)"
+    match_kinds:
+      - identifier
+    included: "NiftyData/Sources/.*\\.swift"
+    severity: error
+
+  fix_not_edit:
+    name: "Use Fix Not Edit"
+    message: "Per SRS §12: use 'Fix'/'Fixed' in UI strings — never 'Edit'/'Editor'."
+    regex: "\"[^\"]*\\b[Ee]dit(or|ing)?\\b[^\"]*\""
+    included: "Apps/.*\\.swift"
+    severity: warning
+
+# ── Line length ────────────────────────────────────────────────────────────────
+line_length:
+  warning: 130
+  error: 160
+  ignores_comments: true
+  ignores_urls: true
+
+# ── Type/file length ──────────────────────────────────────────────────────────
+type_body_length:
+  warning: 300
+  error: 500
+
+file_length:
+  warning: 400
+  error: 600
+
+function_body_length:
+  warning: 50
+  error: 100
+
+# ── Naming ─────────────────────────────────────────────────────────────────────
+type_name:
+  min_length: 3
+  max_length: 50
+
+identifier_name:
+  min_length: 2
+  max_length: 50
+  excluded:
+    - id
+    - x
+    - y
+
+# ── Reporter ───────────────────────────────────────────────────────────────────
+reporter: "xcode"

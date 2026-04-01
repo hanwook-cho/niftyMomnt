@@ -1,0 +1,95 @@
+# ── Claude Code local data ────────────────────────────────────────────────────
+.claude/
+
+# ── Xcode ──────────────────────────────────────────────────────────────────────
+*.xcuserstate
+*.xccheckout
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+
+xcuserdata/
+
+*.xcscmblueprint
+*.xcworkspace/contents.xcworkspacedata
+!*.xcworkspace/contents.xcworkspacedata
+
+# Swift Package Manager resolved file — commit Package.resolved for apps,
+# but ignore it inside .xcodeproj (Xcode-managed copy is redundant)
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+
+# ── Build artefacts ────────────────────────────────────────────────────────────
+build/
+DerivedData/
+*.o
+*.d
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# ── Swift Package Manager ──────────────────────────────────────────────────────
+.build/
+.swiftpm/
+Packages/
+# Keep Package.swift and Package.resolved at the workspace/package roots
+!Package.swift
+!Package.resolved
+
+# ── CocoaPods (not used, but just in case) ─────────────────────────────────────
+Pods/
+Podfile.lock
+
+# ── Fastlane ──────────────────────────────────────────────────────────────────
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# ── Signing & provisioning (never commit private keys or profiles) ─────────────
+*.p12
+*.mobileprovision
+*.certSigningRequest
+*.cer
+*.p8
+AuthKey_*.p8
+
+# ── macOS filesystem noise ────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+Thumbs.db
+
+# ── Secrets & environment ─────────────────────────────────────────────────────
+.env
+.env.*
+Secrets.swift
+secrets.xcconfig
+*.xcconfig.local
+
+# ── Test results & coverage ───────────────────────────────────────────────────
+*.xcresult
+TestResults/
+coverage/
+*.lcov
+
+# ── Instruments ───────────────────────────────────────────────────────────────
+*.trace
+
+# ── Playgrounds ───────────────────────────────────────────────────────────────
+playground.xcworkspace
+
+# ── Archives ──────────────────────────────────────────────────────────────────
+*.xcarchive
+
+# ── Simulator data ────────────────────────────────────────────────────────────
+iOSSimulatorDevice/

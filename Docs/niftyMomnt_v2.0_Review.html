@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>niftyMomnt v2.0 — iOS 26 · Colour · Icons · Film · Moment Detail</title>
+<style>
+:root {
+  --bg:       #07070F;
+  --brand:    #6B4EFF;    /* ★ deepened from #5B4FCF */
+  --amber:    #E8A020;
+  --lavender: #C4B5FD;    /* ★ replaces cyan #00E5CC */
+  --coral:    #F07C5C;    /* ★ softened from #D85A30 */
+  --teal:     #2AAF7C;
+  --text:     rgba(255,255,255,0.92);
+  --text-m:   rgba(255,255,255,0.52);
+  --text-s:   rgba(255,255,255,0.28);
+  --border:   rgba(255,255,255,0.08);
+  --glass26:  blur(28px) saturate(200%) brightness(1.12);  /* iOS 26 Liquid Glass */
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body {
+  background: var(--bg);
+  background-image: radial-gradient(rgba(255,255,255,0.022) 1px, transparent 1px);
+  background-size: 22px 22px;
+  font-family: -apple-system,'Helvetica Neue',Arial,sans-serif;
+  color: var(--text);
+  padding: 44px 32px 100px;
+  min-height: 100vh;
+}
+
+/* ─── PAGE HEADER ─── */
+.page-header {
+  max-width: 1480px; margin: 0 auto 44px;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  flex-wrap: wrap; gap: 16px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(107,78,255,0.20);
+}
+.ph-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; color: var(--brand); margin-bottom: 6px; }
+.ph-title   { font-size: 34px; font-weight: 900; letter-spacing: -.6px; line-height: 1.05; }
+.ph-title em { font-style: normal; color: var(--brand); }
+.ph-sub     { font-size: 13px; color: var(--text-s); margin-top: 6px; }
+.ph-badges  { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.badge { font-size: 11px; font-weight: 800; padding: 5px 14px; border-radius: 20px; letter-spacing: .04em; }
+.badge-v { background: linear-gradient(135deg,#6B4EFF,#F07C5C); color: #fff; }
+.badge-n { background: rgba(196,181,253,.12); border: 1px solid rgba(196,181,253,.24); color: var(--lavender); }
+.badge-g { background: rgba(232,160,32,.10); border: 1px solid rgba(232,160,32,.22); color: var(--amber); }
+
+/* ─── 5-POINT CRITIQUE TABLE ─── */
+.crit-grid {
+  max-width: 1480px; margin: 0 auto 52px;
+  display: grid; grid-template-columns: repeat(5,1fr); gap: 12px;
+}
+.crit-cell {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--border);
+  border-radius: 14px; padding: 15px 16px;
+}
+.crit-num     { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .10em; color: var(--text-s); margin-bottom: 6px; }
+.crit-q       { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 7px; line-height: 1.35; }
+.crit-verdict { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 8px; display: inline-block; margin-bottom: 7px; }
+.v-fix    { background: rgba(240,124,92,.15); border: 1px solid rgba(240,124,92,.30); color: #F4956E; }
+.v-update { background: rgba(232,160,32,.12); border: 1px solid rgba(232,160,32,.28); color: var(--amber); }
+.v-new    { background: rgba(196,181,253,.12); border: 1px solid rgba(196,181,253,.24); color: var(--lavender); }
+.crit-body    { font-size: 11px; color: var(--text-m); line-height: 1.58; }
+.crit-body code { font-family:'SF Mono',Menlo,monospace; font-size:9.5px; background:rgba(232,160,32,.10); color:var(--amber); padding:1px 5px; border-radius:3px; }
+
+/* ─── SECTION HEAD ─── */
+.sec-head {
+  max-width: 1480px; margin: 0 auto 20px;
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+}
+.sh-num   { font-size: 11px; font-weight: 800; color: var(--brand); letter-spacing: .12em; text-transform: uppercase; }
+.sh-title { font-size: 20px; font-weight: 900; color: #fff; letter-spacing: -.3px; }
+.sh-tag   { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 10px; }
+.sh-tag-lav  { background: rgba(196,181,253,.10); border: 1px solid rgba(196,181,253,.20); color: var(--lavender); }
+.sh-tag-amb  { background: rgba(232,160,32,.10); border: 1px solid rgba(232,160,32,.20); color: var(--amber); }
+
+/* ─── GRID ROWS ─── */
+.row  { max-width: 1480px; margin: 0 auto 72px; display: grid; gap: 28px; align-items: start; }
+.r-3  { grid-template-columns: 340px 340px 1fr; }
+.r-2  { grid-template-columns: 340px 1fr; }
+.r-c2 { grid-template-columns: 1fr 1fr; }
+
+/* ─── PHONE WRAPPER ─── */
+.phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.phone-label {
+  font-size: 10px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase;
+  padding: 3px 12px; border-radius: 20px;
+}
+.pl-cap  { background: rgba(107,78,255,.12); border: 1px solid rgba(107,78,255,.26); color: #B0A8F8; }
+.pl-film { background: rgba(232,160,32,.12); border: 1px solid rgba(232,160,32,.26); color: var(--amber); }
+.pl-det  { background: rgba(196,181,253,.10); border: 1px solid rgba(196,181,253,.22); color: var(--lavender); }
+
+/* ─── PHONE FRAME ─── */
+.phone {
+  border-radius: 46px;
+  border: 1.5px solid rgba(255,255,255,.09);
+  overflow: hidden; position: relative;
+  display: flex; flex-direction: column;
+  box-shadow: 0 44px 110px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.04), inset 0 1px 0 rgba(255,255,255,.07);
+}
+.ph-dark   { background: #0A0A0A; width: 340px; height: 740px; }
+.ph-film-f { background: #0F0D0B; width: 340px; height: 740px; }
+.ph-det    { background: #100C08; width: 340px; height: 740px; }
+
+/* ─── DYNAMIC ISLAND ─── */
+.di { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: #000; border-radius: 16px; z-index: 20; display: flex; align-items: center; height: 32px; padding: 0 10px; }
+.di-std { width: 126px; justify-content: space-between; }
+.di-sm  { width: 108px; justify-content: flex-end; gap: 6px; }
+.di-left{ display: flex; align-items: center; gap: 5px; }
+.di-dot { width: 8px; height: 8px; border-radius: 50%; }
+.di-dot-a { background: var(--amber); }
+.di-dot-l { background: var(--lavender); }
+.di-name  { font-size: 8px; font-weight: 600; color: rgba(255,255,255,.50); }
+.di-arc   { width: 17px; height: 17px; border-radius: 50%; border: 2px solid rgba(255,255,255,.14); position: relative; display: flex; align-items: center; justify-content: center; }
+.di-arc-f { position: absolute; width: 17px; height: 17px; border-radius: 50%; border: 2px solid transparent; border-top-color: var(--amber); border-right-color: var(--amber); transform: rotate(-90deg); }
+.di-arc-n { font-size: 6px; font-weight: 700; color: rgba(255,255,255,.70); }
+
+/* ════ ZONE A — iOS 26 Liquid Glass ════ */
+.zone-a {
+  height: 72px; flex-shrink: 0; z-index: 5;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px 0;
+  /* ★ iOS 26: saturate+brightness vs plain rgba */
+  background: rgba(8,8,8,.22);
+  backdrop-filter: blur(28px) saturate(200%) brightness(1.12);
+  -webkit-backdrop-filter: blur(28px) saturate(200%) brightness(1.12);
+  border-bottom: .5px solid rgba(255,255,255,.10);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07), inset 0 -1px 0 rgba(255,255,255,.04);
+}
+/* ★ Icon pills — 40×40, SF Symbol-style SVG */
+.ip {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,255,255,.09);
+  backdrop-filter: blur(10px) saturate(160%);
+  border: .5px solid rgba(255,255,255,.12);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+}
+.ip-amber {
+  background: rgba(232,160,32,.18);
+  border-color: rgba(232,160,32,.40);
+}
+.za-center { flex: 1; display: flex; justify-content: center; align-items: center; gap: 6px; }
+.za-right  { display: flex; gap: 8px; }
+
+/* Film strip counter */
+.fstrip { display: flex; gap: 2px; align-items: center; }
+.ff  { width: 7px; height: 10px; border-radius: 1.5px; border: .5px solid rgba(255,255,255,.10); }
+.ff-u { background: var(--amber); border-color: #BA7517; }
+.ff-e { background: rgba(255,255,255,.09); }
+.fcount { font-size: 14px; font-weight: 700; color: rgba(255,255,255,.92); }
+
+/* ════ ZONE B — Viewfinder ════ */
+.zone-b { flex: 1; background: #14100A; position: relative; overflow: hidden; }
+.vg1  { position: absolute; width: 280px; height: 180px; background: radial-gradient(ellipse,rgba(130,80,18,.40) 0%,transparent 70%); top: 20%; left: 4%; border-radius: 50%; filter: blur(34px); }
+.vg2  { position: absolute; width: 200px; height: 260px; background: radial-gradient(ellipse,rgba(80,48,10,.36) 0%,transparent 70%); top: 10%; right: 3%; border-radius: 50%; filter: blur(42px); }
+.vtint{ position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(ellipse at 50% 55%,rgba(232,160,32,.07) 0%,transparent 65%); }
+.vgrain{ position: absolute; inset: 0; z-index: 2; opacity: .04; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 150px; mix-blend-mode: overlay; }
+.vleak{ position: absolute; z-index: 3; pointer-events: none; width: 100px; height: 360px; top: -30px; right: -10px; background: linear-gradient(135deg,rgba(232,160,32,.05) 0%,transparent 60%); transform: rotate(-12deg); filter: blur(18px); }
+.manchor { position: absolute; z-index: 10; bottom: 12px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.mghost  { font-size: 12px; font-weight: 600; letter-spacing: 5px; color: rgba(255,255,255,.40); }
+.mdots   { display: flex; gap: 7px; align-items: center; }
+.md   { border-radius: 50%; background: rgba(255,255,255,.22); }
+.md-s { width: 5px; height: 5px; }
+.md-a { width: 7px; height: 7px; background: rgba(255,255,255,.65); }
+
+/* ════ ZONE C — Preset bar ════ */
+.zone-c {
+  height: 46px; flex-shrink: 0;
+  background: rgba(0,0,0,.26);
+  backdrop-filter: blur(28px) saturate(180%) brightness(1.08);
+  -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.08);
+  display: flex; align-items: center; padding: 0 15px; gap: 9px; position: relative;
+  border-top: .5px solid rgba(255,255,255,.07);
+}
+.zone-c::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--amber); opacity:.88; }
+.preset-dot  { width: 9px; height: 9px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
+.preset-name { font-size: 17px; font-weight: 900; letter-spacing: 0.5px; color: rgba(255,255,255,.95); }
+.preset-hint { font-size: 12px; color: rgba(255,255,255,.46); }
+.swatches    { display: flex; gap: 5px; align-items: center; margin-left: 6px; }
+.sw { border-radius: 50%; border: .5px solid rgba(255,255,255,.14); opacity: .50; flex-shrink: 0; }
+.sw-act { opacity: 1; border-color: rgba(255,255,255,.38); }
+.sw-sm  { width: 9px; height: 9px; }
+.sw-md  { width: 12px; height: 12px; }
+.sw-am  { background: #E8A020; }
+.sw-lv  { background: #C4B5FD; }  /* ★ lavender replaces cyan */
+.sw-bl  { background: #8EB4D4; }
+.sw-rd  { background: #FF6B6B; }
+.sw-gr  { background: #C8A882; }
+
+/* ════ ZONE D — Shutter row ════ */
+.zone-d {
+  flex-shrink: 0;
+  background: rgba(0,0,0,.30);
+  backdrop-filter: blur(28px) saturate(180%) brightness(1.08);
+  -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.08);
+  display: flex; align-items: center; justify-content: center;
+  padding: 12px 18px calc(30px + 12px); position: relative;
+  border-top: .5px solid rgba(255,255,255,.06);
+}
+.thumb { position: absolute; left: 17px; top: 12px; width: 58px; height: 42px; border-radius: 11px; background: #1C1208; border: 1px solid rgba(255,255,255,.13); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 3px; }
+.thumb-lbl { font-size: 10px; font-weight: 500; color: rgba(255,255,255,.38); }
+.thumb-bdg { background: var(--amber); color: #000; font-size: 7px; font-weight: 800; padding: 1px 5px; border-radius: 3px; }
+.sh-wrap  { position: relative; width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; }
+.sh-track { position: absolute; width: 90px; height: 90px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,.10); }
+.sh-prog  { position: absolute; width: 90px; height: 90px; border-radius: 50%; border: 2.5px solid transparent; border-top-color: var(--amber); border-right-color: var(--amber); transform: rotate(-90deg); }
+.sh-body  { width: 72px; height: 72px; border-radius: 50%; z-index: 2; background: radial-gradient(circle at 42% 38%, #F2F2EC 0%, #D5D5CE 55%, #C0C0B9 100%); box-shadow: 0 5px 16px rgba(0,0,0,.65), inset 0 1.5px 0 rgba(255,255,255,.62), inset 0 -1px 0 rgba(0,0,0,.18), 0 0 0 2px rgba(232,160,32,.52); display: flex; align-items: center; justify-content: center; }
+.sh-inner { width: 58px; height: 58px; border-radius: 50%; border: 1.5px solid rgba(232,160,32,.48); display: flex; align-items: center; justify-content: center; }
+.sh-count { font-size: 17px; font-weight: 700; color: var(--amber); }
+.flip-hint{ position: absolute; right: 17px; top: 12px; text-align: center; }
+.flip-line{ display: block; font-size: 11px; color: rgba(255,255,255,.46); line-height: 1.5; }
+.home-bar { position: absolute; bottom: 9px; left: 50%; transform: translateX(-50%); width: 108px; height: 4px; background: rgba(255,255,255,.20); border-radius: 2px; }
+
+/* ════ FILM ARCHIVE — dark editorial ════ */
+.film-status {
+  height: 46px; background: rgba(12,10,8,.95); flex-shrink: 0;
+  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px;
+}
+.film-header {
+  height: 60px; background: rgba(12,10,8,.92);
+  backdrop-filter: var(--glass26); -webkit-backdrop-filter: var(--glass26);
+  flex-shrink: 0; display: flex; align-items: center;
+  padding: 0 18px; justify-content: space-between;
+  border-bottom: .5px solid rgba(255,255,255,.08);
+}
+.film-h-left   { display: flex; align-items: baseline; gap: 8px; }
+.film-title    { font-size: 26px; font-weight: 900; color: #fff; letter-spacing: -.5px; }
+.film-cnt-bdg  { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: rgba(232,160,32,.16); border: 1px solid rgba(232,160,32,.30); color: var(--amber); }
+.film-h-right  { display: flex; gap: 10px; }
+.film-h-btn    { width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.07); border: .5px solid rgba(255,255,255,.10); display: flex; align-items: center; justify-content: center; }
+.film-feed     { flex: 1; overflow: hidden; padding: 12px 14px 0; display: flex; flex-direction: column; gap: 10px; background: #0F0D0B; position: relative; }
+.film-datelbl  { font-size: 10px; font-weight: 800; color: rgba(255,255,255,.22); letter-spacing: .08em; text-transform: uppercase; }
+.film-card     { background: rgba(255,255,255,.04); border-radius: 18px; overflow: hidden; border: .5px solid rgba(255,255,255,.08); }
+.film-hero     { height: 130px; position: relative; overflow: hidden; }
+.film-hero-grad{ position: absolute; inset: 0; }
+.film-grain    { position: absolute; inset: 0; opacity: .06; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 150px; }
+.film-strip    { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+.film-shots    { position: absolute; right: 10px; top: 10px; background: rgba(0,0,0,.62); backdrop-filter: blur(8px); padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; color: #fff; }
+.film-lbl      { position: absolute; bottom: 10px; left: 14px; }
+.film-lbl-name { font-size: 15px; font-weight: 900; color: #fff; letter-spacing: -.2px; }
+.film-lbl-date { font-size: 10px; font-weight: 500; color: rgba(255,255,255,.55); margin-top: 2px; }
+.film-thumbs   { display: flex; gap: 4px; padding: 8px 10px; overflow: hidden; }
+.film-thumb    { width: 38px; height: 28px; border-radius: 6px; flex-shrink: 0; }
+.film-body     { padding: 8px 13px 10px; display: flex; align-items: center; justify-content: space-between; }
+.film-tags     { font-size: 11px; color: rgba(255,255,255,.40); }
+.film-play     { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; flex-shrink: 0; }
+
+/* ★ iOS 26 floating glass pill tab bar */
+.tab-float-wrap { height: 88px; background: #0F0D0B; flex-shrink: 0; position: relative; }
+.tab-float {
+  position: absolute; bottom: 16px; left: 12px; right: 12px; height: 58px;
+  background: rgba(20,16,12,.76);
+  backdrop-filter: blur(28px) saturate(200%) brightness(1.14);
+  -webkit-backdrop-filter: blur(28px) saturate(200%) brightness(1.14);
+  border-radius: 29px;
+  border: .5px solid rgba(255,255,255,.13);
+  box-shadow: 0 8px 32px rgba(0,0,0,.60), inset 0 1px 0 rgba(255,255,255,.09);
+  display: flex; align-items: center; justify-content: space-around;
+  padding: 0 10px; z-index: 20;
+}
+.tab-item  { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; padding: 0 6px; }
+.tab-lbl   { font-size: 9px; font-weight: 700; letter-spacing: .03em; }
+.tab-on  .tab-lbl { color: var(--lavender); }
+.tab-off .tab-lbl { color: rgba(255,255,255,.26); }
+.tab-dot   { width: 4px; height: 4px; border-radius: 50%; background: var(--lavender); margin-top: 1px; }
+
+/* ════ MOMENT DETAIL SCREEN ════ */
+.det-zone-a {
+  height: 68px; flex-shrink: 0; z-index: 5;
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px 0;
+  background: rgba(8,6,4,.22);
+  backdrop-filter: var(--glass26); -webkit-backdrop-filter: var(--glass26);
+  border-bottom: .5px solid rgba(255,255,255,.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+.det-back  { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,.09); border: .5px solid rgba(255,255,255,.12); display: flex; align-items: center; justify-content: center; }
+.det-title { flex: 1; text-align: center; font-size: 13px; font-weight: 900; letter-spacing: .07em; color: rgba(255,255,255,.88); }
+.det-share-btn { width: 40px; height: 40px; border-radius: 50%; background: rgba(107,78,255,.18); border: .5px solid rgba(107,78,255,.36); display: flex; align-items: center; justify-content: center; }
+.det-photo { flex: 1; background: #14100A; position: relative; overflow: hidden; }
+.det-grad  { position: absolute; inset: 0; }
+.det-grain { position: absolute; inset: 0; z-index: 2; opacity: .05; mix-blend-mode: overlay; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 150px; }
+.det-leak  { position: absolute; z-index: 3; pointer-events: none; width: 100px; height: 360px; top: -30px; right: -10px; background: linear-gradient(135deg,rgba(232,160,32,.07) 0%,transparent 60%); transform: rotate(-12deg); filter: blur(18px); }
+.det-loc   {
+  position: absolute; z-index: 12; top: 14px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(0,0,0,.52); backdrop-filter: blur(14px) saturate(160%);
+  border: .5px solid rgba(255,255,255,.14); border-radius: 20px;
+  padding: 5px 12px 5px 8px; white-space: nowrap;
+}
+.det-loc-txt { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.75); }
+.det-stickers{ position: absolute; z-index: 12; width: 100%; top: 38%; }
+.det-stk     { position: absolute; display: inline-flex; align-items: center; gap: 4px; padding: 7px 13px; font-size: 12px; font-weight: 700; border: 1.5px solid; border-radius: 22px; backdrop-filter: blur(8px); }
+.det-stk-a   { left: 14px; top: 0; background: rgba(232,160,32,.22); border-color: rgba(232,160,32,.48); color: var(--amber); transform: rotate(-3.5deg); }
+.det-stk-b   { right: 14px; top: 36px; background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.18); color: rgba(255,255,255,.88); transform: rotate(2.5deg); }
+.det-nav     { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; z-index: 12; }
+.det-nav-d   { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.28); }
+.det-nav-a   { width: 16px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.76); }
+.det-sheet   {
+  flex-shrink: 0;
+  background: rgba(12,9,6,.82);
+  backdrop-filter: var(--glass26); -webkit-backdrop-filter: var(--glass26);
+  border-top: .5px solid rgba(255,255,255,.12);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+  padding: 10px 18px calc(28px + 10px);
+}
+.det-handle   { width: 36px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.18); margin: 0 auto 12px; }
+.det-info-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.det-roll-lbl { font-size: 14px; font-weight: 900; color: rgba(255,255,255,.88); letter-spacing: .05em; }
+.det-date-lbl { font-size: 11px; color: rgba(255,255,255,.38); }
+.det-vibes    { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.det-vibe     { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 14px; background: rgba(232,160,32,.14); border: 1px solid rgba(232,160,32,.28); color: var(--amber); }
+.det-vibe-b   { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.13); color: rgba(255,255,255,.56); }
+.det-actions  { display: flex; gap: 8px; align-items: center; }
+.det-act-fix  { flex:1; height:40px; border-radius:12px; background:rgba(255,255,255,.07); border:.5px solid rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; gap:6px; font-size:12px; font-weight:700; color:rgba(255,255,255,.78); }
+.det-act-share{ flex:1; height:40px; border-radius:12px; background:rgba(107,78,255,.20); border:.5px solid rgba(107,78,255,.38); display:flex; align-items:center; justify-content:center; gap:6px; font-size:12px; font-weight:700; color:var(--lavender); }
+.det-act-more { width:40px; height:40px; border-radius:12px; background:rgba(255,255,255,.06); border:.5px solid rgba(255,255,255,.10); display:flex; align-items:center; justify-content:center; }
+.det-home-bar { margin-top: 8px; width: 108px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.16); margin-left: auto; margin-right: auto; display: block; }
+
+/* ─── ANNOTATION PANEL ─── */
+.ann-panel { padding-top: 20px; }
+.ann-sec   { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--text-s); margin-bottom: 14px; }
+.ann-item  { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 14px; }
+.anum { width: 22px; height: 22px; border-radius: 50%; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+.a1 { background: var(--amber); color: #000; }
+.a2 { background: var(--brand); color: #fff; }
+.a3 { background: var(--lavender); color: #000; }
+.a4 { background: var(--coral); color: #fff; }
+.a5 { background: #4DCCA0; color: #000; }
+.a-title { font-size: 13px; font-weight: 700; color: rgba(255,255,255,.90); margin-bottom: 3px; }
+.a-body  { font-size: 12px; color: var(--text-m); line-height: 1.58; }
+.a-body code { font-family:'SF Mono',Menlo,monospace; font-size:9.5px; background:rgba(232,160,32,.10); color:var(--amber); padding:1px 5px; border-radius:3px; }
+.tag-b { font-size:10px; font-weight:600; padding:1px 7px; border-radius:8px; background:rgba(255,80,80,.10); border:1px solid rgba(255,80,80,.20); color:#FF7070; vertical-align:middle; margin-right:3px; }
+.tag-a { font-size:10px; font-weight:600; padding:1px 7px; border-radius:8px; background:rgba(42,175,124,.10); border:1px solid rgba(42,175,124,.22); color:#4DCCA0; vertical-align:middle; margin-left:3px; }
+.divider { height:1px; background:var(--border); margin:16px 0; }
+.info-box { background:linear-gradient(135deg,rgba(107,78,255,.10),rgba(196,181,253,.05)); border:1px solid rgba(107,78,255,.20); border-radius:12px; padding:14px; margin-top:14px; }
+.info-box-title { font-size:11px; font-weight:800; color:#EAE8FC; margin-bottom:7px; letter-spacing:.05em; }
+.info-box-body  { font-size:12px; color:var(--text-m); line-height:1.62; }
+
+/* ─── COLOUR COMPARISON ─── */
+.color-panel { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-radius: 18px; padding: 22px; }
+.cp-title    { font-size: 14px; font-weight: 800; letter-spacing: -.1px; margin-bottom: 16px; }
+.cp-swatches { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.cp-sw       { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.cp-circle   { width: 52px; height: 52px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.10); }
+.cp-name     { font-size: 10px; font-weight: 700; color: var(--text-m); text-align: center; }
+.cp-hex      { font-size: 9px; font-weight: 500; color: var(--text-s); text-align: center; font-family: 'SF Mono', monospace; }
+.cp-body     { font-size: 12px; color: var(--text-m); line-height: 1.60; }
+.glass-panel { background: rgba(255,255,255,.03); border: 1px solid var(--border); border-radius: 18px; padding: 22px; }
+.glass-comp  { display: flex; gap: 12px; margin: 14px 0; }
+.gs {
+  flex: 1; height: 54px; border-radius: 14px;
+  display: flex; align-items: center; padding: 0 14px;
+  font-size: 11px; font-weight: 600; color: rgba(255,255,255,.75);
+}
+.gs-old { background: rgba(0,0,0,.36); border: 1px solid rgba(255,255,255,.08); }
+.gs-new {
+  background: rgba(8,8,8,.22);
+  backdrop-filter: blur(28px) saturate(200%) brightness(1.12);
+  border: .5px solid rgba(255,255,255,.13);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.09);
+}
+.gs-label    { font-size: 10px; font-weight: 700; color: var(--text-s); margin-bottom: 4px; }
+.next-box { background: rgba(232,160,32,.07); border: 1px solid rgba(232,160,32,.18); border-radius: 12px; padding: 14px; margin-top: 14px; }
+</style>
+</head>
+<body>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div>
+    <div class="ph-eyebrow">Design Review · 5-Point Critique</div>
+    <div class="ph-title"><em>niftyMomnt</em> v2.0<br>iOS 26 · Colour · Icons · Film · Moment Detail</div>
+    <div class="ph-sub">3 revised/new screens · colour system update · March 2026 · Han Wook Cho</div>
+  </div>
+  <div class="ph-badges">
+    <span class="badge badge-v">v2.0</span>
+    <span class="badge badge-n">iOS 26 Liquid Glass</span>
+    <span class="badge badge-g">dark Film archive</span>
+  </div>
+</div>
+
+<!-- 5-POINT CRITIQUE TABLE -->
+<div class="crit-grid">
+  <div class="crit-cell">
+    <div class="crit-num">Q01</div>
+    <div class="crit-q">Does it follow iOS 26 UI?</div>
+    <div class="crit-verdict v-fix">Needs Update</div>
+    <div class="crit-body">v1.9 uses flat <code>blur(20px)</code> + <code>rgba(0,0,0,.36)</code> — the old iOS 17/18 frosted glass. iOS 26 Liquid Glass requires <code>saturate(200%) brightness(1.12)</code> + inner-glow highlights + floating pill tab bar. Updated across all zones in v2.0.</div>
+  </div>
+  <div class="crit-cell">
+    <div class="crit-num">Q02</div>
+    <div class="crit-q">Is the colour scheme trendy?</div>
+    <div class="crit-verdict v-update">Partially</div>
+    <div class="crit-body">Amber is the hero colour and stays — strong, distinctive, film-authentic. Cyan (#00E5CC) is a circa-2018 fintech teal — dated for a film aesthetic app. Replaced with soft lavender (#C4B5FD), trending in Gen Z apps (Notion, Arc, Locket). Brand purple deepened to #6B4EFF.</div>
+  </div>
+  <div class="crit-cell">
+    <div class="crit-num">Q03</div>
+    <div class="crit-q">Top bar icons too small?</div>
+    <div class="crit-verdict v-fix">Needs Fix</div>
+    <div class="crit-body">Yes. Emoji glyphs (⏱⊙⚡) at 14px inside 30×38px pills are below Apple's 44pt tap-target guideline and look non-native. In v2.0: inline SVG SF Symbol-style icons (timer, AF-lock, flash, overflow) in 40×40px round pills with Liquid Glass treatment. Active flash pill amber-tinted.</div>
+  </div>
+  <div class="crit-cell">
+    <div class="crit-num">Q04</div>
+    <div class="crit-q">Film screen layout good?</div>
+    <div class="crit-verdict v-fix">Major Revamp</div>
+    <div class="crit-body">The light-mode (#F5F4F0) card list is a jarring contrast switch from the dark capture experience, and feels generic iOS. Popular film apps (Dispo, Darkroom) use dark editorial aesthetics. Revamped to dark #0F0D0B, larger heroes, horizontal thumbnail strip, floating iOS 26 pill tab bar.</div>
+  </div>
+  <div class="crit-cell">
+    <div class="crit-num">Q05</div>
+    <div class="crit-q">Moment Detail screen OK?</div>
+    <div class="crit-verdict v-new">Missing → Added</div>
+    <div class="crit-body">Not included in v1.9 at all — a significant gap. Added as a new screen: full-bleed photo with preset's film grade visible, location chip, floating tilted sticker vibes, swipe-navigation dots, and a glass bottom sheet with roll info, vibe tags, "Fix this shot" and Share actions.</div>
+  </div>
+</div>
+
+<!-- ═══ SECTION 01: Capture Hub + Film Archive ═══ -->
+<div class="sec-head">
+  <span class="sh-num">01</span>
+  <span class="sh-title">Capture Hub — Icons & Glass · Film Archive — Dark Editorial</span>
+  <span class="sh-tag sh-tag-lav">Q01 · Q02 · Q03 · Q04</span>
+</div>
+
+<div class="row r-3">
+
+  <!-- PHONE 1: Capture Hub v2.0 -->
+  <div class="phone-wrap">
+    <div class="phone-label pl-cap">Capture Hub · v2.0</div>
+    <div class="phone ph-dark">
+      <div class="di di-std">
+        <div class="di-left"><div class="di-dot di-dot-a"></div><span class="di-name">AMALFI</span></div>
+        <div class="di-arc"><div class="di-arc-f"></div><span class="di-arc-n">17</span></div>
+      </div>
+      <!-- Zone A: iOS 26 Liquid Glass + SVG icons -->
+      <div class="zone-a">
+        <!-- Timer icon -->
+        <div class="ip">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="9" cy="10.5" r="5.5" stroke="rgba(255,255,255,0.82)" stroke-width="1.3"/>
+            <path d="M9 8.5V10.8L10.6 12" stroke="rgba(255,255,255,0.82)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M7 2.5H11" stroke="rgba(255,255,255,0.82)" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <!-- AF Lock / focus frame icon -->
+        <div class="ip">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M2 6V3.5C2 2.67 2.67 2 3.5 2H6" stroke="rgba(255,255,255,0.82)" stroke-width="1.3" stroke-linecap="round"/>
+            <path d="M12 2H14.5C15.33 2 16 2.67 16 3.5V6" stroke="rgba(255,255,255,0.82)" stroke-width="1.3" stroke-linecap="round"/>
+            <path d="M16 12V14.5C16 15.33 15.33 16 14.5 16H12" stroke="rgba(255,255,255,0.82)" stroke-width="1.3" stroke-linecap="round"/>
+            <path d="M6 16H3.5C2.67 16 2 15.33 2 14.5V12" stroke="rgba(255,255,255,0.82)" stroke-width="1.3" stroke-linecap="round"/>
+            <circle cx="9" cy="9" r="2" stroke="rgba(255,255,255,0.82)" stroke-width="1.3"/>
+          </svg>
+        </div>
+        <!-- Film strip + counter -->
+        <div class="za-center">
+          <div class="fstrip">
+            <div class="ff ff-u"></div><div class="ff ff-u"></div><div class="ff ff-u"></div>
+            <div class="ff ff-u"></div><div class="ff ff-u"></div><div class="ff ff-u"></div>
+            <div class="ff ff-u"></div><div class="ff ff-e"></div><div class="ff ff-e"></div>
+          </div>
+          <span class="fcount">17 left</span>
+        </div>
+        <div class="za-right">
+          <!-- Flash icon (active = amber pill) -->
+          <div class="ip ip-amber">
+            <svg width="15" height="18" viewBox="0 0 15 18" fill="none">
+              <path d="M9.5 1L2 10H7L5.5 17L13 8H8L9.5 1Z" fill="rgba(232,160,32,0.92)"/>
+            </svg>
+          </div>
+          <!-- More: three dots -->
+          <div class="ip">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <circle cx="4.5" cy="9" r="1.5" fill="rgba(255,255,255,0.78)"/>
+              <circle cx="9"   cy="9" r="1.5" fill="rgba(255,255,255,0.78)"/>
+              <circle cx="13.5" cy="9" r="1.5" fill="rgba(255,255,255,0.78)"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <!-- Zone B -->
+      <div class="zone-b">
+        <div class="vg1"></div><div class="vg2"></div>
+        <div class="vtint"></div><div class="vgrain"></div><div class="vleak"></div>
+        <div class="manchor">
+          <div class="mghost">CLIP</div>
+          <div class="mdots"><div class="md md-s"></div><div class="md md-a"></div><div class="md md-s"></div></div>
+        </div>
+      </div>
+      <!-- Zone C -->
+      <div class="zone-c">
+        <div class="preset-dot"></div>
+        <span class="preset-name">AMALFI</span>
+        <div class="swatches">
+          <div class="sw sw-sm sw-gr"></div>
+          <div class="sw sw-md sw-am sw-act"></div>
+          <div class="sw sw-sm sw-lv"></div>
+          <div class="sw sw-sm sw-bl"></div>
+          <div class="sw sw-sm sw-rd"></div>
+        </div>
+        <span class="preset-hint" style="margin-left:8px;">hold</span>
+      </div>
+      <!-- Zone D -->
+      <div class="zone-d">
+        <div class="thumb"><span class="thumb-lbl">last</span><span class="thumb-bdg">▶ LIVE</span></div>
+        <div class="sh-wrap">
+          <div class="sh-track"></div><div class="sh-prog"></div>
+          <div class="sh-body"><div class="sh-inner"><span class="sh-count">8</span></div></div>
+        </div>
+        <div class="flip-hint"><span class="flip-line">double-tap</span><span class="flip-line">to flip</span></div>
+        <div class="home-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHONE 2: Film Archive v2.0 — dark editorial -->
+  <div class="phone-wrap">
+    <div class="phone-label pl-film">Film Archive · v2.0 — dark editorial</div>
+    <div class="phone ph-film-f">
+      <!-- Status bar -->
+      <div class="film-status">
+        <svg width="130" height="14" viewBox="0 0 130 14" fill="none">
+          <text x="8" y="11" font-size="11" font-weight="600" fill="rgba(255,255,255,0.65)" font-family="-apple-system">9:41</text>
+          <path d="M88 3H92V11H88V3Z" fill="rgba(255,255,255,0.65)"/>
+          <path d="M95 5H99V11H95V5Z" fill="rgba(255,255,255,0.65)"/>
+          <path d="M102 7H106V11H102V7Z" fill="rgba(255,255,255,0.65)"/>
+          <rect x="109" y="3" width="9" height="8" rx="2" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>
+          <rect x="110.5" y="4.5" width="5" height="5" rx="1" fill="rgba(255,255,255,0.65)"/>
+        </svg>
+      </div>
+      <!-- Dark editorial header -->
+      <div class="film-header">
+        <div class="film-h-left">
+          <span class="film-title">Film</span>
+          <span class="film-cnt-bdg">12 rolls</span>
+        </div>
+        <div class="film-h-right">
+          <div class="film-h-btn">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+              <circle cx="6.5" cy="6.5" r="4.5" stroke="rgba(255,255,255,0.60)" stroke-width="1.3"/>
+              <path d="M10 10L13.5 13.5" stroke="rgba(255,255,255,0.60)" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="film-h-btn">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+              <rect x="1.5" y="1.5" width="5" height="5" rx="1.5" stroke="rgba(255,255,255,0.60)" stroke-width="1.3"/>
+              <rect x="8.5" y="1.5" width="5" height="5" rx="1.5" stroke="rgba(255,255,255,0.60)" stroke-width="1.3"/>
+              <rect x="1.5" y="8.5" width="5" height="5" rx="1.5" stroke="rgba(255,255,255,0.60)" stroke-width="1.3"/>
+              <rect x="8.5" y="8.5" width="5" height="5" rx="1.5" stroke="rgba(255,255,255,0.60)" stroke-width="1.3"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <!-- Feed -->
+      <div class="film-feed">
+        <div class="film-datelbl">This Week · Mar 28–31</div>
+        <!-- Card 1: AMALFI roll -->
+        <div class="film-card">
+          <div class="film-hero">
+            <div class="film-hero-grad" style="background:linear-gradient(155deg,#1E0A00 0%,#7A3A00 40%,#E8A020 100%);"></div>
+            <div class="film-grain"></div>
+            <div class="film-strip" style="background:var(--amber);"></div>
+            <div class="film-shots">24 shots</div>
+            <div class="film-lbl">
+              <div class="film-lbl-name">AMALFI · Hongdae Walk</div>
+              <div class="film-lbl-date">Sat, Mar 28 · golden hour</div>
+            </div>
+          </div>
+          <div class="film-thumbs">
+            <div class="film-thumb" style="background:linear-gradient(135deg,#7A3A00,#E8A020);"></div>
+            <div class="film-thumb" style="background:linear-gradient(135deg,#2A1800,#6B3A10);"></div>
+            <div class="film-thumb" style="background:linear-gradient(135deg,#4A2800,#C87020);"></div>
+            <div class="film-thumb" style="background:linear-gradient(135deg,#1A0C00,#8B4A00);"></div>
+            <div class="film-thumb" style="background:rgba(255,255,255,.06); display:flex; align-items:center; justify-content:center; font-size:10px; color:rgba(255,255,255,.28);">+20</div>
+          </div>
+          <div class="film-body">
+            <div class="film-tags">✨ golden hour &nbsp;🌊 wandering</div>
+            <div class="film-play" style="background:var(--amber);">▶</div>
+          </div>
+        </div>
+        <!-- Card 2: NORDIC roll -->
+        <div class="film-card">
+          <div class="film-hero">
+            <div class="film-hero-grad" style="background:linear-gradient(155deg,#050A18 0%,#152050 45%,#3A58C0 100%);"></div>
+            <div class="film-grain"></div>
+            <div class="film-strip" style="background:#3A58C0;"></div>
+            <div class="film-shots">18 shots</div>
+            <div class="film-lbl">
+              <div class="film-lbl-name">NORDIC · Itaewon Night</div>
+              <div class="film-lbl-date">Fri, Mar 27 · midnight</div>
+            </div>
+          </div>
+          <div class="film-thumbs">
+            <div class="film-thumb" style="background:linear-gradient(135deg,#050A18,#3A58C0);"></div>
+            <div class="film-thumb" style="background:linear-gradient(135deg,#152050,#2040A8);"></div>
+            <div class="film-thumb" style="background:linear-gradient(135deg,#030812,#3050B0);"></div>
+            <div class="film-thumb" style="background:rgba(255,255,255,.06); display:flex; align-items:center; justify-content:center; font-size:10px; color:rgba(255,255,255,.28);">+15</div>
+          </div>
+          <div class="film-body">
+            <div class="film-tags">🌃 city night &nbsp;⚡ electric</div>
+            <div class="film-play" style="background:#3A58C0;">▶</div>
+          </div>
+        </div>
+      </div>
+      <!-- ★ iOS 26 Floating Glass Pill Tab Bar -->
+      <div class="tab-float-wrap">
+        <div class="tab-float">
+          <div class="tab-item tab-off">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="10" r="7" stroke="rgba(255,255,255,0.26)" stroke-width="1.4"/>
+              <circle cx="10" cy="10" r="2.5" stroke="rgba(255,255,255,0.26)" stroke-width="1.4"/>
+            </svg>
+            <span class="tab-lbl">Capture</span>
+          </div>
+          <div class="tab-item tab-on">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <rect x="2" y="6" width="16" height="11" rx="2" stroke="#C4B5FD" stroke-width="1.4"/>
+              <path d="M2 9.5H18" stroke="#C4B5FD" stroke-width="1.4"/>
+              <rect x="7" y="2" width="2" height="5" rx="1" fill="#C4B5FD"/>
+              <rect x="11" y="2" width="2" height="5" rx="1" fill="#C4B5FD"/>
+            </svg>
+            <span class="tab-lbl">Film</span>
+            <div class="tab-dot"></div>
+          </div>
+          <div class="tab-item tab-off">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <rect x="3" y="3" width="14" height="14" rx="3" stroke="rgba(255,255,255,0.26)" stroke-width="1.4"/>
+              <path d="M8.5 3V17" stroke="rgba(255,255,255,0.26)" stroke-width="1.4"/>
+              <path d="M3 8H8.5" stroke="rgba(255,255,255,0.26)" stroke-width="1.4"/>
+              <path d="M3 12H8.5" stroke="rgba(255,255,255,0.26)" stroke-width="1.4"/>
+            </svg>
+            <span class="tab-lbl">Vault</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Annotation: Row 1 -->
+  <div class="ann-panel">
+    <div class="ann-sec">Capture Hub · Film Archive — changes applied</div>
+    <div class="ann-item">
+      <div class="anum a1">1</div>
+      <div>
+        <div class="a-title">SVG icons replace emoji — 40×40pt pills</div>
+        <div class="a-body"><span class="tag-b">before</span> Emoji (⏱⊙⚡) at 14px in 30×38px pills — below Apple's 44pt tap-target guideline, render inconsistently across OS, non-native look. <span class="tag-a">after</span> Inline SVG glyphs in 40×40 round pills: clock face (timer), corner-frame with centre dot (AF lock), filled lightning bolt (flash — amber-tinted when active), three horizontal dots (more). Matches Halide, ProCamera icon vocabulary.</div>
+      </div>
+    </div>
+    <div class="ann-item">
+      <div class="anum a2">2</div>
+      <div>
+        <div class="a-title">iOS 26 Liquid Glass on all zones</div>
+        <div class="a-body"><span class="tag-b">before</span> <code>backdrop-filter: blur(20px)</code> + flat <code>rgba(0,0,0,.36)</code>. <span class="tag-a">after</span> <code>blur(28px) saturate(200%) brightness(1.12)</code> + inner top/bottom edge glows. Zone A, C, D all updated. Matches <code>UIVisualEffectView .systemUltraThinMaterialDark</code> with the new Liquid Glass refraction that iOS 26 introduced system-wide in Fall 2025.</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="ann-item">
+      <div class="anum a3">3</div>
+      <div>
+        <div class="a-title">Film archive: dark editorial, not light mode</div>
+        <div class="a-body"><span class="tag-b">before</span> White #F5F4F0 background — jarring brightness jump from dark camera, looks like a generic iOS Notes list. <span class="tag-a">after</span> Dark #0F0D0B editorial background — consistent with the film/photography aesthetic (Dispo, Darkroom, Halide all use dark archival UIs). Warm near-black reinforces the "developing your roll" metaphor. Preset accent colour carries into each card's hero strip.</div>
+      </div>
+    </div>
+    <div class="ann-item">
+      <div class="anum a4">4</div>
+      <div>
+        <div class="a-title">Floating pill tab bar — iOS 26 signature pattern</div>
+        <div class="a-body"><span class="tag-b">before</span> Full-width white bar pinned to bottom edge — the iOS 17/18 default, being phased out in iOS 26. <span class="tag-a">after</span> Floating glass pill (<code>border-radius: 29px</code>) with Liquid Glass material hovering 16pt above the screen edge. This is iOS 26's defining tab bar pattern (seen in Messages, Photos, Music beta builds). Active tab uses lavender accent dot — replaces the old cyan.</div>
+      </div>
+    </div>
+    <div class="ann-item">
+      <div class="anum a5">5</div>
+      <div>
+        <div class="a-title">Thumbnail strip — photo-forward cards</div>
+        <div class="a-body"><span class="tag-b">before</span> Card showed only text metadata below hero. <span class="tag-a">after</span> Horizontal thumbnail strip exposes 4–5 actual shots from the roll. Users immediately see what's in each roll without opening it. Overflow "+N" chip shows remaining count. Matches how BeReal Memories and Dispo Rolls present content. Hero height increased to 130pt to support the richer layout.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SECTION 02: Moment Detail (NEW) ═══ -->
+<div class="sec-head">
+  <span class="sh-num">02</span>
+  <span class="sh-title">Moment Detail — New Screen</span>
+  <span class="sh-tag sh-tag-amb">Q05 · full-bleed · glass sheet · sticker vibes · fix shot</span>
+</div>
+
+<div class="row r-2">
+  <!-- PHONE 3: Moment Detail -->
+  <div class="phone-wrap">
+    <div class="phone-label pl-det">Moment Detail · NEW in v2.0</div>
+    <div class="phone ph-det">
+      <div class="di di-sm">
+        <div class="di-dot di-dot-a"></div>
+        <span class="di-name">AMALFI</span>
+      </div>
+      <!-- Zone A: back → roll name → share -->
+      <div class="det-zone-a">
+        <div class="det-back">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M11 4L6 9L11 14" stroke="rgba(255,255,255,0.82)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="det-title">AMALFI · Hongdae Walk</div>
+        <div class="det-share-btn">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M9 2V11" stroke="#C4B5FD" stroke-width="1.4" stroke-linecap="round"/>
+            <path d="M5.5 5.5L9 2L12.5 5.5" stroke="#C4B5FD" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 10V14.5C4 15.05 4.45 15.5 5 15.5H13C13.55 15.5 14 15.05 14 14.5V10" stroke="#C4B5FD" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+      <!-- Full-bleed photo: golden-hour street scene simulation -->
+      <div class="det-photo">
+        <div class="det-grad" style="background: linear-gradient(168deg, #180A00 0%, #4A2200 18%, #B06820 52%, #ECC060 78%, #FFE8B0 100%);"></div>
+        <div class="det-grain"></div>
+        <div class="det-leak"></div>
+        <!-- Location chip -->
+        <div class="det-loc">
+          <span style="font-size:11px;">📍</span>
+          <span class="det-loc-txt">Hongdae · Seoul · golden hour</span>
+        </div>
+        <!-- Floating sticker vibes -->
+        <div class="det-stickers">
+          <div class="det-stk det-stk-a">✨ golden hour</div>
+          <div class="det-stk det-stk-b">🌊 wandering</div>
+        </div>
+        <!-- Swipe navigation dots -->
+        <div class="det-nav">
+          <div class="det-nav-d"></div>
+          <div class="det-nav-a"></div>
+          <div class="det-nav-d"></div>
+          <div class="det-nav-d"></div>
+        </div>
+      </div>
+      <!-- Glass bottom sheet -->
+      <div class="det-sheet">
+        <div class="det-handle"></div>
+        <div class="det-info-row">
+          <div class="det-roll-lbl">Shot 8 of 24</div>
+          <div class="det-date-lbl">Sat, Mar 28 · 6:42 PM</div>
+        </div>
+        <div class="det-vibes">
+          <span class="det-vibe">✨ golden hour</span>
+          <span class="det-vibe det-vibe-b">🌊 wandering</span>
+          <span class="det-vibe det-vibe-b">📍 Hongdae</span>
+        </div>
+        <div class="det-actions">
+          <div class="det-act-fix">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="7" cy="7" r="4.5" stroke="rgba(255,255,255,0.65)" stroke-width="1.3"/>
+              <path d="M5 7L6.5 8.5L9.5 5.5" stroke="rgba(255,255,255,0.65)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Fix this shot
+          </div>
+          <div class="det-act-share">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M7 1.5V9" stroke="#C4B5FD" stroke-width="1.3" stroke-linecap="round"/>
+              <path d="M4.5 4L7 1.5L9.5 4" stroke="#C4B5FD" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3 8V11.5C3 11.78 3.22 12 3.5 12H10.5C10.78 12 11 11.78 11 11.5V8" stroke="#C4B5FD" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+            Share
+          </div>
+          <div class="det-act-more">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="3"  cy="7" r="1.3" fill="rgba(255,255,255,0.58)"/>
+              <circle cx="7"  cy="7" r="1.3" fill="rgba(255,255,255,0.58)"/>
+              <circle cx="11" cy="7" r="1.3" fill="rgba(255,255,255,0.58)"/>
+            </svg>
+          </div>
+        </div>
+        <div class="det-home-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Annotation: Moment Detail -->
+  <div class="ann-panel">
+    <div class="ann-sec">Moment Detail — design rationale</div>
+    <div class="ann-item">
+      <div class="anum a1">1</div>
+      <div>
+        <div class="a-title">Full-bleed photo — preset grade visible</div>
+        <div class="a-body">Photo fills screen edge-to-edge with the preset's vibe tint and film grain applied — the exact look the user captured. Light leak persists from the capture session's overlay. Swipe left/right navigates shots within the roll. Shot position is shown via the pill-and-dot indicator at photo bottom. VSCO and Halide set this expectation for Gen Z: the photo is everything, chrome steps back.</div>
+      </div>
+    </div>
+    <div class="ann-item">
+      <div class="anum a2">2</div>
+      <div>
+        <div class="a-title">iOS 26 glass bottom sheet</div>
+        <div class="a-body">Liquid Glass material slides up over the photo — <code>saturate(200%) brightness(1.12)</code> + <code>inset 0 1px 0 rgba(255,255,255,.08)</code>. Contains: roll name, shot number, timestamp, vibe tag row, and action buttons. The drag handle affords swipe-to-dismiss to reveal the full photo. Bottom padding uses <code>env(safe-area-inset-bottom)</code> for home indicator coverage on all iPhone 15–16 sizes.</div>
+      </div>
+    </div>
+    <div class="ann-item">
+      <div class="anum a3">3</div>
+      <div>
+        <div class="a-title">Floating sticker vibes — personal, not metadata</div>
+        <div class="a-body">Vibe tags from the post-capture flow appear as tilted sticker chips over the photo — same spring-bounce animation as the post-capture prompt, same tilt angles. This makes the emotional tags feel genuinely owned and placed (like stickers on a physical print) rather than cold system metadata. Tap a sticker to edit the tag. Two stickers are shown; a third is visible on the edge to imply more.</div>
+      </div>
+    </div>
+    <div class="ann-item">
+      <div class="anum a4">4</div>
+      <div>
+        <div class="a-title">Zone A: back → roll → share</div>
+        <div class="a-body">Back button (left) returns to Film Archive with a slide-right transition. Centre shows roll name + moment title in 900-weight — orients users without a separate header. Share button (right, lavender) triggers <code>UIActivityViewController</code> — identical to the Quick Share Pill from post-capture, so the same share path is consistent across contexts. All three buttons are 40×40pt.</div>
+      </div>
+    </div>
+    <div class="ann-item">
+      <div class="anum a5">5</div>
+      <div>
+        <div class="a-title">"Fix this shot" — §5.3 Fix Modal entry</div>
+        <div class="a-body">Prominent action alongside Share — opens §5.3 Fix Modal (exposure, crop, preset swap). Gen Z expects quick in-app touch-ups (VSCO, Adobe Lightroom Mobile established this norm). The circle-check icon signals non-destructive refinement, not a full re-edit. The action is placed left-of-share so the eye lands on Fix before Share — nudging towards quality before distribution.</div>
+      </div>
+    </div>
+    <div class="info-box">
+      <div class="info-box-title">PRD + Spec update needed for this screen</div>
+      <div class="info-box-body">§5.2 Moment Detail in the UI/UX Spec needs: (1) Zone A layout with back/title/share spec, (2) floating sticker vibe rendering rules (position, tilt, tap-to-edit behaviour), (3) swipe-navigation gesture + pagination indicator. PRD §3.5 should cross-reference this detail view from the Film Archive card tap interaction.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SECTION 03: Colour System ═══ -->
+<div class="sec-head">
+  <span class="sh-num">03</span>
+  <span class="sh-title">Colour System — v1.9 vs v2.0 · iOS 26 Glass Spec</span>
+  <span class="sh-tag sh-tag-lav">Q01 · Q02</span>
+</div>
+
+<div class="row r-c2">
+  <!-- Before / After colours -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+    <div class="color-panel">
+      <div class="cp-title" style="color:rgba(255,100,100,.75);">v1.9 — Before</div>
+      <div class="cp-swatches">
+        <div class="cp-sw">
+          <div class="cp-circle" style="background:#5B4FCF;"></div>
+          <div class="cp-name">Brand</div>
+          <div class="cp-hex">#5B4FCF</div>
+        </div>
+        <div class="cp-sw">
+          <div class="cp-circle" style="background:#E8A020;"></div>
+          <div class="cp-name">Amber ✓</div>
+          <div class="cp-hex">#E8A020</div>
+        </div>
+        <div class="cp-sw">
+          <div class="cp-circle" style="background:#00E5CC; border-color:rgba(0,229,204,.35);"></div>
+          <div class="cp-name" style="color:#FF9090;">Cyan ✕</div>
+          <div class="cp-hex" style="color:#FF9090;">#00E5CC</div>
+        </div>
+        <div class="cp-sw">
+          <div class="cp-circle" style="background:#D85A30;"></div>
+          <div class="cp-name">Coral</div>
+          <div class="cp-hex">#D85A30</div>
+        </div>
+      </div>
+      <div class="cp-body">Cyan (#00E5CC) was a common "tech-y" teal used heavily in 2017–2020 fintech and utility apps (Revolut, Robinhood era). For a film-aesthetic Gen Z camera app it reads as functional/corporate rather than editorial or emotional. Purple is competent but generic at this value.</div>
+    </div>
+    <div class="color-panel">
+      <div class="cp-title" style="color:rgba(42,175,124,.80);">v2.0 — After</div>
+      <div class="cp-swatches">
+        <div class="cp-sw">
+          <div class="cp-circle" style="background:#6B4EFF;"></div>
+          <div class="cp-name">Brand ↑</div>
+          <div class="cp-hex">#6B4EFF</div>
+        </div>
+        <div class="cp-sw">
+          <div class="cp-circle" style="background:#E8A020;"></div>
+          <div class="cp-name">Amber ✓</div>
+          <div class="cp-hex">#E8A020</div>
+        </div>
+        <div class="cp-sw">
+          <div class="cp-circle" style="background:#C4B5FD;"></div>
+          <div class="cp-name" style="color:#C4B5FD;">Lavender ★</div>
+          <div class="cp-hex" style="color:#C4B5FD;">#C4B5FD</div>
+        </div>
+        <div class="cp-sw">
+          <div class="cp-circle" style="background:#F07C5C;"></div>
+          <div class="cp-name">Coral ↓</div>
+          <div class="cp-hex">#F07C5C</div>
+        </div>
+      </div>
+      <div class="cp-body">Lavender (#C4B5FD) is trending across 2025–2026 Gen Z software: Notion, Linear, Arc Browser, and photo apps like Locket all use this warm purple-adjacent tone. Feels editorial and warm — not cold-tech. Brand purple deepened to #6B4EFF for stronger contrast against dark surfaces. Coral softened to a warmer peach-coral. Amber stays the hero.</div>
+    </div>
+  </div>
+
+  <!-- iOS 26 glass spec + next steps -->
+  <div style="display:grid; grid-template-rows:auto auto; gap:14px;">
+    <div class="glass-panel">
+      <div class="cp-title">iOS 26 Liquid Glass — What Changed</div>
+      <div style="font-size:12px; color:var(--text-m); line-height:1.65; margin-bottom:12px;">iOS 26 (shipped Fall 2025) replaced the flat frosted glass of iOS 17/18 with Liquid Glass — a vibrantly translucent, refractive material that responds to content underneath. It appears across the OS: tab bars, navigation bars, control centres, and sheets. Not adopting it makes an app look one generation behind.</div>
+      <div class="gs-label">v1.9 — flat frosted glass (iOS 17/18)</div>
+      <div class="glass-comp">
+        <div class="gs gs-old" style="font-size:10px;"><code style="font-size:9.5px;">blur(20px) · rgba(0,0,0,.36)</code></div>
+      </div>
+      <div class="gs-label">v2.0 — Liquid Glass (iOS 26)</div>
+      <div class="glass-comp">
+        <div class="gs gs-new" style="font-size:10px;"><code style="font-size:9.5px;">blur(28px) saturate(200%) brightness(1.12) · inset glow</code></div>
+      </div>
+    </div>
+    <div class="next-box">
+      <div style="font-size:12px; font-weight:800; color:var(--amber); margin-bottom:8px; letter-spacing:.04em;">READY TO UPDATE DOCUMENTS</div>
+      <div style="font-size:12px; color:var(--text-m); line-height:1.65;">
+        <div style="margin-bottom:6px;"><span style="font-weight:700; color:#fff;">PRD v1.6:</span> §2 add Moment Detail section · §3.5 Zone A icon spec · §5 Film Archive dark mode · §9 colour token update (cyan→lavender, brand #6B4EFF)</div>
+        <div><span style="font-weight:700; color:#fff;">UI/UX Spec v1.7:</span> §2 colour tokens · §4.1 Zone A glass spec (iOS 26) + icon pill sizing · §5.2 Moment Detail full layout · §5.4 Film Archive dark editorial + floating tab bar · §6 Tab bar spec (floating pill)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

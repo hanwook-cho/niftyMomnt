@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>niftyMomnt v1.9 — MZ Critique Applied</title>
+<style>
+:root {
+  --bg:     #07070F;
+  --brand:  #5B4FCF;
+  --amber:  #E8A020;
+  --cyan:   #00E5CC;
+  --coral:  #D85A30;
+  --teal:   #0F6E56;
+  --text:   rgba(255,255,255,0.92);
+  --text-m: rgba(255,255,255,0.52);
+  --text-s: rgba(255,255,255,0.28);
+  --border: rgba(255,255,255,0.07);
+  --glass:  rgba(0,0,0,0.36);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body {
+  background: var(--bg);
+  background-image: radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 22px 22px;
+  font-family: -apple-system,'Helvetica Neue',Arial,sans-serif;
+  color: var(--text);
+  padding: 44px 32px 100px;
+  min-height: 100vh;
+}
+
+/* ── Page header ── */
+.page-header {
+  max-width: 1380px; margin: 0 auto 44px;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  flex-wrap: wrap; gap: 16px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(91,79,207,0.18);
+}
+.ph-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--brand); margin-bottom: 6px; }
+.ph-title   { font-size: 34px; font-weight: 900; letter-spacing: -.6px; line-height: 1.05; }
+.ph-title em { font-style: normal; color: var(--brand); }
+.ph-sub     { font-size: 13px; color: var(--text-s); margin-top: 6px; }
+.ph-badges  { display: flex; gap: 8px; }
+.badge { font-size: 11px; font-weight: 800; padding: 5px 14px; border-radius: 20px; letter-spacing: .04em; }
+.badge-v  { background: linear-gradient(135deg,#5B4FCF,#D85A30); color: #fff; }
+.badge-gz { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: var(--text-m); }
+
+/* ── Section header ── */
+.section-head {
+  max-width: 1380px; margin: 0 auto 22px;
+  display: flex; align-items: baseline; gap: 12px;
+}
+.sh-num   { font-size: 11px; font-weight: 800; color: var(--brand); letter-spacing: .12em; text-transform: uppercase; }
+.sh-title { font-size: 20px; font-weight: 900; color: #fff; letter-spacing: -.3px; }
+.sh-tag   { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 10px; background: rgba(0,229,204,.10); border: 1px solid rgba(0,229,204,.2); color: var(--cyan); }
+
+/* ── Grid rows ── */
+.row { max-width: 1380px; margin: 0 auto 72px; display: grid; gap: 28px; align-items: start; }
+.row-main { grid-template-columns: 355px 355px 1fr; }
+.row-sub  { grid-template-columns: 308px 308px 1fr; }
+
+/* ── Phone wrapper ── */
+.phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.phone-label {
+  font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  padding: 3px 12px; border-radius: 20px;
+}
+.pl-cap  { background: rgba(91,79,207,.15); border: 1px solid rgba(91,79,207,.3); color: #B0A8EF; }
+.pl-post { background: rgba(0,229,204,.10); border: 1px solid rgba(0,229,204,.2); color: var(--cyan); }
+.pl-roll { background: rgba(232,160,32,.15); border: 1px solid rgba(232,160,32,.3); color: var(--amber); }
+.pl-film { background: rgba(15,110,86,.15);  border: 1px solid rgba(15,110,86,.3);  color: #5FD4AA; }
+
+/* ── Phone frame ── */
+.phone {
+  background: #0A0A0A;
+  border-radius: 46px;
+  border: 1.5px solid rgba(255,255,255,0.09);
+  overflow: hidden; position: relative;
+  display: flex; flex-direction: column;
+  box-shadow: 0 44px 110px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.04), inset 0 1px 0 rgba(255,255,255,.07);
+}
+.ph-dark { width: 355px; height: 770px; }
+.ph-roll { width: 308px; height: 668px; }
+.ph-film { width: 308px; height: 668px; border-radius: 42px; background: #F5F4F0; border-color: rgba(0,0,0,.1); box-shadow: 0 24px 72px rgba(0,0,0,.45); }
+
+/* ── Dynamic Island ── */
+.di {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  background: #000; border-radius: 16px; z-index: 20;
+  display: flex; align-items: center; height: 32px; padding: 0 10px;
+}
+.di-std  { width: 128px; justify-content: space-between; }
+.di-sm   { width: 108px; justify-content: flex-end; gap: 6px; }
+.di-left { display: flex; align-items: center; gap: 5px; }
+.di-dot  { width: 8px; height: 8px; border-radius: 50%; }
+.di-dot-amber  { background: var(--amber); }
+.di-dot-purple { background: var(--brand); }
+.di-dot-glow   { background: var(--amber); box-shadow: 0 0 7px var(--amber); }
+.di-name { font-size: 8px; font-weight: 600; color: rgba(255,255,255,.50); }
+.di-arc  { width: 17px; height: 17px; border-radius: 50%; border: 2px solid rgba(255,255,255,.14); position: relative; display: flex; align-items: center; justify-content: center; }
+.di-arc-fill { position: absolute; width: 17px; height: 17px; border-radius: 50%; border: 2px solid transparent; border-top-color: var(--amber); border-right-color: var(--amber); transform: rotate(-90deg); }
+.di-arc-n    { font-size: 6px; font-weight: 700; color: rgba(255,255,255,.7); }
+
+/* ════════════════════════════
+   ZONE A — Top bar
+════════════════════════════ */
+.zone-a {
+  height: 68px; flex-shrink: 0; z-index: 5;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px 0;
+  background: rgba(0,0,0,.36);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: .5px solid rgba(255,255,255,.06);
+}
+.ip { width: 38px; height: 30px; border-radius: 50px; background: rgba(255,255,255,.10); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.za-center { flex: 1; display: flex; justify-content: center; align-items: center; gap: 6px; }
+.za-right  { display: flex; gap: 8px; }
+
+/* Film strip */
+.fstrip { display: flex; gap: 2px; align-items: center; }
+.ff { width: 7px; height: 10px; border-radius: 1.5px; border: .5px solid rgba(255,255,255,.10); }
+.ff-used   { background: var(--amber); border-color: #BA7517; }
+.ff-empty  { background: rgba(255,255,255,.09); }
+.ff-all    { background: var(--amber); border-color: #BA7517; box-shadow: 0 0 4px rgba(232,160,32,.4); }
+.fcount { font-size: 14px; font-weight: 700; color: rgba(255,255,255,.92); }
+.fcount-zero { color: var(--amber); }
+
+/* ════════════════════════════
+   ZONE B — Viewfinder
+════════════════════════════ */
+.zone-b { flex: 1; background: #14100A; position: relative; overflow: hidden; }
+.vg1 { position: absolute; width: 280px; height: 180px; background: radial-gradient(ellipse,rgba(130,80,18,.40) 0%,transparent 70%); top: 20%; left: 4%; border-radius: 50%; filter: blur(34px); }
+.vg2 { position: absolute; width: 200px; height: 260px; background: radial-gradient(ellipse,rgba(80,48,10,.36) 0%,transparent 70%); top: 10%; right: 3%; border-radius: 50%; filter: blur(42px); }
+.vtint { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(ellipse at 50% 55%,rgba(232,160,32,.07) 0%,transparent 65%); }
+.vgrain { position: absolute; inset: 0; z-index: 2; opacity: .04; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 150px; mix-blend-mode: overlay; }
+.vleak { position: absolute; z-index: 3; pointer-events: none; width: 100px; height: 360px; top: -30px; right: -10px; background: linear-gradient(135deg,rgba(232,160,32,.05) 0%,transparent 60%); transform: rotate(-12deg); filter: blur(18px); }
+
+/* Low-light */
+.ll-pill { position: absolute; z-index: 10; bottom: 56px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,.56); backdrop-filter: blur(12px); border: .5px solid rgba(255,255,255,.10); border-radius: 24px; padding: 6px 13px 6px 8px; white-space: nowrap; }
+.ll-dot  { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); animation: llp 2s ease-in-out infinite; }
+@keyframes llp { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.72)} }
+.ll-txt  { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.65); }
+
+/* Mode anchor */
+.manchor { position: absolute; z-index: 10; bottom: 12px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.mghost  { font-size: 12px; font-weight: 600; letter-spacing: 5px; color: rgba(255,255,255,.40); }
+.mdots   { display: flex; gap: 7px; align-items: center; }
+.md { border-radius: 50%; background: rgba(255,255,255,.22); }
+.md-s { width: 5px; height: 5px; }
+.md-a { width: 7px; height: 7px; background: rgba(255,255,255,.65); }
+
+/* ════════════════════════════
+   ZONE C — Preset bar
+════════════════════════════ */
+.zone-c {
+  height: 46px; flex-shrink: 0;
+  background: rgba(0,0,0,.33); backdrop-filter: blur(20px);
+  display: flex; align-items: center; padding: 0 15px; gap: 9px; position: relative;
+}
+.zone-c::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--amber); opacity:.88; }
+.preset-dot  { width: 9px; height: 9px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
+
+/* ★ CHANGE 1: Black weight, tighter tracking */
+.preset-name { font-size: 17px; font-weight: 900; letter-spacing: 0.5px; color: rgba(255,255,255,.95); }
+
+.preset-hint { font-size: 12px; color: rgba(255,255,255,.48); }
+
+/* Peek swatches */
+.swatches { display: flex; gap: 5px; align-items: center; margin-left: 6px; }
+.sw { border-radius: 50%; border: .5px solid rgba(255,255,255,.14); opacity: .50; flex-shrink: 0; }
+.sw-act { opacity: 1; border-color: rgba(255,255,255,.38); }
+.sw-sm { width: 9px; height: 9px; }
+.sw-md { width: 12px; height: 12px; }
+.sw-amber { background: #E8A020; }
+.sw-cyan  { background: #00E5CC; }
+.sw-blue  { background: #8EB4D4; }
+.sw-red   { background: #FF6B6B; }
+.sw-grain { background: #C8A882; }
+
+/* ════════════════════════════
+   ZONE D — Shutter row
+════════════════════════════ */
+.zone-d {
+  flex-shrink: 0;
+  background: rgba(0,0,0,.42); backdrop-filter: blur(20px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 12px 18px calc(30px + 12px); position: relative;
+}
+.thumb { position: absolute; left: 17px; top: 12px; width: 60px; height: 43px; border-radius: 11px; background: #1C1208; border: 1px solid rgba(255,255,255,.13); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 3px; }
+.thumb-lbl { font-size: 10px; font-weight: 500; color: rgba(255,255,255,.38); }
+.thumb-bdg { background: var(--amber); color: #000; font-size: 7px; font-weight: 800; padding: 1px 5px; border-radius: 3px; }
+
+/* Shutter */
+.sh-wrap { position: relative; width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; }
+.sh-track { position: absolute; width: 90px; height: 90px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,.10); }
+.sh-prog  { position: absolute; width: 90px; height: 90px; border-radius: 50%; border: 2.5px solid transparent; border-top-color: var(--amber); border-right-color: var(--amber); transform: rotate(-90deg); }
+
+/* ★ CHANGE 2: Matte physical shutter */
+.sh-body {
+  width: 72px; height: 72px; border-radius: 50%; z-index: 2;
+  background: radial-gradient(circle at 42% 38%, #F2F2EC 0%, #D5D5CE 55%, #C0C0B9 100%);
+  box-shadow: 0 5px 16px rgba(0,0,0,.65), inset 0 1.5px 0 rgba(255,255,255,.62), inset 0 -1px 0 rgba(0,0,0,.18), 0 0 0 2px rgba(232,160,32,.52);
+  display: flex; align-items: center; justify-content: center;
+}
+.sh-inner { width: 58px; height: 58px; border-radius: 50%; border: 1.5px solid rgba(232,160,32,.48); display: flex; align-items: center; justify-content: center; }
+.sh-count { font-size: 17px; font-weight: 700; color: var(--amber); }
+
+.flip-hint { position: absolute; right: 17px; top: 12px; text-align: center; }
+.flip-line { display: block; font-size: 11px; color: rgba(255,255,255,.46); line-height: 1.5; }
+.home-bar  { position: absolute; bottom: 9px; left: 50%; transform: translateX(-50%); width: 108px; height: 4px; background: rgba(255,255,255,.20); border-radius: 2px; }
+
+/* ════════════════════════════
+   POST-CAPTURE OVERLAY
+════════════════════════════ */
+.post-b { flex: 1; background: #14100A; position: relative; overflow: hidden; }
+.post-tint  { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(ellipse at 50% 42%,rgba(232,160,32,.13) 0%,transparent 68%); }
+.post-grain { position: absolute; inset: 0; z-index: 2; opacity: .05; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 150px; mix-blend-mode: overlay; }
+
+/* ★ CHANGE 4: Location chip now in post-capture */
+.loc-chip {
+  position: absolute; z-index: 12;
+  top: 20px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(0,0,0,.52); backdrop-filter: blur(12px);
+  border: .5px solid rgba(255,255,255,.12); border-radius: 20px;
+  padding: 5px 12px 5px 8px; white-space: nowrap;
+}
+.loc-emoji { font-size: 11px; }
+.loc-txt   { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.72); letter-spacing: .1px; }
+
+/* Chip area */
+.chips-area { position: absolute; z-index: 12; top: 50%; left: 50%; transform: translate(-50%, -56%); width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.chips-lbl  { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.38); margin-bottom: 2px; }
+.chips-row  { display: flex; gap: 8px; justify-content: center; padding: 0 22px; }
+
+/* ★ CHANGE 5: Sticker chips with tilt + spring bounce */
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 8px 15px; font-size: 13px; font-weight: 700;
+  border: 1.5px solid; cursor: pointer;
+  animation: chipBounce .42s cubic-bezier(.34,1.56,.64,1) both;
+  backdrop-filter: blur(8px);
+}
+@keyframes chipBounce {
+  0%   { opacity:0; transform: scale(.28) rotate(var(--cr)); }
+  68%  { transform: scale(1.1) rotate(var(--cr)); }
+  100% { opacity:1; transform: scale(1)   rotate(var(--cr)); }
+}
+/* Each chip: unique tilt, delay, shape, color */
+.chip-a { --cr: -2.5deg; animation-delay: 0ms;   transform: rotate(var(--cr)); border-radius: 28px; background: rgba(232,160,32,.22); border-color: rgba(232,160,32,.48); color: var(--amber); }
+.chip-b { --cr:  1.8deg; animation-delay: 58ms;  transform: rotate(var(--cr)); border-radius: 18px; background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.17); color: rgba(255,255,255,.88); }
+.chip-c { --cr: -1.2deg; animation-delay: 116ms; transform: rotate(var(--cr)); border-radius: 22px; background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.17); color: rgba(255,255,255,.88); }
+.chip-d { --cr:  2.2deg; animation-delay: 174ms; transform: rotate(var(--cr)); border-radius: 26px; background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.17); color: rgba(255,255,255,.88); }
+
+/* ★ CHANGE 6: Share pill — purple accent, not neutral */
+.share-pill {
+  position: absolute; z-index: 12;
+  bottom: 78px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(91,79,207,.24); backdrop-filter: blur(14px);
+  border: 1px solid rgba(91,79,207,.48); border-radius: 30px;
+  padding: 8px 16px 8px 10px; white-space: nowrap;
+  animation: shareUp .44s cubic-bezier(.34,1.36,.64,1) .42s both;
+}
+@keyframes shareUp { 0%{opacity:0;transform:translateX(-50%) translateY(14px) scale(.9)} 100%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)} }
+.s-avs { display: flex; }
+.s-av  { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,.4); font-size: 12px; display: flex; align-items: center; justify-content: center; background: rgba(91,79,207,.3); }
+.s-av + .s-av { margin-left: -6px; }
+.share-txt { font-size: 12px; font-weight: 700; color: rgba(255,255,255,.88); margin-left: 4px; }
+
+/* ════════════════════════════
+   ROLL COMPLETE STATE
+════════════════════════════ */
+.roll-b { flex: 1; background: #0F0900; position: relative; overflow: hidden; }
+.roll-flood { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 38%,rgba(232,160,32,.36) 0%,rgba(180,100,10,.12) 52%,transparent 78%); }
+.roll-grain { position: absolute; inset: 0; z-index: 2; opacity: .07; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 150px; mix-blend-mode: overlay; }
+/* ★ CHANGE 7: Personality copy */
+.roll-copy { position: absolute; z-index: 10; top: 50%; left: 50%; transform: translate(-50%,-52%); text-align: center; width: 100%; padding: 0 20px; }
+.roll-h1   { font-size: 42px; font-weight: 900; letter-spacing: -1.5px; color: rgba(255,255,255,.96); text-shadow: 0 2px 22px rgba(232,160,32,.28); line-height: 1; }
+.roll-sub  { font-size: 16px; font-weight: 500; color: rgba(255,255,255,.50); margin-top: 9px; letter-spacing: .15px; }
+.roll-cta  { display: inline-block; margin-top: 22px; font-size: 13px; font-weight: 900; letter-spacing: .04em; padding: 10px 26px; border-radius: 26px; background: var(--amber); color: #000; box-shadow: 0 4px 22px rgba(232,160,32,.42); }
+.roll-x    { position: absolute; z-index: 15; top: 14px; right: 14px; width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,.10); backdrop-filter: blur(8px); border: .5px solid rgba(255,255,255,.14); display: flex; align-items: center; justify-content: center; font-size: 13px; color: rgba(255,255,255,.55); }
+.roll-a { height: 60px; flex-shrink: 0; z-index: 5; display: flex; align-items: center; gap: 8px; padding: 8px 13px 0; background: rgba(0,0,0,.36); backdrop-filter: blur(20px); border-bottom: .5px solid rgba(255,255,255,.06); }
+.roll-c { height: 44px; flex-shrink: 0; background: rgba(0,0,0,.33); backdrop-filter: blur(20px); display: flex; align-items: center; padding: 0 13px; gap: 8px; position: relative; }
+.roll-c::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:var(--amber); }
+.roll-d { flex-shrink:0; background:rgba(0,0,0,.42); backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; padding:10px 16px calc(26px+10px); position:relative; }
+
+/* ════════════════════════════
+   FILM ARCHIVE (light mode)
+════════════════════════════ */
+.film-status { height: 46px; background: #fff; flex-shrink: 0; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; }
+/* ★ CHANGE 8: "Film" replaces "Journal" / "Moments" */
+.film-nav { height: 52px; background: #fff; flex-shrink: 0; display: flex; align-items: center; padding: 0 18px; justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,.06); }
+.film-nav-title { font-size: 24px; font-weight: 900; color: #1A1A1A; letter-spacing: -.5px; }
+.film-nav-r     { display: flex; gap: 12px; }
+.film-nav-btn   { font-size: 13px; font-weight: 600; color: #5B4FCF; }
+.film-feed { flex: 1; overflow: hidden; padding: 14px 13px 0; display: flex; flex-direction: column; gap: 9px; background: #F5F4F0; }
+.film-date { font-size: 11px; font-weight: 700; color: rgba(0,0,0,.30); letter-spacing: .07em; text-transform: uppercase; }
+.film-card { background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid rgba(0,0,0,.06); box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+.film-hero { height: 124px; position: relative; }
+.film-accent { position: absolute; left:0; top:0; bottom:0; width: 7px; }
+.film-count  { position: absolute; right:9px; top:9px; background:rgba(0,0,0,.55); padding:2px 7px; border-radius:10px; font-size:10px; font-weight:700; color:#fff; }
+.film-lbl    { position: absolute; bottom:9px; left:14px; font-size:14px; font-weight:900; color:#fff; letter-spacing:-.2px; }
+.film-body   { padding: 9px 13px; display: flex; align-items: center; justify-content: space-between; }
+.film-meta-tags { font-size: 11px; color: #5F5E5A; }
+.film-meta-amb  { font-size: 11px; color: #888780; margin-top: 2px; }
+/* ★ CHANGE 9: ▶ play circle replaces "Make Reel" text */
+.film-cta { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 10px rgba(91,79,207,.32); flex-shrink: 0; color: #fff; }
+.film-tab  { height: 56px; background: #fff; flex-shrink: 0; display: flex; align-items: center; justify-content: space-around; border-top: 1px solid rgba(0,0,0,.06); padding-bottom: 6px; }
+.tab-item  { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.tab-icon  { font-size: 19px; }
+.tab-lbl   { font-size: 9px; font-weight: 700; }
+.tab-on  .tab-lbl { color: #5B4FCF; }
+.tab-off .tab-lbl { color: #888780; }
+
+/* ════════════════════════════
+   ANNOTATION PANEL
+════════════════════════════ */
+.ann-panel { padding-top: 50px; }
+.ann-sec-title { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--text-s); margin-bottom: 13px; }
+.ann-item { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 14px; }
+.anum { width: 22px; height: 22px; border-radius: 50%; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+.a1 { background: var(--amber);  color: #000; }
+.a2 { background: var(--brand);  color: #fff; }
+.a3 { background: var(--cyan);   color: #000; }
+.a4 { background: var(--coral);  color: #fff; }
+.a5 { background: var(--teal);   color: #fff; }
+.a6 { background: #FF6B6B;       color: #fff; }
+.a-title { font-size: 13px; font-weight: 700; color: rgba(255,255,255,.90); margin-bottom: 3px; }
+.a-body  { font-size: 12px; color: var(--text-m); line-height: 1.55; }
+.a-body code { font-family:'SF Mono',Menlo,monospace; font-size:10px; background:rgba(232,160,32,.10); color:var(--amber); padding:1px 5px; border-radius:3px; }
+.tag-b { font-size:10px; font-weight:600; padding:1px 6px; border-radius:8px; background:rgba(255,80,80,.10); border:1px solid rgba(255,80,80,.20); color:#FF7070; vertical-align:middle; margin-right:3px; }
+.tag-a { font-size:10px; font-weight:600; padding:1px 6px; border-radius:8px; background:rgba(0,229,204,.08); border:1px solid rgba(0,229,204,.20); color:var(--cyan); vertical-align:middle; margin-left:3px; }
+.divider { height:1px; background:var(--border); margin:16px 0; }
+.gz-box { background:linear-gradient(135deg,rgba(91,79,207,.10),rgba(0,229,204,.05)); border:1px solid rgba(91,79,207,.20); border-radius:12px; padding:14px; margin-top:14px; }
+.gz-title { font-size:11px; font-weight:800; color:#EAE8FC; margin-bottom:6px; letter-spacing:.05em; }
+.gz-body  { font-size:12px; color:var(--text-m); line-height:1.62; }
+</style>
+</head>
+<body>
+
+<!-- Page header -->
+<div class="page-header">
+  <div>
+    <div class="ph-eyebrow">Design Proposal</div>
+    <div class="ph-title"><em>niftyMomnt</em> v1.9<br>MZ Critique Applied</div>
+    <div class="ph-sub">10 changes across 4 screens · March 2026 · Han Wook Cho</div>
+  </div>
+  <div class="ph-badges">
+    <span class="badge badge-v">v1.9</span>
+    <span class="badge badge-gz">gen-z applied ✦</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     ROW 1 — Capture Hub + Post-Capture
+════════════════════════════════════ -->
+<div class="section-head">
+  <span class="sh-num">01 — 02</span>
+  <span class="sh-title">Capture Hub & Post-Capture</span>
+  <span class="sh-tag">typography · shutter · sticker chips · location</span>
+</div>
+
+<div class="row row-main">
+
+  <!-- Phone 1: Capture Hub -->
+  <div class="phone-wrap">
+    <div class="phone-label pl-cap">Capture Hub · v1.9</div>
+    <div class="phone ph-dark">
+      <div class="di di-std">
+        <div class="di-left"><div class="di-dot di-dot-amber"></div><span class="di-name">AMALFI</span></div>
+        <div class="di-arc"><div class="di-arc-fill"></div><span class="di-arc-n">17</span></div>
+      </div>
+      <!-- Zone A -->
+      <div class="zone-a">
+        <div class="ip">⏱</div><div class="ip">⊙</div>
+        <div class="za-center">
+          <div class="fstrip">
+            <div class="ff ff-used"></div><div class="ff ff-used"></div><div class="ff ff-used"></div>
+            <div class="ff ff-used"></div><div class="ff ff-used"></div><div class="ff ff-used"></div>
+            <div class="ff ff-used"></div><div class="ff ff-empty"></div><div class="ff ff-empty"></div>
+          </div>
+          <span class="fcount">17 left</span>
+        </div>
+        <div class="za-right"><div class="ip">⚡</div><div class="ip">···</div></div>
+      </div>
+      <!-- Zone B -->
+      <div class="zone-b">
+        <div class="vg1"></div><div class="vg2"></div>
+        <div class="vtint"></div><div class="vgrain"></div><div class="vleak"></div>
+        <div class="ll-pill"><div class="ll-dot"></div><span class="ll-txt">Low light — camera active</span></div>
+        <div class="manchor">
+          <div class="mghost">CLIP</div>
+          <div class="mdots"><div class="md md-s"></div><div class="md md-a"></div><div class="md md-s"></div></div>
+        </div>
+      </div>
+      <!-- Zone C -->
+      <div class="zone-c">
+        <div class="preset-dot"></div>
+        <span class="preset-name">AMALFI</span>
+        <div class="swatches">
+          <div class="sw sw-sm sw-grain"></div>
+          <div class="sw sw-md sw-amber sw-act"></div>
+          <div class="sw sw-sm sw-cyan"></div>
+          <div class="sw sw-sm sw-blue"></div>
+          <div class="sw sw-sm sw-red"></div>
+        </div>
+        <span class="preset-hint" style="margin-left:8px;">hold</span>
+      </div>
+      <!-- Zone D -->
+      <div class="zone-d">
+        <div class="thumb"><span class="thumb-lbl">last</span><span class="thumb-bdg">▶ LIVE</span></div>
+        <div class="sh-wrap">
+          <div class="sh-track"></div><div class="sh-prog"></div>
+          <div class="sh-body"><div class="sh-inner"><span class="sh-count">8</span></div></div>
+        </div>
+        <div class="flip-hint"><span class="flip-line">double-tap</span><span class="flip-line">to flip</span></div>
+        <div class="home-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phone 2: Post-Capture -->
+  <div class="phone-wrap">
+    <div class="phone-label pl-post">Post-Capture · v1.9</div>
+    <div class="phone ph-dark">
+      <div class="di di-std">
+        <div class="di-left"><div class="di-dot di-dot-purple"></div><span class="di-name">AMALFI</span></div>
+        <div class="di-arc"><div class="di-arc-fill"></div><span class="di-arc-n">16</span></div>
+      </div>
+      <!-- Zone A -->
+      <div class="zone-a">
+        <div class="ip">⏱</div><div class="ip">⊙</div>
+        <div class="za-center">
+          <div class="fstrip">
+            <div class="ff ff-used"></div><div class="ff ff-used"></div><div class="ff ff-used"></div>
+            <div class="ff ff-used"></div><div class="ff ff-used"></div><div class="ff ff-used"></div>
+            <div class="ff ff-used"></div><div class="ff ff-used"></div><div class="ff ff-empty"></div>
+          </div>
+          <span class="fcount">16 left</span>
+        </div>
+        <div class="za-right"><div class="ip">⚡</div><div class="ip">···</div></div>
+      </div>
+      <!-- Zone B: post-capture overlay -->
+      <div class="post-b">
+        <div class="vg1" style="opacity:.65;"></div><div class="vg2" style="opacity:.65;"></div>
+        <div class="post-tint"></div><div class="post-grain"></div><div class="vleak"></div>
+        <!-- Location chip — now here, not in live viewfinder -->
+        <div class="loc-chip">
+          <span class="loc-emoji">📍</span>
+          <span class="loc-txt">Hongdae · Seoul · golden hour</span>
+        </div>
+        <!-- Sticker vibe chips -->
+        <div class="chips-area">
+          <div class="chips-lbl">add a vibe</div>
+          <div class="chips-row">
+            <div class="chip chip-a">✨ golden hour</div>
+            <div class="chip chip-b">🌃 city night</div>
+          </div>
+          <div class="chips-row" style="margin-top:2px;">
+            <div class="chip chip-c">🌊 wandering</div>
+            <div class="chip chip-d">☕ chill spot</div>
+          </div>
+        </div>
+        <!-- Share pill — purple accent -->
+        <div class="share-pill">
+          <div class="s-avs"><div class="s-av">🧑</div><div class="s-av">👩</div><div class="s-av">🧑‍🦱</div></div>
+          <span class="share-txt">send to close friends</span>
+        </div>
+        <div class="manchor" style="opacity:0;"><div class="mghost">CLIP</div></div>
+      </div>
+      <!-- Zone C -->
+      <div class="zone-c">
+        <div class="preset-dot"></div>
+        <span class="preset-name">AMALFI</span>
+        <div class="swatches">
+          <div class="sw sw-sm sw-grain"></div><div class="sw sw-md sw-amber sw-act"></div>
+          <div class="sw sw-sm sw-cyan"></div><div class="sw sw-sm sw-blue"></div><div class="sw sw-sm sw-red"></div>
+        </div>
+        <span class="preset-hint" style="margin-left:8px;">hold</span>
+      </div>
+      <!-- Zone D -->
+      <div class="zone-d">
+        <div class="thumb"><span class="thumb-lbl">last</span><span class="thumb-bdg">▶ NEW</span></div>
+        <div class="sh-wrap">
+          <div class="sh-track"></div><div class="sh-prog"></div>
+          <div class="sh-body"><div class="sh-inner"><span class="sh-count">8</span></div></div>
+        </div>
+        <div class="flip-hint"><span class="flip-line">double-tap</span><span class="flip-line">to flip</span></div>
+        <div class="home-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Annotation: Row 1 -->
+  <div class="ann-panel">
+    <div class="ann-sec-title">Capture Hub — changes</div>
+
+    <div class="ann-item">
+      <div class="anum a1">1</div>
+      <div>
+        <div class="a-title">Preset name — black weight</div>
+        <div class="a-body"><span class="tag-b">was</span> 700 · 1.5px spacing <span class="tag-a">now</span> <code>900 · 0.5px · 17px</code>. Same word, completely different energy. Reads as a camera's physical selector dial, not a lifestyle editorial label.</div>
+      </div>
+    </div>
+
+    <div class="ann-item">
+      <div class="anum a2">2</div>
+      <div>
+        <div class="a-title">Shutter — matte physical</div>
+        <div class="a-body"><span class="tag-b">was</span> glassy white sphere <span class="tag-a">now</span> <code>radial-gradient(#F2F2EC → #C0C0B9)</code> with inset shadow. Less Apple-icon, more real camera button. The inset highlights give it physical weight.</div>
+      </div>
+    </div>
+
+    <div class="ann-item">
+      <div class="anum a3">3</div>
+      <div>
+        <div class="a-title">Preset peek swatches</div>
+        <div class="a-body">5 color dots in Zone C. Active is larger. Signals a collection at a glance — users discover the swipe without needing to find the long-press gesture.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="ann-sec-title">Post-Capture — changes</div>
+
+    <div class="ann-item">
+      <div class="anum a4">4</div>
+      <div>
+        <div class="a-title">Location chip — moved here</div>
+        <div class="a-body"><span class="tag-b">was</span> live viewfinder chrome <span class="tag-a">now</span> top of post-capture overlay. Zero viewfinder impact. Surfaces at the exact moment users are choosing a vibe tag — contextually useful.</div>
+      </div>
+    </div>
+
+    <div class="ann-item">
+      <div class="anum a5">5</div>
+      <div>
+        <div class="a-title">Sticker chips — tilt + bounce</div>
+        <div class="a-body">Each chip has a unique tilt <code>−2.5° / +1.8° / −1.2° / +2.2°</code>, staggered spring entrance <code>0 / 58 / 116 / 174ms</code>, and varied border-radius. Feels like slapping labels, not filling a form. Huji/BeReal energy.</div>
+      </div>
+    </div>
+
+    <div class="ann-item">
+      <div class="anum a2">6</div>
+      <div>
+        <div class="a-title">Share pill — purple, not amber</div>
+        <div class="a-body"><span class="tag-b">was</span> neutral glass <span class="tag-a">now</span> brand purple tint. Visually signals "sharing" vs "shooting" — a different mode. Also reduces amber overload across the chrome.</div>
+      </div>
+    </div>
+
+    <div class="gz-box">
+      <div class="gz-title">✦ The key shift</div>
+      <div class="gz-body">The post-capture screen is now intentionally more expressive than the capture screen. Gen Z wants the shooting experience invisible — and the moment of reflection to have personality. The sticker chips + location context + purple pill create a distinct "what just happened" beat.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     ROW 2 — Roll Complete + Film Archive
+════════════════════════════════════ -->
+<div class="section-head" style="margin-top:8px;">
+  <span class="sh-num">03 — 04</span>
+  <span class="sh-title">Roll Complete & Film Archive</span>
+  <span class="sh-tag">personality moment · rename · cta update · metaphor payoff</span>
+</div>
+
+<div class="row row-sub">
+
+  <!-- Phone 3: Roll Complete -->
+  <div class="phone-wrap">
+    <div class="phone-label pl-roll">Roll Complete · NEW state</div>
+    <div class="phone ph-roll">
+      <div class="di di-sm" style="width:108px;height:30px;top:10px;">
+        <div class="di-dot di-dot-glow"></div>
+        <span class="di-name" style="font-size:7.5px;">0 shots</span>
+      </div>
+      <!-- Zone A: all frames amber -->
+      <div class="roll-a">
+        <div class="ip" style="width:32px;height:26px;font-size:12px;">⏱</div>
+        <div style="flex:1;display:flex;justify-content:center;align-items:center;gap:5px;">
+          <div class="fstrip">
+            <div class="ff ff-all"></div><div class="ff ff-all"></div><div class="ff ff-all"></div>
+            <div class="ff ff-all"></div><div class="ff ff-all"></div><div class="ff ff-all"></div>
+            <div class="ff ff-all"></div><div class="ff ff-all"></div><div class="ff ff-all"></div>
+          </div>
+          <span class="fcount fcount-zero" style="font-size:12px;">0 left</span>
+        </div>
+        <div class="ip" style="width:32px;height:26px;font-size:12px;">···</div>
+      </div>
+      <!-- Zone B: roll complete -->
+      <div class="roll-b">
+        <div class="roll-flood"></div><div class="roll-grain"></div>
+        <div class="roll-x">×</div>
+        <div class="roll-copy">
+          <div class="roll-h1">roll's done.</div>
+          <div class="roll-sub">we'll develop it.</div>
+          <div class="roll-cta">develop ✦</div>
+        </div>
+      </div>
+      <!-- Zone C -->
+      <div class="roll-c">
+        <div class="preset-dot"></div>
+        <span class="preset-name" style="font-size:15px;">AMALFI</span>
+        <div class="swatches" style="margin-left:auto;">
+          <div class="sw sw-sm sw-grain"></div>
+          <div class="sw sw-md sw-amber sw-act"></div>
+          <div class="sw sw-sm sw-cyan"></div>
+        </div>
+      </div>
+      <!-- Zone D: shutter locked -->
+      <div class="roll-d">
+        <div class="sh-wrap" style="width:76px;height:76px;opacity:.38;">
+          <div class="sh-track" style="width:76px;height:76px;border-color:rgba(255,255,255,.08);"></div>
+          <div class="sh-body" style="width:58px;height:58px;box-shadow:none;">
+            <div class="sh-inner" style="width:46px;height:46px;"><span style="font-size:18px;">🔒</span></div>
+          </div>
+        </div>
+        <div class="home-bar" style="width:90px;bottom:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phone 4: Film Archive -->
+  <div class="phone-wrap">
+    <div class="phone-label pl-film">Film Archive · renamed</div>
+    <div class="phone ph-film">
+      <div class="film-status">
+        <div style="width:100px;height:26px;background:#000;border-radius:13px;position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:flex-end;padding-right:10px;">
+          <div class="di-dot di-dot-amber" style="width:7px;height:7px;"></div>
+        </div>
+      </div>
+      <!-- Nav: "Film" replaces "Journal" -->
+      <div class="film-nav">
+        <span class="film-nav-title">Film</span>
+        <div class="film-nav-r">
+          <span class="film-nav-btn">Search</span>
+          <span class="film-nav-btn">Map</span>
+        </div>
+      </div>
+      <div class="film-feed">
+        <div class="film-date">Tue · 31 Mar</div>
+        <!-- Card 1 -->
+        <div class="film-card">
+          <div class="film-hero" style="background:#2A2018;">
+            <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 42% 52%,rgba(128,76,16,.55) 0%,transparent 68%);"></div>
+            <div class="film-accent" style="background:#E8A020;"></div>
+            <div class="film-count">12</div>
+            <div class="film-lbl">Golden Hour · Hongdae</div>
+          </div>
+          <div class="film-body">
+            <div>
+              <div class="film-meta-tags">Sunset · Golden hour · Outdoor</div>
+              <div class="film-meta-amb">6:42 PM · 24°C · Tame Impala</div>
+            </div>
+            <!-- ▶ circle replaces "Make Reel" -->
+            <div class="film-cta" style="background:#5B4FCF;">▶</div>
+          </div>
+        </div>
+        <div class="film-date" style="margin-top:4px;">Mon · 30 Mar</div>
+        <!-- Card 2 -->
+        <div class="film-card">
+          <div class="film-hero" style="background:#182028;">
+            <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 58% 38%,rgba(0,100,120,.32) 0%,transparent 68%);"></div>
+            <div class="film-accent" style="background:#00E5CC;"></div>
+            <div class="film-count">7</div>
+            <div class="film-lbl">Rainy Walk · Siena</div>
+          </div>
+          <div class="film-body">
+            <div>
+              <div class="film-meta-tags">Rainy · Urban · Melancholic</div>
+              <div class="film-meta-amb">3:15 PM · 14°C · 62m elev.</div>
+            </div>
+            <div class="film-cta" style="background:#00E5CC;">▶</div>
+          </div>
+        </div>
+      </div>
+      <!-- Tab bar: 🎞 icon for Film -->
+      <div class="film-tab">
+        <div class="tab-item tab-on">
+          <span class="tab-icon">🎞</span>
+          <span class="tab-lbl">Film</span>
+        </div>
+        <div class="tab-item tab-off">
+          <span class="tab-icon" style="font-size:18px;">🔒</span>
+          <span class="tab-lbl">Vault</span>
+        </div>
+        <div class="tab-item tab-off">
+          <span class="tab-icon" style="font-size:18px;">⚙</span>
+          <span class="tab-lbl">Settings</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Annotation: Row 2 -->
+  <div class="ann-panel">
+    <div class="ann-sec-title">Roll complete — new state</div>
+
+    <div class="ann-item">
+      <div class="anum a1">7</div>
+      <div>
+        <div class="a-title">"roll's done. / we'll develop it."</div>
+        <div class="a-body">When 0 shots remain: warm amber flood fills the viewfinder, all film strip frames glow amber, and bold personality copy replaces the scene. The <code>develop ✦</code> CTA routes to the Film archive. Shutter shows 🔒. Gen Z screenshots and shares this state — it's the film metaphor's payoff moment.</div>
+      </div>
+    </div>
+
+    <div class="ann-item">
+      <div class="anum a2">8</div>
+      <div>
+        <div class="a-title">Film strip: all frames glow amber</div>
+        <div class="a-body">All 9 frames filled and glowing. Counter reads <code>0 left</code> in amber. Visual completion satisfies the gamification loop — the strip is a reward, not just a counter.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="ann-sec-title">Film archive — terminology</div>
+
+    <div class="ann-item">
+      <div class="anum a5">9</div>
+      <div>
+        <div class="a-title">"Film" replaces "Journal"</div>
+        <div class="a-body"><span class="tag-b">was</span> "Journal" / "Moments" <span class="tag-a">now</span> "Film". The tab icon becomes 🎞. "Journal" reads mindfulness-app; "Film" completes the analog camera metaphor that runs through the entire experience. Also shorter — fits the tab bar better.</div>
+      </div>
+    </div>
+
+    <div class="ann-item">
+      <div class="anum a6">10</div>
+      <div>
+        <div class="a-title">▶ icon replaces "Make Reel" button</div>
+        <div class="a-body"><span class="tag-b">was</span> "Make Reel" text pill <span class="tag-a">now</span> a circular ▶ in the card's accent color. "Reel" is peak Instagram-2021 language. The icon is universal, smaller, and lets the card breathe. Color matches the preset that was active during that moment.</div>
+      </div>
+    </div>
+
+    <div class="gz-box">
+      <div class="gz-title">✦ The film metaphor, completed</div>
+      <div class="gz-body">v1.9 runs one continuous metaphor: shoot → fill the strip → roll's done → develop → Film archive. Every state has character. This is what makes an app feel designed by someone who cares rather than assembled from a component library — and it's exactly what MZ shares on their finsta.</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

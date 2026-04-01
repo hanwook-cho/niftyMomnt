@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>niftyMomnt — App Icon Proposals</title>
+<style>
+:root {
+  --bg:      #07070F;
+  --brand:   #6B4EFF;
+  --amber:   #E8A020;
+  --lav:     #C4B5FD;
+  --text:    rgba(255,255,255,0.92);
+  --text-m:  rgba(255,255,255,0.52);
+  --text-s:  rgba(255,255,255,0.26);
+  --border:  rgba(255,255,255,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body {
+  background: var(--bg);
+  background-image: radial-gradient(rgba(255,255,255,.022) 1px,transparent 1px);
+  background-size: 22px 22px;
+  font-family: -apple-system,'Helvetica Neue',Arial,sans-serif;
+  color: var(--text);
+  padding: 44px 32px 100px;
+  min-height: 100vh;
+}
+
+/* PAGE HEADER */
+.page-header {
+  max-width: 1200px; margin: 0 auto 52px;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  flex-wrap: wrap; gap: 16px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(107,78,255,.20);
+}
+.ph-eyebrow { font-size:11px; font-weight:800; letter-spacing:.13em; text-transform:uppercase; color:var(--brand); margin-bottom:6px; }
+.ph-title   { font-size:34px; font-weight:900; letter-spacing:-.6px; line-height:1.05; }
+.ph-title em{ font-style:normal; color:var(--brand); }
+.ph-sub     { font-size:13px; color:var(--text-s); margin-top:6px; }
+.badge { font-size:11px; font-weight:800; padding:5px 14px; border-radius:20px; }
+.badge-v { background:linear-gradient(135deg,#6B4EFF,#F07C5C); color:#fff; }
+
+/* ICON GRID */
+.icon-grid {
+  max-width: 1200px; margin: 0 auto 72px;
+  display: grid; grid-template-columns: repeat(2,1fr); gap: 28px;
+}
+
+/* ICON CARD */
+.icon-card {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 32px;
+  display: flex; flex-direction: column; gap: 24px;
+}
+.icon-card.recommended {
+  border-color: rgba(232,160,32,.40);
+  background: rgba(232,160,32,.04);
+  box-shadow: 0 0 0 1px rgba(232,160,32,.12);
+}
+
+/* Icon display row */
+.icon-row {
+  display: flex; align-items: flex-end; gap: 18px;
+}
+/* squircle wrapper */
+.sq {
+  border-radius: 22.5%;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: block;
+  line-height: 0;
+  box-shadow: 0 12px 40px rgba(0,0,0,.70), 0 2px 8px rgba(0,0,0,.50);
+}
+.sq-180 { width:180px; height:180px; }
+.sq-96  { width:96px;  height:96px; }
+.sq-60  { width:60px;  height:60px; }
+.sq-small-stack { display:flex; flex-direction:column; gap:10px; justify-content:flex-end; }
+.size-lbl { font-size:9px; font-weight:700; letter-spacing:.08em; text-align:center; color:var(--text-s); margin-top:4px; text-transform:uppercase; }
+
+/* Light bg preview */
+.light-preview {
+  background: #F0EDE8;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  margin-top: -4px;
+}
+.lp-icon { width:52px; height:52px; border-radius:11.7%; overflow:hidden; flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,.18); }
+.lp-label { font-size:12px; font-weight:700; color:#1A1A1A; }
+.lp-sub   { font-size:10px; color:#888780; margin-top:2px; }
+
+/* Icon metadata */
+.icon-meta { }
+.ic-tag-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+.ic-name  { font-size:18px; font-weight:900; letter-spacing:-.3px; }
+.ic-badge { font-size:10px; font-weight:800; padding:2px 9px; border-radius:10px; }
+.ib-rec   { background:rgba(232,160,32,.18); border:1px solid rgba(232,160,32,.38); color:var(--amber); }
+.ib-alt   { background:rgba(196,181,253,.10); border:1px solid rgba(196,181,253,.22); color:var(--lav); }
+.ic-concept { font-size:13px; color:var(--text-m); margin-bottom:14px; line-height:1.55; }
+.ic-bullets { list-style:none; display:flex; flex-direction:column; gap:6px; }
+.ic-bullets li { font-size:12px; color:var(--text-m); line-height:1.55; display:flex; gap:8px; align-items:flex-start; }
+.ic-bullets li::before { content:''; width:6px; height:6px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+.li-amber::before { background:var(--amber); }
+.li-brand::before { background:var(--brand); }
+.li-lav::before   { background:var(--lav); }
+.li-coral::before { background:#F07C5C; }
+
+/* RECOMMENDATION SECTION */
+.rec-section {
+  max-width: 1200px; margin: 0 auto 60px;
+  background: linear-gradient(135deg, rgba(232,160,32,.08), rgba(107,78,255,.06));
+  border: 1px solid rgba(232,160,32,.22);
+  border-radius: 20px;
+  padding: 32px 36px;
+  display: grid; grid-template-columns: auto 1fr; gap: 36px; align-items: start;
+}
+.rec-icon-col { display:flex; flex-direction:column; align-items:center; gap:10px; }
+.rec-badge { font-size:10px; font-weight:800; padding:3px 12px; border-radius:12px; background:var(--amber); color:#000; letter-spacing:.04em; }
+.rec-content h2 { font-size:22px; font-weight:900; margin-bottom:8px; letter-spacing:-.3px; }
+.rec-content h2 em { font-style:normal; color:var(--amber); }
+.rec-content p { font-size:13px; color:var(--text-m); line-height:1.65; margin-bottom:12px; }
+.rec-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
+.rec-cell { background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
+.rc-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--text-s); margin-bottom:5px; }
+.rc-body  { font-size:12px; color:var(--text-m); line-height:1.55; }
+
+/* COMPARISON ROW */
+.compare-row {
+  max-width: 1200px; margin: 0 auto 52px;
+  background: rgba(255,255,255,.03); border:1px solid var(--border); border-radius:18px; padding:24px 28px;
+}
+.compare-row h3 { font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.10em; color:var(--text-s); margin-bottom:18px; }
+.comp-icons { display:flex; gap:20px; align-items:flex-end; flex-wrap:wrap; }
+.comp-item  { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.comp-lbl   { font-size:10px; font-weight:600; color:var(--text-s); text-align:center; }
+</style>
+</head>
+<body>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div>
+    <div class="ph-eyebrow">Brand Identity</div>
+    <div class="ph-title"><em>niftyMomnt</em><br>App Icon Proposals</div>
+    <div class="ph-sub">4 concepts · shown at 180 / 96 / 60pt · light + dark preview · March 2026</div>
+  </div>
+  <span class="badge badge-v">icon concepts</span>
+</div>
+
+<!-- ═══ ALL-SIZES COMPARISON ═══ -->
+<div class="compare-row">
+  <h3>All four concepts at a glance — home screen size (60pt)</h3>
+  <div class="comp-icons">
+    <div class="comp-item">
+      <div class="sq sq-60">
+        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="60" height="60">
+          <defs>
+            <linearGradient id="cA-bg" x1="0" y1="0" x2=".7" y2="1"><stop offset="0%" stop-color="#0D0921"/><stop offset="100%" stop-color="#1C1245"/></linearGradient>
+            <radialGradient id="cA-lk" cx="88%" cy="8%" r="55%"><stop offset="0%" stop-color="#E8A020" stop-opacity=".52"/><stop offset="100%" stop-color="#E8A020" stop-opacity="0"/></radialGradient>
+          </defs>
+          <rect width="512" height="512" fill="url(#cA-bg)"/>
+          <rect width="512" height="512" fill="url(#cA-lk)"/>
+          <text x="62" y="378" font-family="-apple-system,'Helvetica Neue',Arial" font-size="298" font-weight="900" fill="rgba(255,255,255,.95)">n</text>
+          <circle cx="400" cy="162" r="46" fill="#E8A020"/>
+        </svg>
+      </div>
+      <div class="comp-lbl">A — n·</div>
+    </div>
+    <div class="comp-item">
+      <div class="sq sq-60">
+        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="60" height="60">
+          <defs>
+            <radialGradient id="cB-glo" cx="50%" cy="52%" r="38%"><stop offset="0%" stop-color="#E8A020" stop-opacity=".52"/><stop offset="100%" stop-color="#E8A020" stop-opacity="0"/></radialGradient>
+            <radialGradient id="cB-lk"  cx="92%" cy="6%"  r="44%"><stop offset="0%" stop-color="#E8A020" stop-opacity=".38"/><stop offset="100%" stop-color="#E8A020" stop-opacity="0"/></radialGradient>
+            <radialGradient id="cB-in"  cx="46%" cy="52%" r="48%"><stop offset="0%" stop-color="#C86010" stop-opacity=".28"/><stop offset="70%" stop-color="#000" stop-opacity=".10"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></radialGradient>
+          </defs>
+          <rect width="512" height="512" fill="#0A0A0A"/>
+          <rect width="512" height="512" fill="url(#cB-glo)"/>
+          <rect width="512" height="512" fill="url(#cB-lk)"/>
+          <rect x="122" y="84" width="268" height="344" rx="8" fill="none" stroke="rgba(255,255,255,.20)" stroke-width="3"/>
+          <rect x="134" y="118" width="244" height="276" rx="4" fill="url(#cB-in)"/>
+          <ellipse cx="256" cy="256" rx="96" ry="108" fill="#E8A020" opacity=".16"/>
+          <rect x="164" y="62" width="22" height="40" rx="5" fill="rgba(255,255,255,.18)"/>
+          <rect x="245" y="62" width="22" height="40" rx="5" fill="rgba(255,255,255,.18)"/>
+          <rect x="326" y="62" width="22" height="40" rx="5" fill="rgba(255,255,255,.18)"/>
+          <rect x="164" y="410" width="22" height="40" rx="5" fill="rgba(255,255,255,.18)"/>
+          <rect x="245" y="410" width="22" height="40" rx="5" fill="rgba(255,255,255,.18)"/>
+          <rect x="326" y="410" width="22" height="40" rx="5" fill="rgba(255,255,255,.18)"/>
+        </svg>
+      </div>
+      <div class="comp-lbl">B — Frame</div>
+    </div>
+    <div class="comp-item">
+      <div class="sq sq-60">
+        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="60" height="60">
+          <defs>
+            <radialGradient id="cC-bg" cx="50%" cy="50%" r="60%"><stop offset="0%" stop-color="#161010"/><stop offset="100%" stop-color="#0A0807"/></radialGradient>
+            <radialGradient id="cC-sh" cx="40%" cy="36%" r="65%"><stop offset="0%" stop-color="#F2F2EC"/><stop offset="55%" stop-color="#D5D5CE"/><stop offset="100%" stop-color="#B8B8B0"/></radialGradient>
+            <radialGradient id="cC-lk" cx="90%" cy="5%"  r="42%"><stop offset="0%" stop-color="#E8A020" stop-opacity=".38"/><stop offset="100%" stop-color="#E8A020" stop-opacity="0"/></radialGradient>
+          </defs>
+          <rect width="512" height="512" fill="url(#cC-bg)"/>
+          <rect width="512" height="512" fill="url(#cC-lk)"/>
+          <circle cx="256" cy="262" r="184" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="2.5"/>
+          <circle cx="256" cy="262" r="170" fill="none" stroke="#E8A020" stroke-width="6" opacity=".55"/>
+          <circle cx="256" cy="262" r="148" fill="url(#cC-sh)"/>
+          <circle cx="256" cy="262" r="148" fill="none" stroke="rgba(255,255,255,.50)" stroke-width="1.5"/>
+          <circle cx="256" cy="262" r="120" fill="none" stroke="rgba(232,160,32,.45)" stroke-width="2.5"/>
+          <ellipse cx="228" cy="232" rx="52" ry="34" fill="rgba(255,255,255,.24)" opacity=".55"/>
+        </svg>
+      </div>
+      <div class="comp-lbl">C — Shutter</div>
+    </div>
+    <div class="comp-item">
+      <div class="sq sq-60">
+        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="60" height="60">
+          <defs>
+            <linearGradient id="cD-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#160800"/><stop offset="32%" stop-color="#6B2C00"/><stop offset="62%" stop-color="#D87A10"/><stop offset="100%" stop-color="#F8D860"/></linearGradient>
+            <radialGradient id="cD-sun" cx="50%" cy="66%" r="26%"><stop offset="0%" stop-color="#FFF0A0" stop-opacity=".92"/><stop offset="100%" stop-color="#FFF0A0" stop-opacity="0"/></radialGradient>
+            <radialGradient id="cD-hor" cx="50%" cy="72%" r="62%"><stop offset="0%" stop-color="#FFD060" stop-opacity=".40"/><stop offset="100%" stop-color="#FFD060" stop-opacity="0"/></radialGradient>
+          </defs>
+          <rect width="512" height="512" fill="url(#cD-sky)"/>
+          <rect width="512" height="512" fill="url(#cD-sun)"/>
+          <rect width="512" height="512" fill="url(#cD-hor)"/>
+          <rect x="24" y="24" width="464" height="464" rx="4" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="2.5"/>
+          <rect x="8"   y="96"  width="16" height="28" rx="4" fill="rgba(0,0,0,.32)"/>
+          <rect x="8"   y="192" width="16" height="28" rx="4" fill="rgba(0,0,0,.32)"/>
+          <rect x="8"   y="288" width="16" height="28" rx="4" fill="rgba(0,0,0,.32)"/>
+          <rect x="8"   y="384" width="16" height="28" rx="4" fill="rgba(0,0,0,.32)"/>
+          <rect x="488" y="96"  width="16" height="28" rx="4" fill="rgba(0,0,0,.32)"/>
+          <rect x="488" y="192" width="16" height="28" rx="4" fill="rgba(0,0,0,.32)"/>
+          <rect x="488" y="288" width="16" height="28" rx="4" fill="rgba(0,0,0,.32)"/>
+          <rect x="488" y="384" width="16" height="28" rx="4" fill="rgba(0,0,0,.32)"/>
+        </svg>
+      </div>
+      <div class="comp-lbl">D — Golden Hour</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ICON CARDS GRID ═══ -->
+<div class="icon-grid">
+
+  <!-- ═══ ICON A: n· LETTERMARK ═══ -->
+  <div class="icon-card recommended">
+    <div class="icon-row">
+      <!-- 180pt main preview -->
+      <div>
+        <div class="sq sq-180">
+          <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="180" height="180">
+            <defs>
+              <linearGradient id="A-bg" x1="0" y1="0" x2=".65" y2="1">
+                <stop offset="0%" stop-color="#0D0921"/>
+                <stop offset="100%" stop-color="#1C1245"/>
+              </linearGradient>
+              <radialGradient id="A-lk" cx="88%" cy="7%" r="55%">
+                <stop offset="0%" stop-color="#E8A020" stop-opacity=".54"/>
+                <stop offset="60%" stop-color="#E8A020" stop-opacity=".15"/>
+                <stop offset="100%" stop-color="#E8A020" stop-opacity="0"/>
+              </radialGradient>
+              <radialGradient id="A-amb" cx="30%" cy="80%" r="50%">
+                <stop offset="0%" stop-color="#6B4EFF" stop-opacity=".20"/>
+                <stop offset="100%" stop-color="#6B4EFF" stop-opacity="0"/>
+              </radialGradient>
+              <filter id="A-grain">
+                <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="4" stitchTiles="stitch" result="noise"/>
+                <feBlend in="SourceGraphic" in2="noise" mode="overlay"/>
+              </filter>
+            </defs>
+            <!-- Background -->
+            <rect width="512" height="512" fill="url(#A-bg)"/>
+            <!-- Purple ambient glow bottom-left -->
+            <rect width="512" height="512" fill="url(#A-amb)"/>
+            <!-- Amber light leak top-right -->
+            <rect width="512" height="512" fill="url(#A-lk)"/>
+            <!-- "n" letterform -->
+            <text x="55" y="378"
+              font-family="-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif"
+              font-size="298" font-weight="900"
+              fill="rgba(255,255,255,.95)"
+              letter-spacing="-6">n</text>
+            <!-- Amber circle — the "moment" dot -->
+            <circle cx="400" cy="158" r="50" fill="#E8A020"/>
+            <!-- Dot inner glow -->
+            <circle cx="388" cy="148" r="22" fill="rgba(255,255,255,.28)" opacity=".6"/>
+            <!-- Film grain -->
+            <rect width="512" height="512" opacity=".045" filter="url(#A-grain)" fill="white"/>
+          </svg>
+        </div>
+        <div class="size-lbl">180pt · App Store</div>
+      </div>
+      <!-- Smaller sizes -->
+      <div class="sq-small-stack">
+        <div>
+          <div class="sq sq-96">
+            <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="96" height="96">
+              <defs>
+                <linearGradient id="A2-bg" x1="0" y1="0" x2=".65" y2="1"><stop offset="0%" stop-color="#0D0921"/><stop offset="100%" stop-color="#1C1245"/></linearGradient>
+                <radialGradient id="A2-lk" cx="88%" cy="7%" r="55%"><stop offset="0%" stop-color="#E8A020" stop-opacity=".54"/><stop offset="100%" stop-color="#E8A020" stop-opacity="0"/></radialGradient>
+              </defs>
+              <rect width="512" height="512" fill="url(#A2-bg)"/>
+              <rect width="512" height="512" fill="url(#A2-lk)"/>
+              <text x="55" y="378" font-family="-apple-system,'Helvetica Neue',Arial" font-size="298" font-weight="900" fill="rgba(255,255,255,.95)">n</text>
+              <circle cx="400" cy="158" r="50" fill="#E8A020"/>
+              <circle cx="388" cy="148" r="22" fill="rgba(255,255,255,.28)" opacity=".55"/>
+            </svg>
+          </div>
+          <div class="size-lbl">96pt</div>
+        </div>
+        <div>
+          <div class="sq sq-60">
+            <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="60" height="60">
+              <defs>
+                <linearGradient id="A3-bg" x1="0" y1="0" x2=".65" y2="1"><stop offset="0%" stop-color="#0D0921"/><stop offset="100%" stop-color="#1C1245"/></linearGradient>
+                <radialGradient id="A3-lk" cx="88%" cy="7%" r="55%"><stop offset="0%" stop-color="#E8A020" stop-opacity=".54"/><stop offset="100%" stop-color="#E8A020" stop-opacity="0"/></radialGradient>
+              </defs>
+              <rect width="512" height="512" fill="url(#A3-bg)"/>
+              <rect width="512" height="512" fill="url(#A3-lk)"/>
+              <text x="55" y="378" font-family="-apple-system,'Helvetica Neue',Arial" font-size="298" font-weight="900" fill="rgba(255,255,255,.95)">n</text>
+              <circle cx="400" cy="158" r="50" fill="#E8A020"/>
+            </svg>
+          </div>
+          <div class="size-lbl">60pt · home</div>
+        </div>
+      </div>
+      <!-- Light bg preview -->
+      <div class="light-preview" style="flex:1; align-self:flex-end;">
+        <div class="lp-icon">
+          <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="52" height="52">
+            <defs><linearGradient id="A4-bg" x1="0" y1="0" x2=".65" y2="1"><stop offset="0%" stop-color="#0D0921"/><stop offset="100%" stop-color="#1C1245"/></linearGradient><radialGradient id="A4-lk" cx="88%" cy="7%" r="55%"><stop offset="0%" stop-color="#E8A020" stop-opacity=".54"/><stop offset="100%" stop-color="#E8A020" stop-opacity="0"/></radialGradient></defs>
+            <rect width="512" height="512" fill="url(#A4-bg)"/>
+            <rect width="512" height="512" fill="url(#A4-lk)"/>
+            <text x="55" y="378" font-family="-apple-system,'Helvetica Neue',Arial" font-size="298" font-weight="900" fill="rgba(255,255,255,.95)">n</text>
+            <circle cx="400" cy="158" r="50" fill="#E8A020"/>
+          </svg>
+        </div>
+        <div>
+          <div class="lp-label">niftyMomnt</div>
+          <div class="lp-sub">On light wallpaper</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="icon-meta">
+      <div class="ic-tag-row">
+        <span class="ic-name">Option A — "n·"</span>
+        <span class="ic-badge ib-rec">★ Recommended</span>
+      </div>
+      <p class="ic-concept">A typographic lettermark: a bold lowercase "n" with an amber dot to its upper right. The dot is the captured moment — small, bright, impossible to miss. The purple-to-near-black gradient background is distinctly brand-coded without needing any camera imagery.</p>
+      <ul class="ic-bullets">
+        <li class="li-amber">Most distinctive of the four — no competing camera app uses a lettermark like this. VSCO uses "vsco", BeReal uses "BeReal" text, none use a symbol+dot combo.</li>
+        <li class="li-brand">Scales perfectly to 20pt (notification icon) — the "n" + amber dot remain legible where film frames and shutters become unreadable noise.</li>
+        <li class="li-lav">Extendable to all brand materials: loading screen, splash, app clip icon, widget background, share sheet thumbnail. The "n·" mark becomes a visual signature.</li>
+        <li class="li-coral">The amber light leak in the top-right corner ties the icon to the in-app film aesthetic without being literal about it.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ ICON B: MOMENT FRAME ═══ -->
+  <div class="icon-card">
+    <div class="icon-row">
+      <div>
+        <div class="sq sq-180">
+          <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="180" height="180">
+            <defs>
+              <radialGradient id="B-glo" cx="50%" cy="52%" r="40%">
+                <stop offset="0%" stop-color="#E8A020" stop-opacity=".55"/>
+                <stop offset="100%" stop-color="#E8A020" stop-opacity="0"/>
+              </radialGradient>
+              <radialGradient id="B-lk" cx="92%" cy="6%" r="46%">
+                <stop offset="0%" stop-color="#E8A020" stop-opacity=".40"/>
+                <stop offset="100%" stop-color="#E8A020" stop-opacity="0"/>
+              </radialGradient>
+              <radialGradient id="B-in" cx="46%" cy="52%" r="50%">
+                <stop offset="0%" stop-color="#C86010" stop-opacity=".30"/>
+                <stop offset="60%" stop-color="#6B3000" stop-opacity=".12"/>
+                <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+              </radialGradient>
+              <filter id="B-grain">
+                <feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="4" stitchTiles="stitch"/>
+                <feBlend in="SourceGraphic" mode="overlay"/>
+              </filter>
+            </defs>
+            <rect width="512" height="512" fill="#0A0A0A"/>
+            <rect width="512" height="512" fill="url(#B-glo)"/>
+            <rect width="512" height="512" fill="url(#B-lk)"/>
+            <!-- Film frame outer -->
+            <rect x="118" y="80" width="276" height="352" rx="8" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="3"/>
+            <!-- Inner content -->
+            <rect x="130" y="116" width="252" height="280" rx="4" fill="url(#B-in)"/>
+            <!-- Inner scene warm ellipse -->
+            <ellipse cx="256" cy="256" rx="102" ry="112" fill="#E8A020" opacity=".18"/>
+            <!-- Sprocket holes — top (3) -->
+            <rect x="160" y="56" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+            <rect x="244" y="56" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+            <rect x="328" y="56" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+            <!-- Sprocket holes — bottom (3) -->
+            <rect x="160" y="414" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+            <rect x="244" y="414" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+            <rect x="328" y="414" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+            <!-- Film grain -->
+            <rect width="512" height="512" opacity=".042" filter="url(#B-grain)" fill="white"/>
+          </svg>
+        </div>
+        <div class="size-lbl">180pt · App Store</div>
+      </div>
+      <div class="sq-small-stack">
+        <div>
+          <div class="sq sq-96">
+            <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="96" height="96">
+              <defs><radialGradient id="B2-glo" cx="50%" cy="52%" r="40%"><stop offset="0%" stop-color="#E8A020" stop-opacity=".55"/><stop offset="100%" stop-color="#E8A020" stop-opacity="0"/></radialGradient><radialGradient id="B2-lk" cx="92%" cy="6%" r="46%"><stop offset="0%" stop-color="#E8A020" stop-opacity=".40"/><stop offset="100%" stop-color="#E8A020" stop-opacity="0"/></radialGradient><radialGradient id="B2-in" cx="46%" cy="52%" r="50%"><stop offset="0%" stop-color="#C86010" stop-opacity=".30"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></radialGradient></defs>
+              <rect width="512" height="512" fill="#0A0A0A"/>
+              <rect width="512" height="512" fill="url(#B2-glo)"/>
+              <rect width="512" height="512" fill="url(#B2-lk)"/>
+              <rect x="118" y="80" width="276" height="352" rx="8" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="3"/>
+              <rect x="130" y="116" width="252" height="280" rx="4" fill="url(#B2-in)"/>
+              <ellipse cx="256" cy="256" rx="102" ry="112" fill="#E8A020" opacity=".18"/>
+              <rect x="160" y="56" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+              <rect x="244" y="56" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+              <rect x="328" y="56" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+              <rect x="160" y="414" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+              <rect x="244" y="414" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+              <rect x="328" y="414" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+            </svg>
+          </div>
+          <div class="size-lbl">96pt</div>
+        </div>
+        <div>
+          <div class="sq sq-60">
+            <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="60" height="60">
+              <defs><radialGradient id="B3-glo" cx="50%" cy="52%" r="40%"><stop offset="0%" stop-color="#E8A020" stop-opacity=".55"/><stop offset="100%" stop-color="#E8A020" stop-opacity="0"/></radialGradient><radialGradient id="B3-lk" cx="92%" cy="6%" r="46%"><stop offset="0%" stop-color="#E8A020" stop-opacity=".40"/><stop offset="100%" stop-color="#E8A020" stop-opacity="0"/></radialGradient><radialGradient id="B3-in" cx="46%" cy="52%" r="50%"><stop offset="0%" stop-color="#C86010" stop-opacity=".30"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></radialGradient></defs>
+              <rect width="512" height="512" fill="#0A0A0A"/>
+              <rect width="512" height="512" fill="url(#B3-glo)"/>
+              <rect width="512" height="512" fill="url(#B3-lk)"/>
+              <rect x="118" y="80" width="276" height="352" rx="8" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="3"/>
+              <rect x="130" y="116" width="252" height="280" rx="4" fill="url(#B3-in)"/>
+              <ellipse cx="256" cy="256" rx="102" ry="112" fill="#E8A020" opacity=".18"/>
+              <rect x="160" y="56" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+              <rect x="244" y="56" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+              <rect x="328" y="56" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+              <rect x="160" y="414" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+              <rect x="244" y="414" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+              <rect x="328" y="414" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+            </svg>
+          </div>
+          <div class="size-lbl">60pt · home</div>
+        </div>
+      </div>
+      <div class="light-preview" style="flex:1; align-self:flex-end;">
+        <div class="lp-icon">
+          <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="52" height="52">
+            <defs><radialGradient id="B4-glo" cx="50%" cy="52%" r="40%"><stop offset="0%" stop-color="#E8A020" stop-opacity=".55"/><stop offset="100%" stop-color="#E8A020" stop-opacity="0"/></radialGradient><radialGradient id="B4-in" cx="46%" cy="52%" r="50%"><stop offset="0%" stop-color="#C86010" stop-opacity=".30"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></radialGradient></defs>
+            <rect width="512" height="512" fill="#0A0A0A"/>
+            <rect width="512" height="512" fill="url(#B4-glo)"/>
+            <rect x="118" y="80" width="276" height="352" rx="8" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="3"/>
+            <rect x="130" y="116" width="252" height="280" rx="4" fill="url(#B4-in)"/>
+            <ellipse cx="256" cy="256" rx="102" ry="112" fill="#E8A020" opacity=".18"/>
+            <rect x="160" y="56" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+            <rect x="244" y="56" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+            <rect x="328" y="56" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+            <rect x="160" y="414" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+            <rect x="244" y="414" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+            <rect x="328" y="414" width="24" height="42" rx="6" fill="rgba(255,255,255,.18)"/>
+          </svg>
+        </div>
+        <div><div class="lp-label">niftyMomnt</div><div class="lp-sub">On light wallpaper</div></div>
+      </div>
+    </div>
+    <div class="icon-meta">
+      <div class="ic-tag-row">
+        <span class="ic-name">Option B — "Moment Frame"</span>
+        <span class="ic-badge ib-alt">Strong runner-up</span>
+      </div>
+      <p class="ic-concept">A film frame in portrait orientation — sprocket holes at top and bottom, warm amber glow inside the frame suggesting a scene yet to be developed. The most literal translation of the film roll metaphor.</p>
+      <ul class="ic-bullets">
+        <li class="li-amber">Immediately communicates "film photography" — the sprocket perforations are unmistakably analog. Works well for the Huji/Dispo-aware Gen Z user who recognises film aesthetics.</li>
+        <li class="li-brand">The amber interior glow suggests a moment being "held" inside the frame — poetic and on-brand.</li>
+        <li class="li-lav">Risk: similar territory to Huji, Dispo, and some VSCO visual language. Less distinctive as a logo mark compared to Option A.</li>
+        <li class="li-coral">At 60pt the sprocket holes can read as noise. Works better at 96pt+ where the frame structure is clear.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ ICON C: SHUTTER ═══ -->
+  <div class="icon-card">
+    <div class="icon-row">
+      <div>
+        <div class="sq sq-180">
+          <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="180" height="180">
+            <defs>
+              <radialGradient id="C-bg" cx="50%" cy="50%" r="65%">
+                <stop offset="0%" stop-color="#181010"/>
+                <stop offset="100%" stop-color="#0A0807"/>
+              </radialGradient>
+              <radialGradient id="C-sh" cx="40%" cy="36%" r="65%">
+                <stop offset="0%" stop-color="#F4F4EE"/>
+                <stop offset="52%" stop-color="#D8D8D0"/>
+                <stop offset="100%" stop-color="#B8B8B0"/>
+              </radialGradient>
+              <radialGradient id="C-lk" cx="90%" cy="5%" r="44%">
+                <stop offset="0%" stop-color="#E8A020" stop-opacity=".40"/>
+                <stop offset="100%" stop-color="#E8A020" stop-opacity="0"/>
+              </radialGradient>
+              <filter id="C-grain">
+                <feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="4" stitchTiles="stitch"/>
+                <feBlend in="SourceGraphic" mode="overlay"/>
+              </filter>
+            </defs>
+            <rect width="512" height="512" fill="url(#C-bg)"/>
+            <rect width="512" height="512" fill="url(#C-lk)"/>
+            <!-- Outer subtle ring -->
+            <circle cx="256" cy="262" r="192" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="2"/>
+            <!-- Amber glow ring -->
+            <circle cx="256" cy="262" r="174" fill="none" stroke="#E8A020" stroke-width="6" opacity=".58"/>
+            <!-- Amber glow blur -->
+            <circle cx="256" cy="262" r="174" fill="none" stroke="#E8A020" stroke-width="14" opacity=".12"/>
+            <!-- Shutter body — matte gradient -->
+            <circle cx="256" cy="262" r="150" fill="url(#C-sh)"/>
+            <!-- Edge highlight (top) -->
+            <circle cx="256" cy="262" r="150" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>
+            <!-- Edge shadow (bottom) -->
+            <circle cx="256" cy="262" r="150" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="1"/>
+            <!-- Inner amber ring -->
+            <circle cx="256" cy="262" r="122" fill="none" stroke="rgba(232,160,32,.48)" stroke-width="2.8"/>
+            <!-- Specular ellipse -->
+            <ellipse cx="224" cy="228" rx="58" ry="38" fill="rgba(255,255,255,.28)" opacity=".52"/>
+            <!-- Film grain on shutter -->
+            <rect width="512" height="512" opacity=".038" filter="url(#C-grain)" fill="white"/>
+          </svg>
+        </div>
+        <div class="size-lbl">180pt · App Store</div>
+      </div>
+      <div class="sq-small-stack">
+        <div>
+          <div class="sq sq-96">
+            <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="96" height="96">
+              <defs><radialGradient id="C2-bg" cx="50%" cy="50%" r="65%"><stop offset="0%" stop-color="#181010"/><stop offset="100%" stop-color="#0A0807"/></radialGradient><radialGradient id="C2-sh" cx="40%" cy="36%" r="65%"><stop offset="0%" stop-color="#F4F4EE"/><stop offset="52%" stop-color="#D8D8D0"/><stop offset="100%" stop-color="#B8B8B0"/></radialGradient><radialGradient id="C2-lk" cx="90%" cy="5%" r="44%"><stop offset="0%" stop-color="#E8A020" stop-opacity=".40"/><stop offset="100%" stop-color="#E8A020" stop-opacity="0"/></radialGradient></defs>
+              <rect width="512" height="512" fill="url(#C2-bg)"/>
+              <rect width="512" height="512" fill="url(#C2-lk)"/>
+              <circle cx="256" cy="262" r="174" fill="none" stroke="#E8A020" stroke-width="6" opacity=".58"/>
+              <circle cx="256" cy="262" r="150" fill="url(#C2-sh)"/>
+              <circle cx="256" cy="262" r="150" fill="none" stroke="rgba(255,255,255,.50)" stroke-width="1.5"/>
+              <circle cx="256" cy="262" r="122" fill="none" stroke="rgba(232,160,32,.48)" stroke-width="2.8"/>
+              <ellipse cx="224" cy="228" rx="58" ry="38" fill="rgba(255,255,255,.26)" opacity=".52"/>
+            </svg>
+          </div>
+          <div class="size-lbl">96pt</div>
+        </div>
+        <div>
+          <div class="sq sq-60">
+            <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="60" height="60">
+              <defs><radialGradient id="C3-bg" cx="50%" cy="50%" r="65%"><stop offset="0%" stop-color="#181010"/><stop offset="100%" stop-color="#0A0807"/></radialGradient><radialGradient id="C3-sh" cx="40%" cy="36%" r="65%"><stop offset="0%" stop-color="#F4F4EE"/><stop offset="52%" stop-color="#D8D8D0"/><stop offset="100%" stop-color="#B8B8B0"/></radialGradient><radialGradient id="C3-lk" cx="90%" cy="5%" r="44%"><stop offset="0%" stop-color="#E8A020" stop-opacity=".40"/><stop offset="100%" stop-color="#E8A020" stop-opacity="0"/></radialGradient></defs>
+              <rect width="512" height="512" fill="url(#C3-bg)"/>
+              <rect width="512" height="512" fill="url(#C3-lk)"/>
+              <circle cx="256" cy="262" r="174" fill="none" stroke="#E8A020" stroke-width="6" opacity=".58"/>
+              <circle cx="256" cy="262" r="150" fill="url(#C3-sh)"/>
+              <circle cx="256" cy="262" r="150" fill="none" stroke="rgba(255,255,255,.50)" stroke-width="1.5"/>
+              <circle cx="256" cy="262" r="122" fill="none" stroke="rgba(232,160,32,.48)" stroke-width="2.8"/>
+            </svg>
+          </div>
+          <div class="size-lbl">60pt · home</div>
+        </div>
+      </div>
+      <div class="light-preview" style="flex:1; align-self:flex-end;">
+        <div class="lp-icon">
+          <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="52" height="52">
+            <defs><radialGradient id="C4-bg" cx="50%" cy="50%" r="65%"><stop offset="0%" stop-color="#181010"/><stop offset="100%" stop-color="#0A0807"/></radialGradient><radialGradient id="C4-sh" cx="40%" cy="36%" r="65%"><stop offset="0%" stop-color="#F4F4EE"/><stop offset="52%" stop-color="#D8D8D0"/><stop offset="100%" stop-color="#B8B8B0"/></radialGradient></defs>
+            <rect width="512" height="512" fill="url(#C4-bg)"/>
+            <circle cx="256" cy="262" r="174" fill="none" stroke="#E8A020" stroke-width="6" opacity=".58"/>
+            <circle cx="256" cy="262" r="150" fill="url(#C4-sh)"/>
+            <circle cx="256" cy="262" r="150" fill="none" stroke="rgba(255,255,255,.50)" stroke-width="1.5"/>
+            <circle cx="256" cy="262" r="122" fill="none" stroke="rgba(232,160,32,.48)" stroke-width="2.8"/>
+          </svg>
+        </div>
+        <div><div class="lp-label">niftyMomnt</div><div class="lp-sub">On light wallpaper</div></div>
+      </div>
+    </div>
+    <div class="icon-meta">
+      <div class="ic-tag-row">
+        <span class="ic-name">Option C — "Shutter"</span>
+        <span class="ic-badge ib-alt">Contextual pick</span>
+      </div>
+      <p class="ic-concept">The matte physical shutter button from the Capture Hub, scaled to fill the icon. The object that users tap hundreds of times becomes the face of the app — familiarity as identity.</p>
+      <ul class="ic-bullets">
+        <li class="li-amber">Strong brand continuity — users see the same object in the icon as the one they tap inside the app. Creates an immediate "I know what this does" moment on the home screen.</li>
+        <li class="li-brand">The matte cream gradient reads as premium and physical — distinctly different from the flat/glassy icons surrounding it on any home screen.</li>
+        <li class="li-lav">Risk: at 60pt the concentric circles can look generic (too similar to a generic "camera" or "record" button icon). The film-specific personality is less obvious.</li>
+        <li class="li-coral">Best use case: as a secondary icon option (Settings → App Icon) for users who prefer a more minimal/abstract mark.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ ICON D: GOLDEN HOUR ═══ -->
+  <div class="icon-card">
+    <div class="icon-row">
+      <div>
+        <div class="sq sq-180">
+          <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="180" height="180">
+            <defs>
+              <linearGradient id="D-sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"   stop-color="#160800"/>
+                <stop offset="28%"  stop-color="#6B2C00"/>
+                <stop offset="58%"  stop-color="#D87A10"/>
+                <stop offset="100%" stop-color="#F8D860"/>
+              </linearGradient>
+              <radialGradient id="D-sun" cx="50%" cy="64%" r="28%">
+                <stop offset="0%"   stop-color="#FFFAB0" stop-opacity=".95"/>
+                <stop offset="100%" stop-color="#FFFAB0" stop-opacity="0"/>
+              </radialGradient>
+              <radialGradient id="D-hor" cx="50%" cy="72%" r="65%">
+                <stop offset="0%"   stop-color="#FFD060" stop-opacity=".42"/>
+                <stop offset="100%" stop-color="#FFD060" stop-opacity="0"/>
+              </radialGradient>
+              <linearGradient id="D-vign" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"   stop-color="#000" stop-opacity=".42"/>
+                <stop offset="35%"  stop-color="#000" stop-opacity="0"/>
+                <stop offset="65%"  stop-color="#000" stop-opacity="0"/>
+                <stop offset="100%" stop-color="#000" stop-opacity=".28"/>
+              </linearGradient>
+              <filter id="D-grain">
+                <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="4" stitchTiles="stitch"/>
+                <feBlend in="SourceGraphic" mode="overlay"/>
+              </filter>
+            </defs>
+            <!-- Golden hour gradient -->
+            <rect width="512" height="512" fill="url(#D-sky)"/>
+            <!-- Sun glow -->
+            <rect width="512" height="512" fill="url(#D-sun)"/>
+            <!-- Horizon warm haze -->
+            <rect width="512" height="512" fill="url(#D-hor)"/>
+            <!-- Vignette -->
+            <rect width="512" height="512" fill="url(#D-vign)"/>
+            <!-- Film frame border -->
+            <rect x="26" y="26" width="460" height="460" rx="5" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="3"/>
+            <!-- Sprocket holes — left edge (4) -->
+            <rect x="8"   y="92"  width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+            <rect x="8"   y="186" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+            <rect x="8"   y="296" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+            <rect x="8"   y="390" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+            <!-- Sprocket holes — right edge (4) -->
+            <rect x="486" y="92"  width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+            <rect x="486" y="186" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+            <rect x="486" y="296" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+            <rect x="486" y="390" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+            <!-- Film grain -->
+            <rect width="512" height="512" opacity=".055" filter="url(#D-grain)" fill="white"/>
+          </svg>
+        </div>
+        <div class="size-lbl">180pt · App Store</div>
+      </div>
+      <div class="sq-small-stack">
+        <div>
+          <div class="sq sq-96">
+            <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="96" height="96">
+              <defs><linearGradient id="D2-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#160800"/><stop offset="28%" stop-color="#6B2C00"/><stop offset="58%" stop-color="#D87A10"/><stop offset="100%" stop-color="#F8D860"/></linearGradient><radialGradient id="D2-sun" cx="50%" cy="64%" r="28%"><stop offset="0%" stop-color="#FFFAB0" stop-opacity=".95"/><stop offset="100%" stop-color="#FFFAB0" stop-opacity="0"/></radialGradient></defs>
+              <rect width="512" height="512" fill="url(#D2-sky)"/>
+              <rect width="512" height="512" fill="url(#D2-sun)"/>
+              <rect x="26" y="26" width="460" height="460" rx="5" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="3"/>
+              <rect x="8" y="92" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+              <rect x="8" y="186" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+              <rect x="8" y="296" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+              <rect x="8" y="390" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+              <rect x="486" y="92" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+              <rect x="486" y="186" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+              <rect x="486" y="296" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+              <rect x="486" y="390" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+            </svg>
+          </div>
+          <div class="size-lbl">96pt</div>
+        </div>
+        <div>
+          <div class="sq sq-60">
+            <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="60" height="60">
+              <defs><linearGradient id="D3-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#160800"/><stop offset="28%" stop-color="#6B2C00"/><stop offset="58%" stop-color="#D87A10"/><stop offset="100%" stop-color="#F8D860"/></linearGradient><radialGradient id="D3-sun" cx="50%" cy="64%" r="28%"><stop offset="0%" stop-color="#FFFAB0" stop-opacity=".95"/><stop offset="100%" stop-color="#FFFAB0" stop-opacity="0"/></radialGradient></defs>
+              <rect width="512" height="512" fill="url(#D3-sky)"/>
+              <rect width="512" height="512" fill="url(#D3-sun)"/>
+              <rect x="26" y="26" width="460" height="460" rx="5" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="3"/>
+              <rect x="8" y="92" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+              <rect x="8" y="186" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+              <rect x="8" y="296" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+              <rect x="8" y="390" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+              <rect x="486" y="92" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+              <rect x="486" y="186" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+              <rect x="486" y="296" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+              <rect x="486" y="390" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+            </svg>
+          </div>
+          <div class="size-lbl">60pt · home</div>
+        </div>
+      </div>
+      <div class="light-preview" style="flex:1; align-self:flex-end;">
+        <div class="lp-icon">
+          <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="52" height="52">
+            <defs><linearGradient id="D4-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#160800"/><stop offset="28%" stop-color="#6B2C00"/><stop offset="58%" stop-color="#D87A10"/><stop offset="100%" stop-color="#F8D860"/></linearGradient><radialGradient id="D4-sun" cx="50%" cy="64%" r="28%"><stop offset="0%" stop-color="#FFFAB0" stop-opacity=".95"/><stop offset="100%" stop-color="#FFFAB0" stop-opacity="0"/></radialGradient></defs>
+            <rect width="512" height="512" fill="url(#D4-sky)"/>
+            <rect width="512" height="512" fill="url(#D4-sun)"/>
+            <rect x="26" y="26" width="460" height="460" rx="5" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="3"/>
+            <rect x="8" y="92" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+            <rect x="8" y="186" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+            <rect x="8" y="296" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+            <rect x="486" y="92" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+            <rect x="486" y="186" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+            <rect x="486" y="296" width="18" height="30" rx="5" fill="rgba(0,0,0,.34)"/>
+          </svg>
+        </div>
+        <div><div class="lp-label">niftyMomnt</div><div class="lp-sub">On light wallpaper</div></div>
+      </div>
+    </div>
+    <div class="icon-meta">
+      <div class="ic-tag-row">
+        <span class="ic-name">Option D — "Golden Hour"</span>
+        <span class="ic-badge ib-alt">Alt / seasonal icon</span>
+      </div>
+      <p class="ic-concept">The icon IS a photograph — a golden-hour sky rendered as a film strip with sprocket perforations along both edges. No UI chrome, no lettermark. Pure atmosphere. The icon says "this is what your memories feel like."</p>
+      <ul class="ic-bullets">
+        <li class="li-amber">Most emotionally resonant — it immediately communicates the app's core promise (beautiful, atmospheric moments) rather than its mechanism (film/camera).</li>
+        <li class="li-brand">Works brilliantly as a seasonal or limited alternate icon: different gradients for different times of year (golden hour, blue hour, midnight, winter light).</li>
+        <li class="li-lav">Risk: reads as "photo gallery" or "weather app" rather than "camera app" to a new user. Weak discoverability in the App Store where icon clarity matters.</li>
+        <li class="li-coral">Best use: as an alternate icon (the Amalfi Golden Hour edition) that power users can select. Creates a premium "I found the secret icon" moment.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ RECOMMENDATION ═══ -->
+<div class="rec-section">
+  <div class="rec-icon-col">
+    <div class="sq sq-180" style="box-shadow:0 24px 72px rgba(232,160,32,.30), 0 8px 24px rgba(0,0,0,.70);">
+      <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="180" height="180">
+        <defs>
+          <linearGradient id="R-bg" x1="0" y1="0" x2=".65" y2="1"><stop offset="0%" stop-color="#0D0921"/><stop offset="100%" stop-color="#1C1245"/></linearGradient>
+          <radialGradient id="R-lk" cx="88%" cy="7%" r="55%"><stop offset="0%" stop-color="#E8A020" stop-opacity=".56"/><stop offset="55%" stop-color="#E8A020" stop-opacity=".18"/><stop offset="100%" stop-color="#E8A020" stop-opacity="0"/></radialGradient>
+          <radialGradient id="R-amb" cx="28%" cy="82%" r="52%"><stop offset="0%" stop-color="#6B4EFF" stop-opacity=".22"/><stop offset="100%" stop-color="#6B4EFF" stop-opacity="0"/></radialGradient>
+          <filter id="R-grain"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="4" stitchTiles="stitch"/><feBlend in="SourceGraphic" mode="overlay"/></filter>
+        </defs>
+        <rect width="512" height="512" fill="url(#R-bg)"/>
+        <rect width="512" height="512" fill="url(#R-amb)"/>
+        <rect width="512" height="512" fill="url(#R-lk)"/>
+        <text x="55" y="378" font-family="-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="298" font-weight="900" fill="rgba(255,255,255,.95)" letter-spacing="-6">n</text>
+        <circle cx="400" cy="158" r="50" fill="#E8A020"/>
+        <circle cx="388" cy="148" r="22" fill="rgba(255,255,255,.30)" opacity=".60"/>
+        <rect width="512" height="512" opacity=".042" filter="url(#R-grain)" fill="white"/>
+      </svg>
+    </div>
+    <span class="rec-badge">★ Primary recommendation</span>
+  </div>
+  <div class="rec-content">
+    <h2>Go with <em>"n·"</em> — Option A</h2>
+    <p>The lettermark is the strongest long-term brand asset. At every size from 1024pt (App Store hero) down to 20pt (notification badge), the "n" + amber dot reads instantly and unambiguously. No camera app in the Gen Z space owns this type of mark.</p>
+    <p>The amber dot — the "·" in "n·" — is the whole product concept in one glyph: a single moment, bright, precise, captured. It scales into a design language: use it as a bullet point in marketing copy, as a loading indicator, as the "new capture" badge on the widget.</p>
+    <div class="rec-grid">
+      <div class="rec-cell">
+        <div class="rc-label">For engineering</div>
+        <div class="rc-body">The final icon should be exported as a vector path (not live text) for the "n" glyph, using the exact stem/curve geometry of SF Pro Display Black or Helvetica Neue Bold as the reference — converted to outlines in Figma/Sketch before handing off to Xcode.</div>
+      </div>
+      <div class="rec-cell">
+        <div class="rc-label">Alternate icons (post-MVP)</div>
+        <div class="rc-body">Offer Option D "Golden Hour" as a selectable alternate icon (Settings → Appearance → App Icon). Different gradient variants per preset — AMALFI golden, NORDIC blue, TOKYO neon — gives power users a personalization moment.</div>
+      </div>
+      <div class="rec-cell">
+        <div class="rc-label">Dark mode / tinted icons</div>
+        <div class="rc-body">iOS 18+ supports automatic icon tinting. The "n·" icon adapts gracefully: the purple-black bg accepts system tint naturally; the amber dot acts as an accent that resists tinting (set it as a non-tintable layer).</div>
+      </div>
+      <div class="rec-cell">
+        <div class="rc-label">App Clip / widget icon</div>
+        <div class="rc-body">The amber dot alone (just the circle, no "n") works as a micro-icon at 16–20pt in widgets and App Clip banners. It's immediately brand-coded once users have seen the full icon a few times.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

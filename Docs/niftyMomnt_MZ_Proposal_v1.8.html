@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>niftyMomnt — MZ Design Proposal v1.8</title>
+<style>
+:root {
+  --bg: #0C0C18;
+  --brand: #5B4FCF;
+  --brand-l: #EAE8FC;
+  --amber: #E8A020;
+  --amber-d: #BA7517;
+  --teal: #0F6E56;
+  --coral: #D85A30;
+  --text: rgba(255,255,255,0.90);
+  --text-m: rgba(255,255,255,0.55);
+  --text-s: rgba(255,255,255,0.35);
+  --border: rgba(255,255,255,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  padding: 40px 32px 100px;
+}
+
+/* ─── Page header ─── */
+.page-header {
+  max-width: 1320px; margin: 0 auto 16px;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  padding-bottom: 20px; border-bottom: 1px solid rgba(91,79,207,0.25);
+  flex-wrap: wrap; gap: 12px;
+}
+.page-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.4px; }
+.page-header h1 em { color: #5B4FCF; font-style: normal; }
+.page-header p  { font-size: 12px; color: var(--text-s); margin-top: 4px; }
+.v-badge {
+  background: linear-gradient(135deg, #5B4FCF, #D85A30);
+  color: #fff; font-size: 11px; font-weight: 700;
+  padding: 5px 14px; border-radius: 20px; letter-spacing: 0.04em;
+}
+
+/* ─── Inspiration strip ─── */
+.inspo-strip {
+  max-width: 1320px; margin: 20px auto 36px;
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.inspo-label { font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--text-s); margin-right: 4px; }
+.inspo-chip {
+  font-size: 11px; font-weight: 600; padding: 5px 12px;
+  border-radius: 20px; border: 1px solid;
+  display: flex; align-items: center; gap: 5px;
+}
+.chip-bereal  { border-color: rgba(0,0,0,0.3);  background: #fff;  color: #000; }
+.chip-huji    { border-color: rgba(215,90,40,0.3); background: rgba(215,90,40,0.12); color: #E06030; }
+.chip-dazz    { border-color: rgba(91,79,207,0.3); background: rgba(91,79,207,0.12); color: #9B8FE8; }
+.chip-vsco    { border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7); }
+.chip-locket  { border-color: rgba(255,100,100,0.3); background: rgba(255,100,100,0.10); color: #FF7070; }
+.inspo-arrow  { color: var(--text-s); font-size: 13px; }
+.inspo-chip.nifty { border-color: rgba(232,160,32,0.4); background: rgba(232,160,32,0.12); color: var(--amber); }
+
+/* ─── Main layout ─── */
+.stage {
+  max-width: 1320px; margin: 0 auto;
+  display: grid;
+  grid-template-columns: 400px 300px 1fr;
+  gap: 40px; align-items: start;
+}
+
+/* ─── Phone frame ─── */
+.phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.col-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; padding: 4px 14px; border-radius: 20px;
+}
+.cl-main { background: linear-gradient(90deg, rgba(91,79,207,0.3), rgba(232,160,32,0.2));
+  border: 1px solid rgba(232,160,32,0.2); color: #EAE8FC; }
+.cl-post  { background: rgba(15,110,86,0.2); border: 1px solid rgba(15,110,86,0.25); color: #5FD4AA; }
+
+.phone {
+  background: #0A0A0A;
+  border-radius: 50px; border: 2px solid #2A2A2A;
+  overflow: hidden; position: relative;
+  display: flex; flex-direction: column;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
+}
+.phone.main-phone { width: 400px; height: 868px; }
+.phone.post-phone { width: 280px; height: 608px; }
+
+/* Dynamic Island */
+.di {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  background: #000; border-radius: 18px; z-index: 20;
+  display: flex; align-items: center; gap: 6px; overflow: hidden;
+}
+.main-phone .di { width: 140px; height: 36px; padding: 0 12px 0 8px; justify-content: space-between; }
+.post-phone .di { width: 120px; height: 32px; padding: 0 10px; justify-content: flex-end; }
+
+.di-inner { display: flex; align-items: center; gap: 5px; }
+.di-vibe-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--amber); }
+.di-vibe-name { font-size: 8px; font-weight: 600; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
+.di-shot-arc {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.12);
+  position: relative; display: flex; align-items: center; justify-content: center;
+}
+.di-arc-fill {
+  position: absolute; width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--amber); border-right-color: var(--amber);
+  transform: rotate(-90deg);
+}
+.di-shot-num { font-size: 7px; font-weight: 700; color: rgba(255,255,255,0.7); }
+
+/* ════════════════════
+   ZONE A — Top Bar
+════════════════════ */
+.zone-a {
+  height: 72px; flex-shrink: 0;
+  display: flex; align-items: center; gap: 10px; padding: 0 16px;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 0.5px solid rgba(255,255,255,0.07);
+  position: relative; z-index: 5; padding-top: 12px;
+}
+.post-phone .zone-a { height: 58px; padding-top: 10px; }
+
+.icon-pill {
+  height: 32px; border-radius: 50px; background: rgba(255,255,255,0.11);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 15px;
+}
+.post-phone .icon-pill { height: 26px; font-size: 12px; }
+.ip-w { width: 40px; }
+.ip-wide { width: 52px; }
+.post-phone .ip-w { width: 32px; }
+
+/* Film strip counter */
+.film-strip {
+  flex: 1; display: flex; justify-content: center; align-items: center; gap: 5px;
+}
+.film-frames { display: flex; gap: 2px; align-items: center; }
+.ff {
+  width: 7px; height: 11px; border-radius: 1.5px;
+  background: rgba(255,255,255,0.12); border: 0.5px solid rgba(255,255,255,0.08);
+}
+.ff.used { background: var(--amber); border-color: var(--amber-d); }
+.film-count { font-size: 13px; font-weight: 600; color: var(--text); margin-left: 6px; letter-spacing: 0.3px; }
+.post-phone .film-count { font-size: 11px; }
+
+.zone-a-right { display: flex; gap: 10px; }
+.post-phone .zone-a-right { gap: 8px; }
+
+/* ════════════════════
+   ZONE B — Viewfinder
+════════════════════ */
+.zone-b { flex: 1; position: relative; overflow: hidden; background: #1A1208; }
+
+/* Vibe color tint overlay — the KEY MZ feature */
+.vibe-tint {
+  position: absolute; inset: 0; z-index: 1;
+  background: radial-gradient(ellipse at 50% 60%, rgba(232,160,32,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+/* Film grain animation overlay */
+.grain-overlay {
+  position: absolute; inset: 0; z-index: 2; opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 150px 150px;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+/* Light leak — subtle flare */
+.light-leak {
+  position: absolute; z-index: 3; pointer-events: none;
+  width: 120px; height: 400px; top: -40px; right: -20px;
+  background: linear-gradient(135deg, rgba(232,160,32,0.06) 0%, transparent 60%);
+  transform: rotate(-15deg); filter: blur(20px);
+}
+.scene-glow-1 {
+  position: absolute; width: 300px; height: 200px;
+  background: radial-gradient(ellipse, rgba(130,80,18,0.38) 0%, transparent 70%);
+  top: 25%; left: 5%; border-radius: 50%; filter: blur(35px);
+}
+.scene-glow-2 {
+  position: absolute; width: 200px; height: 280px;
+  background: radial-gradient(ellipse, rgba(80,48,10,0.4) 0%, transparent 70%);
+  top: 15%; right: 3%; border-radius: 50%; filter: blur(42px);
+}
+.warm-streak {
+  position: absolute; width: 340px; height: 60px;
+  background: radial-gradient(ellipse, rgba(210,130,35,0.12) 0%, transparent 70%);
+  top: 42%; left: 50%; transform: translateX(-50%); filter: blur(24px);
+}
+
+/* Low-light pill */
+.low-light-pill {
+  position: absolute; z-index: 10;
+  bottom: 70px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(12px);
+  border: 0.5px solid rgba(255,255,255,0.12); border-radius: 24px;
+  padding: 6px 14px 6px 9px; white-space: nowrap;
+}
+.ll-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber);
+  animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
+.ll-text { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.70); }
+
+/* ★ NEW: Location vibe chip */
+.loc-chip {
+  position: absolute; z-index: 10;
+  bottom: 108px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(0,0,0,0.45); backdrop-filter: blur(10px);
+  border: 0.5px solid rgba(255,255,255,0.10); border-radius: 20px;
+  padding: 5px 12px 5px 9px; white-space: nowrap;
+}
+.loc-dot { font-size: 11px; }
+.loc-text { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.65); letter-spacing: 0.1px; }
+
+/* ★ NEW: BeReal dual-cam toggle */
+.dual-cam-btn {
+  position: absolute; z-index: 10;
+  top: 16px; right: 14px;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(255,255,255,0.13); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.18);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px;
+}
+
+/* Mode anchor */
+.mode-anchor {
+  position: absolute; z-index: 10; bottom: 14px; width: 100%;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.mode-ghost { font-size: 13px; font-weight: 500; letter-spacing: 5px; color: rgba(255,255,255,0.42); }
+.mode-dots  { display: flex; gap: 8px; align-items: center; }
+.m-dot { border-radius: 50%; background: rgba(255,255,255,0.22); }
+.m-dot.s { width: 5px; height: 5px; }
+.m-dot.a { width: 7px; height: 7px; background: rgba(255,255,255,0.65); }
+
+/* ════════════════════
+   ZONE C — Preset Bar
+════════════════════ */
+.zone-c {
+  height: 48px; flex-shrink: 0;
+  background: rgba(0,0,0,0.32); backdrop-filter: blur(20px);
+  display: flex; align-items: center; padding: 0 18px; gap: 10px;
+  position: relative;
+}
+.post-phone .zone-c { height: 42px; padding: 0 14px; }
+.zone-c::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 2px; background: var(--amber); opacity: 0.88;
+}
+.preset-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
+.preset-name { font-size: 15px; font-weight: 700; color: rgba(255,255,255,0.95); letter-spacing: 1.5px; }
+.preset-hint { margin-left: auto; font-size: 13px; color: rgba(255,255,255,0.55); }
+.post-phone .preset-name { font-size: 13px; }
+.post-phone .preset-hint { font-size: 11px; }
+
+/* ★ NEW: Preset peek swatches */
+.preset-swatches {
+  display: flex; gap: 5px; align-items: center; margin-left: auto;
+}
+.ps { width: 10px; height: 10px; border-radius: 50%; opacity: 0.55; border: 1px solid rgba(255,255,255,0.1); }
+.ps.act { opacity: 1; width: 13px; height: 13px; border-color: rgba(255,255,255,0.3); }
+.ps-amber  { background: #E8A020; }
+.ps-cyan   { background: #00E5CC; }
+.ps-blue   { background: #8EB4D4; }
+.ps-red    { background: #FF6B6B; }
+.ps-grain  { background: #C8A882; }
+
+/* ════════════════════
+   ZONE D — Shutter Row
+════════════════════ */
+.zone-d {
+  flex-shrink: 0; background: rgba(0,0,0,0.42);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 14px 20px calc(34px + 14px); position: relative;
+}
+.post-phone .zone-d { padding: 10px 14px calc(26px + 10px); }
+
+.thumb {
+  position: absolute; left: 20px; top: 14px;
+  width: 64px; height: 46px; border-radius: 12px;
+  background: #1A1208; border: 1px solid rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 3px;
+}
+.post-phone .thumb { width: 50px; height: 36px; left: 14px; top: 10px; border-radius: 9px; }
+.thumb-label { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.45); }
+.post-phone .thumb-label { font-size: 9px; }
+.live-badge { background: var(--amber); color: #000; font-size: 8px; font-weight: 700;
+  padding: 1px 5px; border-radius: 3px; }
+
+/* Shutter */
+.shutter-wrap { position: relative; width: 96px; height: 96px;
+  display: flex; align-items: center; justify-content: center; }
+.post-phone .shutter-wrap { width: 78px; height: 78px; }
+.sh-track { position: absolute; width: 96px; height: 96px; border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.12); }
+.post-phone .sh-track { width: 78px; height: 78px; border-width: 2.5px; }
+.sh-prog  { position: absolute; width: 96px; height: 96px; border-radius: 50%;
+  border: 3px solid transparent; border-top-color: var(--amber); border-right-color: var(--amber);
+  transform: rotate(-90deg); }
+.post-phone .sh-prog { width: 78px; height: 78px; border-width: 2.5px; }
+.sh-body  { width: 78px; height: 78px; border-radius: 50%; z-index: 2;
+  background: radial-gradient(circle at 38% 34%, #fff 0%, #e8e8e8 65%, #ccc 100%);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.5), 0 0 0 2px rgba(232,160,32,0.55);
+  display: flex; align-items: center; justify-content: center; }
+.post-phone .sh-body { width: 62px; height: 62px; }
+.sh-inner { width: 62px; height: 62px; border-radius: 50%;
+  border: 1.5px solid rgba(232,160,32,0.55); display: flex; align-items: center; justify-content: center; }
+.post-phone .sh-inner { width: 50px; height: 50px; }
+.sh-count { font-size: 18px; font-weight: 700; color: var(--amber); }
+.post-phone .sh-count { font-size: 14px; }
+
+.flip-hint { position: absolute; right: 20px; top: 14px; text-align: center; }
+.post-phone .flip-hint { right: 14px; top: 10px; }
+.flip-line { display: block; font-size: 12px; font-weight: 400;
+  color: rgba(255,255,255,0.50); line-height: 1.5; }
+.post-phone .flip-line { font-size: 10px; }
+
+.home-bar { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  width: 120px; height: 5px; background: rgba(255,255,255,0.25); border-radius: 3px; }
+.post-phone .home-bar { width: 90px; bottom: 8px; }
+
+/* ════════════════════
+   POST-CAPTURE overlays
+════════════════════ */
+/* Vibe tag prompt */
+.vibe-prompt {
+  position: absolute; z-index: 20; left: 0; right: 0;
+  bottom: 170px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 0 16px;
+}
+.vibe-prompt-label {
+  font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.50);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.vibe-tags { display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; }
+.vibe-tag {
+  font-size: 12px; font-weight: 600; padding: 6px 13px;
+  border-radius: 20px; backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.10); color: rgba(255,255,255,0.85);
+  cursor: pointer;
+}
+.vibe-tag.sel { background: rgba(232,160,32,0.25); border-color: rgba(232,160,32,0.5); color: var(--amber); }
+
+/* Quick share pill */
+.share-pill {
+  position: absolute; z-index: 20; left: 50%; transform: translateX(-50%);
+  bottom: 142px;
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.12); backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.18); border-radius: 30px;
+  padding: 8px 16px 8px 10px; white-space: nowrap;
+}
+.share-avatars { display: flex; gap: -4px; }
+.s-av { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.4);
+  font-size: 13px; display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.15); }
+.s-av:not(:first-child) { margin-left: -7px; }
+.share-pill-text { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.85); }
+
+/* Captured flash overlay */
+.capture-flash {
+  position: absolute; inset: 0; z-index: 15;
+  background: rgba(255,255,255,0.06);
+  pointer-events: none;
+}
+
+/* ════════════════════
+   Right: MZ rationale
+════════════════════ */
+.rationale { padding-top: 48px; }
+.rat-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.rat-sub   { font-size: 12px; color: var(--text-s); margin-bottom: 24px; }
+
+.feat-card {
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px; margin-bottom: 12px;
+  background: rgba(255,255,255,0.025);
+  transition: border-color 0.2s;
+}
+.feat-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+.feat-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.c1 { background: var(--amber); color: #000; }
+.c2 { background: #D85A30; color: #fff; }
+.c3 { background: #5B4FCF; color: #fff; }
+.c4 { background: #0F6E56; color: #fff; }
+.c5 { background: #185FA5; color: #fff; }
+.c6 { background: #9B8FE8; color: #fff; }
+.c7 { background: #FF6B6B; color: #fff; }
+
+.feat-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.new-tag {
+  display: inline-block; font-size: 9px; font-weight: 700;
+  padding: 1px 6px; border-radius: 10px;
+  background: rgba(15,110,86,0.25); color: #5FD4AA;
+  border: 1px solid rgba(15,110,86,0.3);
+  margin-left: 6px; vertical-align: middle; letter-spacing: 0.05em;
+}
+.feat-body { font-size: 12px; color: var(--text-m); line-height: 1.6; padding-left: 36px; }
+.feat-body code {
+  font-family: 'SF Mono', Menlo, monospace; font-size: 10.5px;
+  background: rgba(232,160,32,0.12); color: var(--amber);
+  padding: 1px 5px; border-radius: 3px;
+}
+.inspo-ref {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 600;
+  padding: 1px 7px; border-radius: 10px; margin-left: 4px;
+  vertical-align: middle;
+}
+.ref-bereal { background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+.ref-huji   { background: rgba(215,90,40,0.15); color: #E06030; border: 1px solid rgba(215,90,40,0.2); }
+.ref-dazz   { background: rgba(91,79,207,0.15); color: #9B8FE8; border: 1px solid rgba(91,79,207,0.25); }
+.ref-locket { background: rgba(255,100,100,0.12); color: #FF7070; border: 1px solid rgba(255,100,100,0.2); }
+
+/* Divider */
+.sect-div { height: 1px; background: var(--border); margin: 20px 0; }
+
+/* MZ insight box */
+.insight-box {
+  background: linear-gradient(135deg, rgba(91,79,207,0.10), rgba(232,160,32,0.06));
+  border: 1px solid rgba(91,79,207,0.2); border-radius: 12px;
+  padding: 16px; margin-top: 8px;
+}
+.insight-box .ib-title { font-size: 12px; font-weight: 700; color: var(--brand-l); margin-bottom: 8px; }
+.insight-box p { font-size: 12px; color: var(--text-m); line-height: 1.65; }
+.insight-box p + p { margin-top: 8px; }
+
+/* Post phone col */
+.post-col { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+</style>
+</head>
+<body>
+
+<!-- Page header -->
+<div class="page-header">
+  <div>
+    <h1><em>niftyMomnt</em> — MZ Design Proposal</h1>
+    <p>Targeting Millennials & Gen Z · Travel & Daily Capture · v1.8 · March 2026</p>
+  </div>
+  <span class="v-badge">✦ v1.8 MZ Edition</span>
+</div>
+
+<!-- Inspiration strip -->
+<div class="inspo-strip">
+  <span class="inspo-label">Inspired by</span>
+  <span class="inspo-chip chip-bereal">📸 BeReal</span>
+  <span class="inspo-chip chip-huji">📷 Huji Cam</span>
+  <span class="inspo-chip chip-dazz">🎞 Dazz Cam</span>
+  <span class="inspo-chip chip-vsco">◐ VSCO</span>
+  <span class="inspo-chip chip-locket">🔴 Locket</span>
+  <span class="inspo-arrow">→</span>
+  <span class="inspo-chip nifty">✦ niftyMomnt</span>
+</div>
+
+<!-- Main stage -->
+<div class="stage">
+
+  <!-- ─── Main phone: Enhanced Capture Hub ─── -->
+  <div class="phone-wrap">
+    <div class="col-label cl-main">✦ Capture Hub · v1.8 MZ</div>
+    <div class="phone main-phone">
+      <!-- DI — shows vibe name + shot arc -->
+      <div class="di">
+        <div class="di-inner">
+          <div class="di-vibe-dot"></div>
+          <span class="di-vibe-name">AMALFI</span>
+        </div>
+        <div class="di-shot-arc">
+          <div class="di-arc-fill"></div>
+          <span class="di-shot-num">17</span>
+        </div>
+      </div>
+
+      <!-- Zone A -->
+      <div class="zone-a">
+        <div class="icon-pill ip-w">⏱</div>
+        <div class="icon-pill ip-w">⊙</div>
+        <!-- Film strip shot counter -->
+        <div class="film-strip">
+          <div class="film-frames">
+            <div class="ff used"></div><div class="ff used"></div>
+            <div class="ff used"></div><div class="ff used"></div>
+            <div class="ff used"></div><div class="ff used"></div>
+            <div class="ff used"></div>
+            <div class="ff"></div><div class="ff"></div>
+          </div>
+          <span class="film-count">17 left</span>
+        </div>
+        <div class="zone-a-right">
+          <div class="icon-pill ip-w">⚡</div>
+          <div class="icon-pill ip-w">···</div>
+        </div>
+      </div>
+
+      <!-- Zone B: Viewfinder with MZ features -->
+      <div class="zone-b">
+        <div class="scene-glow-1"></div>
+        <div class="scene-glow-2"></div>
+        <div class="warm-streak"></div>
+        <!-- Vibe tint overlay -->
+        <div class="vibe-tint"></div>
+        <!-- Grain overlay -->
+        <div class="grain-overlay"></div>
+        <!-- Light leak -->
+        <div class="light-leak"></div>
+
+        <!-- Dual-cam toggle (BeReal-style) -->
+        <div class="dual-cam-btn">⊕</div>
+
+        <!-- Location vibe chip (NEW) -->
+        <div class="loc-chip">
+          <span class="loc-dot">📍</span>
+          <span class="loc-text">Hongdae · Seoul · golden hour</span>
+        </div>
+
+        <!-- Low-light indicator -->
+        <div class="low-light-pill">
+          <div class="ll-dot"></div>
+          <span class="ll-text">Low light — camera active</span>
+        </div>
+
+        <!-- Mode anchor -->
+        <div class="mode-anchor">
+          <div class="mode-ghost">CLIP</div>
+          <div class="mode-dots">
+            <div class="m-dot s"></div>
+            <div class="m-dot a"></div>
+            <div class="m-dot s"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zone C: Preset bar with swatches -->
+      <div class="zone-c">
+        <div class="preset-dot"></div>
+        <span class="preset-name">AMALFI</span>
+        <!-- Preset peek swatches (NEW) -->
+        <div class="preset-swatches">
+          <div class="ps ps-grain"></div>
+          <div class="ps ps-amber act"></div>
+          <div class="ps ps-cyan"></div>
+          <div class="ps ps-blue"></div>
+          <div class="ps ps-red"></div>
+        </div>
+        <span class="preset-hint">hold to change</span>
+      </div>
+
+      <!-- Zone D: Shutter row -->
+      <div class="zone-d">
+        <div class="thumb">
+          <span class="thumb-label">last</span>
+          <span class="live-badge">▶ LIVE</span>
+        </div>
+        <div class="shutter-wrap">
+          <div class="sh-track"></div>
+          <div class="sh-prog"></div>
+          <div class="sh-body">
+            <div class="sh-inner">
+              <span class="sh-count">8</span>
+            </div>
+          </div>
+        </div>
+        <div class="flip-hint">
+          <span class="flip-line">double-tap</span>
+          <span class="flip-line">to flip</span>
+        </div>
+        <div class="home-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Post-capture phone ─── -->
+  <div class="post-col">
+    <div class="col-label cl-post">Post-Capture State</div>
+    <div class="phone post-phone">
+      <div class="di" style="width:110px;height:30px;padding:0 10px;justify-content:flex-end;gap:5px;">
+        <div class="di-vibe-dot" style="width:8px;height:8px;"></div>
+        <div class="di-arc-fill" style="width:14px;height:14px;border-width:2px;"></div>
+      </div>
+
+      <!-- Zone A -->
+      <div class="zone-a">
+        <div class="icon-pill ip-w" style="height:26px;font-size:12px;">⏱</div>
+        <div class="film-strip">
+          <div class="film-frames">
+            <div class="ff used"></div><div class="ff used"></div>
+            <div class="ff used"></div><div class="ff used"></div>
+            <div class="ff used"></div><div class="ff used"></div>
+            <div class="ff used"></div><div class="ff used"></div>
+            <div class="ff"></div>
+          </div>
+          <span class="film-count" style="font-size:11px;">16 left</span>
+        </div>
+        <div class="zone-a-right">
+          <div class="icon-pill ip-w" style="height:26px;font-size:12px;">⚡</div>
+        </div>
+      </div>
+
+      <!-- Zone B: frozen last capture (tinted) -->
+      <div class="zone-b">
+        <div class="scene-glow-1" style="opacity:0.8;"></div>
+        <div class="scene-glow-2" style="opacity:0.8;"></div>
+        <div class="warm-streak"></div>
+        <div class="vibe-tint" style="background:radial-gradient(ellipse at 50% 50%, rgba(232,160,32,0.15) 0%, transparent 70%);"></div>
+        <div class="grain-overlay" style="opacity:0.06;"></div>
+        <div class="light-leak"></div>
+        <!-- Capture flash -->
+        <div class="capture-flash"></div>
+
+        <!-- Vibe tag prompt (NEW) -->
+        <div class="vibe-prompt">
+          <span class="vibe-prompt-label">add a vibe</span>
+          <div class="vibe-tags">
+            <div class="vibe-tag sel">✨ golden hour</div>
+            <div class="vibe-tag">🌃 city night</div>
+            <div class="vibe-tag">🌊 wandering</div>
+            <div class="vibe-tag">☕ chill spot</div>
+          </div>
+        </div>
+
+        <!-- Quick share pill (NEW) -->
+        <div class="share-pill">
+          <div class="share-avatars">
+            <div class="s-av">🧑</div>
+            <div class="s-av">👩</div>
+            <div class="s-av">🧑‍🦱</div>
+          </div>
+          <span class="share-pill-text">Send to close friends?</span>
+        </div>
+
+        <div class="mode-anchor">
+          <div class="mode-ghost" style="opacity:0;">CLIP</div>
+        </div>
+      </div>
+
+      <!-- Zone C -->
+      <div class="zone-c">
+        <div class="preset-dot"></div>
+        <span class="preset-name" style="font-size:13px;">AMALFI</span>
+        <div class="preset-swatches">
+          <div class="ps ps-grain"></div>
+          <div class="ps ps-amber act"></div>
+          <div class="ps ps-cyan"></div>
+        </div>
+        <span class="preset-hint" style="font-size:11px;">hold to change</span>
+      </div>
+
+      <!-- Zone D -->
+      <div class="zone-d">
+        <div class="thumb" style="width:50px;height:36px;left:14px;top:10px;border-radius:9px;">
+          <span class="thumb-label" style="font-size:9px;">last</span>
+        </div>
+        <div class="shutter-wrap" style="width:78px;height:78px;">
+          <div class="sh-track" style="width:78px;height:78px;border-width:2.5px;"></div>
+          <div class="sh-prog"  style="width:78px;height:78px;border-width:2.5px;"></div>
+          <div class="sh-body"  style="width:62px;height:62px;">
+            <div class="sh-inner" style="width:50px;height:50px;">
+              <span class="sh-count" style="font-size:14px;">7</span>
+            </div>
+          </div>
+        </div>
+        <div class="flip-hint" style="right:14px;top:10px;">
+          <span class="flip-line" style="font-size:10px;">double-tap</span>
+          <span class="flip-line" style="font-size:10px;">to flip</span>
+        </div>
+        <div class="home-bar" style="width:90px;bottom:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── MZ Rationale ─── -->
+  <div class="rationale">
+    <div class="rat-title">Why These 7 Changes Hit Different for MZ</div>
+    <div class="rat-sub">Each decision is grounded in how MZ actually uses camera apps today.</div>
+
+    <div class="feat-card">
+      <div class="feat-header">
+        <div class="feat-num c1">1</div>
+        <div>
+          <div class="feat-name">Vibe Tint + Grain on Viewfinder <span class="new-tag">NEW</span></div>
+        </div>
+      </div>
+      <div class="feat-body">
+        A warm amber color wash <code>(rgba(232,160,32,0.08))</code> and subtle film grain overlay on the live viewfinder. Users feel the preset before they shoot — the aesthetic is in the process, not just the output.
+        <br/><br/><span class="inspo-ref ref-huji">Huji</span><span class="inspo-ref ref-dazz">Dazz Cam</span> both built their entire brand on making the <em>act of shooting</em> feel analog. niftyMomnt can own this too.
+      </div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-header">
+        <div class="feat-num c2">2</div>
+        <div>
+          <div class="feat-name">Film Strip Shot Counter <span class="new-tag">NEW</span></div>
+        </div>
+      </div>
+      <div class="feat-body">
+        Replaces plain "24 left" text with tiny filled/empty film frames + number. Each shot fills a frame. MZ loves progress gamification — watching the strip fill up creates investment in the roll. Taps into FOMO around the last few shots.
+      </div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-header">
+        <div class="feat-num c3">3</div>
+        <div>
+          <div class="feat-name">Dynamic Island — Vibe + Shot Arc <span class="new-tag">NEW</span></div>
+        </div>
+      </div>
+      <div class="feat-body">
+        DI shows the active preset name + a circular arc counting down remaining shots. It's alive during capture. MZ treats the DI as a status badge — niftyMomnt showing their vibe there is a flex.
+      </div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-header">
+        <div class="feat-num c4">4</div>
+        <div>
+          <div class="feat-name">Location Vibe Chip in Viewfinder <span class="new-tag">NEW</span></div>
+        </div>
+      </div>
+      <div class="feat-body">
+        A subtle GPS-derived chip: <code>📍 Hongdae · Seoul · golden hour</code>. Not a latitude/longitude — a vibe descriptor. MZ cares deeply about place identity in their memories. This surfaces at capture time, not buried in metadata later. Auto-dismisses after a few seconds.
+      </div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-header">
+        <div class="feat-num c5">5</div>
+        <div>
+          <div class="feat-name">Dual-Cam Toggle (BeReal-style) <span class="new-tag">NEW</span></div>
+        </div>
+      </div>
+      <div class="feat-body">
+        Single tap to switch to front+back simultaneous capture. "Your face + the moment" — the core BeReal insight that exploded in MZ culture. niftyMomnt's film aesthetic applied to dual-cam would be uniquely compelling and differentiating.
+        <br/><br/><span class="inspo-ref ref-bereal">BeReal</span> proved MZ wants to be <em>in</em> the moment, not just recording it.
+      </div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-header">
+        <div class="feat-num c6">6</div>
+        <div>
+          <div class="feat-name">Post-Capture Vibe Tag Prompt <span class="new-tag">NEW</span></div>
+        </div>
+      </div>
+      <div class="feat-body">
+        Immediately after capture, a quick-tap vibe row appears: <code>✨ golden hour</code> <code>🌃 city night</code> <code>🌊 wandering</code>. One-tap tags the moment emotionally. Dismisses in 4 seconds if not used. Feeds the Journal's vibe feed. MZ journals with feelings, not folders.
+      </div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-header">
+        <div class="feat-num c7">7</div>
+        <div>
+          <div class="feat-name">Quick Close-Friends Share Pill <span class="new-tag">NEW</span></div>
+        </div>
+      </div>
+      <div class="feat-body">
+        After each capture, a "Send to close friends?" pill floats up for 3 seconds showing friend avatars. One tap shares directly, no navigation. Stays true to niftyMomnt's privacy-first principle (opt-in, explicit) while enabling the intimate sharing loop that MZ craves.
+        <br/><br/><span class="inspo-ref ref-locket">Locket</span> built a $100M app on this exact loop: shoot → instantly land on someone's home screen.
+      </div>
+    </div>
+
+    <div class="sect-div"></div>
+
+    <!-- Preset swatches -->
+    <div class="feat-card" style="border-color:rgba(232,160,32,0.2);background:rgba(232,160,32,0.04);">
+      <div class="feat-header">
+        <div class="feat-num" style="background:rgba(232,160,32,0.2);color:var(--amber);">+</div>
+        <div>
+          <div class="feat-name">Preset Peek Swatches in Zone C</div>
+        </div>
+      </div>
+      <div class="feat-body">
+        Five small dots in Zone C hint that more presets exist without needing a tray or picker. The active preset is slightly larger. MZ users love discovering presets — visible swatches reduce the learning curve for the swipe gesture.
+      </div>
+    </div>
+
+    <div class="insight-box">
+      <div class="ib-title">✦ Core MZ Insight</div>
+      <p>MZ doesn't want a camera app that gets out of the way. They want one with a <strong>personality</strong> — the grain, the tint, the vibe chip, the gamified strip. The aesthetic of capturing <em>is</em> the product.</p>
+      <p>niftyMomnt's film roll metaphor and privacy-first design already resonate. The v1.8 changes make the capture experience feel alive, social, and emotionally expressive — which is exactly how MZ describes their favorite apps.</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

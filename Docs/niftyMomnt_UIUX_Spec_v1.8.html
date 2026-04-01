@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>niftyMomnt — UI/UX Specification v1.8</title>
+<style>
+:root {
+  --purple:      #6B4EFF; --purple-l: #EAE8FC; --purple-d: #3C3489;
+  --teal:        #0F6E56; --teal-l:   #E1F5EE; --teal-d:   #085041;
+  --amber:       #BA7517; --amber-l:  #FAEEDA; --amber-d:  #633806;
+  --coral:       #D85A30; --coral-l:  #FAECE7; --coral-d:  #712B13;
+  --blue:        #185FA5; --blue-l:   #E6F1FB; --blue-d:   #0C447C;
+  --gray:        #444441; --gray-l:   #F1EFE8; --gray-d:   #2C2C2A;
+  --border:      #D3D1C7;
+  --text:        #1A1A1A; --text-m:   #5F5E5A; --text-s: #888780;
+  --bg:          #FFFFFF; --bg-soft:  #F8F7F4;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.7;color:var(--text);background:var(--bg);max-width:960px;margin:0 auto;padding:48px 40px 80px;}
+.cover{border-bottom:3px solid var(--purple);padding-bottom:40px;margin-bottom:56px;}
+.cover .app-name{font-size:52px;font-weight:700;color:var(--purple);letter-spacing:-1px;line-height:1;margin-bottom:8px;}
+.cover .doc-title{font-size:22px;color:var(--gray);font-weight:400;margin-bottom:24px;}
+.cover .meta{font-size:13px;color:var(--text-m);display:flex;flex-wrap:wrap;gap:24px;}
+.cover .meta span{display:flex;align-items:center;gap:6px;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--purple);flex-shrink:0;}
+h1{font-size:26px;font-weight:700;color:#fff;background:#1A1A2E;padding:14px 20px;border-radius:8px;margin:56px 0 24px;letter-spacing:-.3px;}
+h2{font-size:19px;font-weight:600;color:var(--purple);border-bottom:2px solid var(--purple-l);padding-bottom:6px;margin:40px 0 16px;}
+h3{font-size:16px;font-weight:600;color:var(--text);margin:28px 0 10px;}
+h4{font-size:14px;font-weight:600;color:var(--text-m);margin:18px 0 8px;text-transform:uppercase;letter-spacing:.05em;}
+p{margin-bottom:14px;}
+ul,ol{padding-left:24px;margin-bottom:14px;}
+li{margin-bottom:5px;}
+strong{font-weight:600;}
+code{font-family:'SF Mono',Menlo,'Courier New',monospace;font-size:12.5px;background:var(--gray-l);padding:2px 6px;border-radius:4px;color:var(--coral);}
+.callout{border-left:4px solid var(--purple);background:var(--purple-l);padding:12px 16px;border-radius:0 8px 8px 0;margin:18px 0;font-weight:600;color:var(--purple-d);font-size:13.5px;line-height:1.6;}
+.callout.teal{border-color:var(--teal);background:var(--teal-l);color:var(--teal-d);}
+.callout.amber{border-color:var(--amber);background:var(--amber-l);color:var(--amber-d);}
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:13px;}
+th{background:#1A1A2E;color:#fff;padding:8px 12px;text-align:left;font-weight:600;font-size:12px;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+tr:nth-child(even) td{background:var(--bg-soft);}
+tr:last-child td{border-bottom:none;}
+.badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.bp{background:var(--purple-l);color:var(--purple-d);}
+.bt{background:var(--teal-l);color:var(--teal-d);}
+.ba{background:var(--amber-l);color:var(--amber-d);}
+.bc{background:var(--coral-l);color:var(--coral-d);}
+.bg2{background:var(--gray-l);color:var(--gray);}
+.wf{background:var(--bg-soft);border:1px solid var(--border);border-radius:12px;padding:28px 20px;margin:24px 0;overflow-x:auto;}
+.wf-caption{font-size:12px;color:var(--text-s);text-align:center;margin-top:12px;font-style:italic;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:18px 0;}
+.spec-card{border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+.spec-card .label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-s);margin-bottom:6px;}
+.spec-card p{font-size:13px;margin-bottom:0;}
+hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
+.token-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;}
+.token{border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;}
+.token .tk{font-weight:600;color:var(--purple);font-family:monospace;font-size:11px;display:block;margin-bottom:2px;}
+.swatch{width:20px;height:20px;border-radius:4px;display:inline-block;vertical-align:middle;margin-right:6px;border:1px solid rgba(0,0,0,.08);}
+.change-log{background:var(--blue-l);border:1px solid var(--blue);border-radius:10px;padding:20px 24px;margin-bottom:40px;}
+.change-log h3{font-size:14px;font-weight:700;color:var(--blue-d);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em;}
+.new-badge{background:var(--blue-l);color:var(--blue-d);border:1px solid var(--blue);font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle;}
+.updated-badge{background:var(--amber-l);color:var(--amber-d);border:1px solid var(--amber);font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle;}
+@media print{body{max-width:100%;padding:20px;font-size:13px;}h1{break-before:page;}.wf{break-inside:avoid;}table{break-inside:avoid;}}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="app-name">niftyMomnt</div>
+  <div class="doc-title">UI/UX Specification — Screens, Flows &amp; Interaction Design</div>
+  <div class="meta">
+    <span><span class="dot"></span>Version 1.8</span>
+    <span><span class="dot"></span>March 2026</span>
+    <span><span class="dot"></span>Companion to PRD v1.6</span>
+    <span><span class="dot"></span>Han Wook Cho · hwcho99@gmail.com</span>
+    <span><span class="dot"></span>Confidential</span>
+  </div>
+</div>
+
+<div class="change-log">
+  <h3>v1.8 Change Log</h3>
+  <table>
+    <thead><tr><th>Section</th><th>Change</th><th>Driven by</th></tr></thead>
+    <tbody>
+      <tr><td>§4.1 Zone A</td><td>Height reduced 72pt → 64pt (matches iOS Camera proportions). Flash moved to Left ① (leftmost = iOS Camera muscle memory). Timer moved to Left ②. AF Lock removed as persistent icon — replaced with contextual overlay (§4.1a). Live Photo toggle added as Right ① persistent control. New §4.1a: AF/AE Lock contextual overlay spec.</td><td>v1.8 Zone A iOS Camera parity review</td></tr>
+      <tr><td>§4.1 Zone A wireframe</td><td>SVG wireframe updated: 64pt band, new icon positions, annotation labels corrected.</td><td>v1.8 Zone A iOS Camera parity review</td></tr>
+    </tbody>
+  </table>
+  <h3 style="margin-top:16px;">v1.7 Change Log</h3>
+  <table>
+    <thead><tr><th>Section</th><th>Change</th><th>Driven by</th></tr></thead>
+    <tbody>
+      <tr><td>§2.1 Color Tokens</td><td><code>--color-brand</code> updated #5B4FCF → #6B4EFF; <code>--color-accent-cyan</code> removed; <code>--color-accent-lavender</code> added (#C4B5FD)</td><td>v2.0 colour critique Q02</td></tr>
+      <tr><td>§2.2 Preset Accent Colours</td><td>Tokyo Neon accent updated #00E5CC → #C4B5FD</td><td>v2.0 colour critique Q02</td></tr>
+      <tr><td>§4.1 Zone A</td><td>Full Zone A spec rewrite: iOS 26 Liquid Glass overlay on preview (iOS Camera stacking), SVG icon pills (40×40pt), icon glyph specs</td><td>v2.0 design critique Q03 · iOS 26 Q01</td></tr>
+      <tr><td>§4.1 Zone C</td><td>Added preset peek swatches spec (5 colour dots, active swatch at 12pt)</td><td>v1.9 MZ changes</td></tr>
+      <tr><td>§4.1 Zones C/D</td><td>iOS 26 Liquid Glass updated on Zone C and Zone D backdrops</td><td>iOS 26 Q01</td></tr>
+      <tr><td>§4.5 (new)</td><td>New section: Post-Capture Overlay specification — sticker chips, location chip, share pill, animation tokens</td><td>PRD §3.9</td></tr>
+      <tr><td>§5 Film (was Journal)</td><td>Section renamed §5 Film Archive; all "Journal" references updated; layout updated to dark editorial; floating iOS 26 pill tab bar added; §5.4 (new) Film Archive Layout</td><td>v2.0 design critique Q04 · MZ design</td></tr>
+      <tr><td>§5.2 Moment Detail</td><td>Full spec added: Zone A (back/title/share), photo zone, sticker vibes, glass bottom sheet, action buttons</td><td>v2.0 design critique Q05</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>1. Design Principles</h1>
+
+<p>Every UI decision in niftyMomnt is anchored to four principles derived from the MRD user research and the PRD product philosophy.</p>
+
+<table>
+  <thead><tr><th>#</th><th>Principle</th><th>What it means in practice</th></tr></thead>
+  <tbody>
+    <tr><td>P-01</td><td><strong>Capture-first, always</strong></td><td>Open app = camera ready, every time. Zero taps between intent and capture. The viewfinder is never more than one gesture away from any screen.</td></tr>
+    <tr><td>P-02</td><td><strong>Feel effortless, look unfiltered</strong></td><td>UI chrome is minimal — it disappears during capture. Presets are always one tap away. The aesthetic feels like it happened naturally, not like it was engineered.</td></tr>
+    <tr><td>P-03</td><td><strong>Private by default, visible when chosen</strong></td><td>No sharing action is ever automatic. Every share is an explicit choice. The vault is the default state. Privacy UI is clear, never buried.</td></tr>
+    <tr><td>P-04</td><td><strong>Moments over metadata</strong></td><td>Tags, timestamps, and GPS are always secondary to the emotional character of the moment. The Film Archive shows vibes and feelings first — raw data is one tap deeper.</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>2. Design System</h1>
+
+<h2>2.1 Color Tokens</h2>
+<p>The design system uses a dual-surface model: the capture surface is always dark (regardless of system setting); the Film Archive uses a fixed dark editorial background (<code>--color-film-bg</code>). Vault and settings surfaces are system-adaptive. All tokens resolve correctly in both modes.</p>
+
+<div class="token-row">
+  <div class="token"><span class="tk">--color-capture-bg</span><span class="swatch" style="background:#0A0A0A;"></span>#0A0A0A — viewfinder background, always dark</div>
+  <div class="token"><span class="tk">--color-brand</span><span class="swatch" style="background:#6B4EFF;"></span>#6B4EFF — primary purple. Buttons, active states, tab active label. Deepened for stronger contrast on dark surfaces.</div>
+  <div class="token"><span class="tk">--color-brand-subtle</span><span class="swatch" style="background:#EAE8FC;"></span>#EAE8FC — purple tint backgrounds (light mode)</div>
+  <div class="token"><span class="tk">--color-accent-amber</span><span class="swatch" style="background:#BA7517;"></span>#BA7517 — warning states (Clip ring, Echo waveform)</div>
+  <div class="token"><span class="tk">--color-accent-amber-vivid</span><span class="swatch" style="background:#E8A020;"></span>#E8A020 — Amalfi preset accent, film strip counter, shutter ring (Amalfi active)</div>
+  <div class="token"><span class="tk">--color-accent-lavender</span><span class="swatch" style="background:#C4B5FD;"></span>#C4B5FD — Tokyo Neon preset accent, Film tab active state, Share button glyph, Moment Detail share button. Warm lavender, trending 2025–2026 in Gen Z apps.</div>
+  <div class="token"><span class="tk">--color-surface</span><span class="swatch" style="background:#FFFFFF;border:1px solid #e0e0e0;"></span>#FFFFFF light / #1A1A1A dark — card backgrounds</div>
+  <div class="token"><span class="tk">--color-surface-raised</span><span class="swatch" style="background:#F8F7F4;border:1px solid #e0e0e0;"></span>#F8F7F4 light / #242420 dark — elevated surfaces</div>
+  <div class="token"><span class="tk">--color-film-bg</span><span class="swatch" style="background:#0F0D0B;"></span>#0F0D0B — Film Archive screen background. Always dark (not adaptive). Warm near-black for editorial film aesthetic.</div>
+  <div class="token"><span class="tk">--color-text-primary</span><span class="swatch" style="background:#1A1A1A;"></span>#1A1A1A light / #F0EFE8 dark</div>
+  <div class="token"><span class="tk">--color-text-secondary</span><span class="swatch" style="background:#5F5E5A;"></span>#5F5E5A light / #9C9A92 dark</div>
+  <div class="token"><span class="tk">--color-border</span><span class="swatch" style="background:#D3D1C7;border:1px solid #ccc;"></span>#D3D1C7 light / #383835 dark</div>
+</div>
+
+<h2>2.2 Vibe Preset Accent Colors</h2>
+<p>Each vibe preset defines an accent color used for the Capture Hub shutter ring, the active mode indicator, and the Film card border accent when that preset was active.</p>
+<table>
+  <thead><tr><th>Preset</th><th>Accent color</th><th>Hex</th><th>Used on</th></tr></thead>
+  <tbody>
+    <tr><td>Film Roll</td><td><span class="swatch" style="background:#C8A882;"></span>Warm grain</td><td>#C8A882</td><td>Shutter ring, Film card border tint</td></tr>
+    <tr><td>Amalfi Golden</td><td><span class="swatch" style="background:#E8A020;"></span>Warm amber</td><td>#E8A020</td><td>Shutter ring, preset strip highlight</td></tr>
+    <tr><td>Tokyo Neon</td><td><span class="swatch" style="background:#C4B5FD;"></span>Soft lavender</td><td>#C4B5FD</td><td>Shutter ring, active mode dot, Film Archive card accent strip. Warm lavender retains a "neon night" editorial feel without the dated cyan-teal association.</td></tr>
+    <tr><td>Nordic Still</td><td><span class="swatch" style="background:#8EB4D4;"></span>Cool blue-gray</td><td>#8EB4D4</td><td>Shutter ring, preset strip highlight</td></tr>
+    <tr><td>Disposable</td><td><span class="swatch" style="background:#FF6B6B;"></span>Flash red-coral</td><td>#FF6B6B</td><td>Shutter ring, date stamp overlay</td></tr>
+  </tbody>
+</table>
+
+<h2>2.3 Typography</h2>
+<table>
+  <thead><tr><th>Token</th><th>Size / weight</th><th>Use</th></tr></thead>
+  <tbody>
+    <tr><td><code>--type-display</code></td><td>28px / 700</td><td>Moment label on hero card, onboarding headings</td></tr>
+    <tr><td><code>--type-title</code></td><td>20px / 600</td><td>Section headings, Nudge card question</td></tr>
+    <tr><td><code>--type-body</code></td><td>15px / 400</td><td>Body text, card descriptions</td></tr>
+    <tr><td><code>--type-caption</code></td><td>12px / 400</td><td>Vibe tags, timestamps, metadata lines</td></tr>
+    <tr><td><code>--type-label</code></td><td>11px / 600</td><td>Buttons, badges, mode labels</td></tr>
+    <tr><td><code>--type-ghost</code></td><td>28px / 600</td><td>Mode ghost label (E C H O) — letter-spacing: 0.25em</td></tr>
+  </tbody>
+</table>
+
+<h2>2.4 Spacing &amp; Radius</h2>
+<p>Base unit: 4px. All spacing values are multiples of 4. Corner radius: 12px for cards, 8px for chips and badges, 50% for circular elements (shutter, avatar). Safe area insets respected on all screens — no interactive element placed behind notch or home indicator.</p>
+
+<h2>2.5 Motion Principles</h2>
+<ul>
+  <li>Duration: micro-interactions 120–200ms; screen transitions 280–350ms; ghost label fade exactly 500ms.</li>
+  <li>Easing: <code>spring(response: 0.35, dampingFraction: 0.72)</code> for all positional animations. Linear for continuous (ring fill, waveform). EaseOut for fade-outs.</li>
+  <li>Reduced Motion: all animations respect <code>UIAccessibility.isReduceMotionEnabled</code>. Crossfades replace slides; static ring replaces animated fill.</li>
+</ul>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>3. Information Architecture</h1>
+
+<h2>3.1 Navigation Model</h2>
+<p>niftyMomnt uses a <strong>capture-first, swipe-up navigation model</strong>. The app opens directly to the Capture Hub viewfinder. Swiping up from anywhere on the capture screen reveals the Film Archive — the primary secondary surface. The Film Archive contains a bottom tab bar for navigating between Film, Vault, and Settings. The Capture Hub is always one swipe down from the Film Archive. The Film feed uses a dark editorial aesthetic consistent with the capture surface.</p>
+
+<div class="wf">
+<svg width="100%" viewBox="0 0 860 340" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="ab" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#6B4EFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <rect x="20" y="100" width="180" height="130" rx="10" fill="#0A0A10" stroke="#6B4EFF" stroke-width="2"/>
+  <rect x="20" y="100" width="180" height="32" rx="10" fill="#1A1A2E"/>
+  <rect x="20" y="122" width="180" height="10" fill="#1A1A2E"/>
+  <text x="110" y="122" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="600" fill="#EAE8FC">Capture Hub</text>
+  <text x="110" y="148" text-anchor="middle" font-family="system-ui" font-size="10" fill="#9C9A92">viewfinder · presets</text>
+  <text x="110" y="164" text-anchor="middle" font-family="system-ui" font-size="10" fill="#9C9A92">mode nav · shutter</text>
+  <text x="110" y="184" text-anchor="middle" font-family="system-ui" font-size="10" fill="#6B4EFF">HOME — app opens here</text>
+  <text x="110" y="220" text-anchor="middle" font-family="system-ui" font-size="10" fill="#534AB7">swipe up → Film</text>
+  <path d="M200 165 Q260 130 310 165" fill="none" stroke="#6B4EFF" stroke-width="1.5" marker-end="url(#ab)"/>
+  <text x="255" y="128" text-anchor="middle" font-family="system-ui" font-size="10" fill="#6B4EFF">swipe up</text>
+  <text x="255" y="142" text-anchor="middle" font-family="system-ui" font-size="10" fill="#6B4EFF">swipe down</text>
+  <path d="M310 185 Q260 220 200 185" fill="none" stroke="#888780" stroke-width="1" marker-end="url(#a)"/>
+  <rect x="312" y="60" width="180" height="130" rx="10" fill="#0F0D0B" stroke="#C4B5FD" stroke-width="1.5"/>
+  <rect x="312" y="60" width="180" height="30" rx="10" fill="#1A1520"/>
+  <rect x="312" y="80" width="180" height="10" fill="#1A1520"/>
+  <text x="402" y="80" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="600" fill="#fff">Film</text>
+  <text x="402" y="106" text-anchor="middle" font-family="system-ui" font-size="10" fill="#9C9A92">roll cards · thumbnail strips</text>
+  <text x="402" y="122" text-anchor="middle" font-family="system-ui" font-size="10" fill="#9C9A92">vibe tags · ambient meta</text>
+  <text x="402" y="138" text-anchor="middle" font-family="system-ui" font-size="10" fill="#C4B5FD">floating glass tab bar</text>
+  <text x="402" y="178" text-anchor="middle" font-family="system-ui" font-size="10" fill="#C4B5FD">tab ① · lavender active</text>
+  <line x1="492" y1="125" x2="528" y2="125" stroke="#C4B5FD" stroke-width="1" marker-end="url(#a)"/>
+  <text x="510" y="118" text-anchor="middle" font-family="system-ui" font-size="9" fill="#C4B5FD">tab</text>
+  <rect x="530" y="60" width="150" height="130" rx="10" fill="#12100C" stroke="#F07C5C" stroke-width="1.5"/>
+  <rect x="530" y="60" width="150" height="30" rx="10" fill="#2A1810"/>
+  <rect x="530" y="80" width="150" height="10" fill="#2A1810"/>
+  <text x="605" y="80" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="600" fill="#F5F0E8">Vault</text>
+  <text x="605" y="106" text-anchor="middle" font-family="system-ui" font-size="10" fill="#9C9A92">private archive</text>
+  <text x="605" y="122" text-anchor="middle" font-family="system-ui" font-size="10" fill="#9C9A92">Face ID gated</text>
+  <text x="605" y="138" text-anchor="middle" font-family="system-ui" font-size="10" fill="#9C9A92">share flow entry</text>
+  <text x="605" y="178" text-anchor="middle" font-family="system-ui" font-size="10" fill="#F07C5C">tab bar item ②</text>
+  <line x1="680" y1="125" x2="716" y2="125" stroke="#C4B5FD" stroke-width="1" marker-end="url(#a)"/>
+  <text x="698" y="118" text-anchor="middle" font-family="system-ui" font-size="9" fill="#C4B5FD">tab</text>
+  <rect x="718" y="60" width="122" height="130" rx="10" fill="#0F0D0B" stroke="#888780" stroke-width="1.5"/>
+  <rect x="718" y="60" width="122" height="30" rx="10" fill="#1C1A16"/>
+  <rect x="718" y="80" width="122" height="10" fill="#1C1A16"/>
+  <text x="779" y="80" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="600" fill="#F5F0E8">Settings</text>
+  <text x="779" y="106" text-anchor="middle" font-family="system-ui" font-size="10" fill="#9C9A92">AI &amp; Privacy</text>
+  <text x="779" y="122" text-anchor="middle" font-family="system-ui" font-size="10" fill="#9C9A92">Presets &amp; Style</text>
+  <text x="779" y="138" text-anchor="middle" font-family="system-ui" font-size="10" fill="#9C9A92">Storage &amp; Sync</text>
+  <text x="779" y="178" text-anchor="middle" font-family="system-ui" font-size="10" fill="#C4B5FD">tab bar item ③</text>
+  <line x1="402" y1="190" x2="310" y2="248" stroke="#888780" stroke-width="1" marker-end="url(#a)"/>
+  <line x1="402" y1="190" x2="402" y2="248" stroke="#888780" stroke-width="1" marker-end="url(#a)"/>
+  <line x1="402" y1="190" x2="494" y2="248" stroke="#888780" stroke-width="1" marker-end="url(#a)"/>
+  <rect x="240" y="250" width="130" height="48" rx="7" fill="rgba(196,181,253,0.12)" stroke="#C4B5FD" stroke-width="0.8"/>
+  <text x="305" y="270" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#EAE8FC">Moment Detail</text>
+  <text x="305" y="288" text-anchor="middle" font-family="system-ui" font-size="10" fill="#C4B5FD">full-bleed · stickers · sheet</text>
+  <rect x="382" y="250" width="130" height="48" rx="7" fill="rgba(107,78,255,0.10)" stroke="#6B4EFF" stroke-width="0.8"/>
+  <text x="447" y="270" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#EAE8FC">Reel Editor</text>
+  <text x="447" y="288" text-anchor="middle" font-family="system-ui" font-size="10" fill="#9C9A92">assemble · caption · share</text>
+  <rect x="524" y="250" width="130" height="48" rx="7" fill="rgba(232,160,32,0.10)" stroke="#E8A020" stroke-width="0.8"/>
+  <text x="589" y="270" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#EAE8FC">Map View</text>
+  <text x="589" y="288" text-anchor="middle" font-family="system-ui" font-size="10" fill="#E8A020">GPS path · Mood Map</text>
+  <rect x="20" y="255" width="176" height="68" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="108" y="276" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#633806">Nudge Card</text>
+  <text x="108" y="294" text-anchor="middle" font-family="system-ui" font-size="10" fill="#854F0B">bottom-sheet · any surface</text>
+  <text x="108" y="312" text-anchor="middle" font-family="system-ui" font-size="10" fill="#854F0B">triggered post-capture</text>
+</svg>
+<div class="wf-caption">Figure 1 — Information architecture. App opens to Capture Hub (dark). Swipe up → Film Archive (dark editorial #0F0D0B). Floating glass pill tab bar with lavender active state. Vault &amp; Settings use dark surfaces. Moment Detail is a first-class drill-down from Film. Nudge card floats over any surface.</div>
+</div>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>4. Capture Hub</h1>
+
+<h2>4.1 Screen Layout</h2>
+<p>The Capture Hub is a full-bleed dark viewfinder with <strong>four UI zones</strong>, redesigned for iOS 26 and MZ users. The old five-zone layout (top bar / viewfinder / preset strip / mode zone / shutter row) has been consolidated: the preset strip is replaced by a single active-preset bar, the mode swipe zone is elevated into a persistent bottom anchor, and the shutter row is simplified. All overlay surfaces use <strong>iOS 26 Liquid Glass</strong> — <code>backdrop-filter</code> with calibrated <code>blur</code>, <code>saturate</code>, and <code>brightness</code> (see zone specs below) — instead of deprecated flat black-only frosted stacks. This gives controls depth and native feel.</p>
+
+<div class="callout">iOS 26 material rule: every overlay surface in the Capture Hub — top bar, preset bar, mode anchor, shutter row — must use the Liquid Glass formula specified per zone (e.g. <code>blur(28px) saturate(200%) brightness(1.12)</code> on Zone A). Do not use flat <code>rgba(0,0,0,.36) blur(20px)</code> alone — that pattern is the deprecated iOS 17/18 frosted glass specification. Flat <code>rgba(0,0,0,x)</code> without the saturate+brightness treatment is prohibited on the capture surface. This is a hard engineering constraint, not a visual preference.</div>
+
+<!-- Capture Hub Wireframe v1.8 — Zone A updated: 64pt, Flash LEFT, Live Photo RIGHT -->
+<div class="wf">
+<svg width="100%" viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="glassTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.18)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.04)"/>
+    </linearGradient>
+    <linearGradient id="glassBottom" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.08)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.16)"/>
+    </linearGradient>
+    <radialGradient id="shutterDepth" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="70%" stop-color="#e8e8e8"/>
+      <stop offset="100%" stop-color="#cccccc"/>
+    </radialGradient>
+    <filter id="blur4">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- Phone frame -->
+  <rect x="280" y="8" width="320" height="578" rx="40" fill="#0A0A0A" stroke="#2A2A2A" stroke-width="2"/>
+  <!-- Screen base -->
+  <rect x="290" y="18" width="300" height="558" rx="32" fill="#14100A"/>
+
+  <!-- Dynamic Island — own row y=22–54; does NOT overlap Zone A -->
+  <rect x="377" y="22" width="126" height="32" rx="16" fill="#000"/>
+  <circle cx="391" cy="38" r="4" fill="#E8A020"/>
+  <text x="399" y="41" font-family="system-ui" font-size="8" font-weight="600" fill="rgba(255,255,255,0.5)">AMALFI</text>
+  <g transform="translate(483,30)">
+    <circle cx="8.5" cy="8.5" r="7.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="2"/>
+    <path d="M8.5 1 A7.5 7.5 0 0 1 16 8.5" fill="none" stroke="#E8A020" stroke-width="2" stroke-linecap="round"/>
+    <text x="8.5" y="10" text-anchor="middle" font-family="system-ui" font-size="6" font-weight="700" fill="rgba(255,255,255,0.7)">17</text>
+  </g>
+
+  <!-- Zone B — camera preview: full-bleed from just below DI (y=54) through Zone A -->
+  <rect x="290" y="54" width="300" height="410" fill="#14100A"/>
+  <rect x="290" y="54" width="300" height="180" fill="#2D1F08" opacity="0.5"/>
+  <rect x="290" y="200" width="300" height="230" fill="#160E04"/>
+  <ellipse cx="390" cy="89" rx="80" ry="58" fill="#7A4A10" opacity="0.22" filter="url(#blur4)"/>
+  <ellipse cx="478" cy="129" rx="58" ry="76" fill="#4A2808" opacity="0.28" filter="url(#blur4)"/>
+  <rect x="290" y="264" width="300" height="200" fill="#0E0904" opacity="0.78"/>
+
+  <!-- Zone A — Liquid Glass overlay ON the live preview. Height 64pt (v1.8). y=54 to y=118. -->
+  <!-- Icon centres at cy=86 (= 54 + 32). -->
+  <rect x="290" y="54" width="300" height="64" fill="rgba(8,8,8,0.22)"/>
+  <rect x="290" y="54" width="300" height="64" fill="url(#glassTop)" opacity="0.80"/>
+  <line x1="290" y1="118" x2="590" y2="118" stroke="rgba(255,255,255,0.10)" stroke-width="0.5"/>
+
+  <!-- LEFT ①: Flash — amber pill (leftmost = iOS Camera muscle memory) -->
+  <circle cx="318" cy="86" r="20" fill="rgba(232,160,32,0.18)" stroke="rgba(232,160,32,0.40)" stroke-width="0.5"/>
+  <g transform="translate(306,74) scale(0.65)">
+    <path d="M9.5 1L2 10H7L5.5 17L13 8H8L9.5 1Z" fill="rgba(232,160,32,0.92)"/>
+  </g>
+
+  <!-- LEFT ②: Timer — neutral pill -->
+  <circle cx="360" cy="86" r="20" fill="rgba(255,255,255,0.09)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+  <g transform="translate(351,77)">
+    <circle cx="9" cy="10.5" r="5.5" stroke="rgba(255,255,255,0.82)" stroke-width="1.2" fill="none"/>
+    <path d="M9 8.5V10.8L10.6 12" stroke="rgba(255,255,255,0.82)" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M7 2.5H11" stroke="rgba(255,255,255,0.82)" stroke-width="1.2" stroke-linecap="round"/>
+  </g>
+
+  <!-- CENTER: Film Strip Counter — 7 amber + 2 empty chips + "17 left" -->
+  <rect x="392" y="78" width="6" height="10" rx="1.5" fill="#E8A020" stroke="#BA7517" stroke-width="0.5"/>
+  <rect x="400" y="78" width="6" height="10" rx="1.5" fill="#E8A020" stroke="#BA7517" stroke-width="0.5"/>
+  <rect x="408" y="78" width="6" height="10" rx="1.5" fill="#E8A020" stroke="#BA7517" stroke-width="0.5"/>
+  <rect x="416" y="78" width="6" height="10" rx="1.5" fill="#E8A020" stroke="#BA7517" stroke-width="0.5"/>
+  <rect x="424" y="78" width="6" height="10" rx="1.5" fill="#E8A020" stroke="#BA7517" stroke-width="0.5"/>
+  <rect x="432" y="78" width="6" height="10" rx="1.5" fill="#E8A020" stroke="#BA7517" stroke-width="0.5"/>
+  <rect x="440" y="78" width="6" height="10" rx="1.5" fill="#E8A020" stroke="#BA7517" stroke-width="0.5"/>
+  <rect x="448" y="78" width="6" height="10" rx="1.5" fill="rgba(255,255,255,0.09)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+  <rect x="456" y="78" width="6" height="10" rx="1.5" fill="rgba(255,255,255,0.09)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+  <text x="480" y="90" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="700" fill="rgba(255,255,255,0.92)">17 left</text>
+
+  <!-- RIGHT ①: Live Photo toggle — neutral pill (replaces AF Lock) -->
+  <circle cx="540" cy="86" r="20" fill="rgba(255,255,255,0.09)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+  <!-- Live Photo icon: small circle with concentric ring + motion dots -->
+  <g transform="translate(531,77)">
+    <circle cx="9" cy="9" r="5" stroke="rgba(255,255,255,0.82)" stroke-width="1.2" fill="none"/>
+    <circle cx="9" cy="9" r="2" fill="rgba(255,255,255,0.82)"/>
+    <circle cx="9" cy="2" r="1" fill="rgba(255,255,255,0.45)"/>
+    <circle cx="9" cy="16" r="1" fill="rgba(255,255,255,0.45)"/>
+    <circle cx="2" cy="9" r="1" fill="rgba(255,255,255,0.45)"/>
+    <circle cx="16" cy="9" r="1" fill="rgba(255,255,255,0.45)"/>
+  </g>
+
+  <!-- RIGHT ②: More — neutral pill -->
+  <circle cx="576" cy="86" r="20" fill="rgba(255,255,255,0.09)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+  <g transform="translate(567,77)">
+    <circle cx="4.5" cy="9" r="1.5" fill="rgba(255,255,255,0.78)"/>
+    <circle cx="9" cy="9" r="1.5" fill="rgba(255,255,255,0.78)"/>
+    <circle cx="13.5" cy="9" r="1.5" fill="rgba(255,255,255,0.78)"/>
+  </g>
+
+  <!-- Mode anchor -->
+  <text x="440" y="438" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="600" letter-spacing="5" fill="rgba(255,255,255,0.40)">CLIP</text>
+  <circle cx="416" cy="450" r="2.5" fill="rgba(255,255,255,0.22)"/>
+  <circle cx="440" cy="450" r="3.5" fill="rgba(255,255,255,0.65)"/>
+  <circle cx="464" cy="450" r="2.5" fill="rgba(255,255,255,0.22)"/>
+
+  <!-- Zone C — preset bar 46pt -->
+  <rect x="290" y="464" width="300" height="46" fill="rgba(0,0,0,0.26)"/>
+  <rect x="290" y="464" width="300" height="46" fill="url(#glassBottom)"/>
+  <line x1="290" y1="464" x2="590" y2="464" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+  <rect x="290" y="464" width="300" height="2" fill="#E8A020" opacity="0.88"/>
+  <circle cx="304" cy="487" r="4.5" fill="#E8A020"/>
+  <text x="318" y="493" font-family="system-ui" font-size="17" font-weight="900" letter-spacing="0.5" fill="rgba(255,255,255,0.95)">AMALFI</text>
+  <circle cx="402" cy="487" r="4.5" fill="#C8A882" stroke="rgba(255,255,255,0.14)" stroke-width="0.5" opacity="0.5"/>
+  <circle cx="415" cy="487" r="6" fill="#E8A020" stroke="rgba(255,255,255,0.38)" stroke-width="0.5"/>
+  <circle cx="428" cy="487" r="4.5" fill="#C4B5FD" stroke="rgba(255,255,255,0.14)" stroke-width="0.5" opacity="0.5"/>
+  <circle cx="441" cy="487" r="4.5" fill="#8EB4D4" stroke="rgba(255,255,255,0.14)" stroke-width="0.5" opacity="0.5"/>
+  <circle cx="454" cy="487" r="4.5" fill="#FF6B6B" stroke="rgba(255,255,255,0.14)" stroke-width="0.5" opacity="0.5"/>
+  <text x="556" y="493" text-anchor="end" font-family="system-ui" font-size="12" fill="rgba(255,255,255,0.46)">hold</text>
+
+  <!-- Zone D — shutter row -->
+  <rect x="290" y="510" width="300" height="66" fill="rgba(0,0,0,0.30)"/>
+  <rect x="290" y="510" width="300" height="66" fill="url(#glassBottom)"/>
+  <line x1="290" y1="510" x2="590" y2="510" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+  <circle cx="440" cy="543" r="33" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="2.5"/>
+  <circle cx="440" cy="543" r="33" fill="none" stroke="#E8A020" stroke-width="2.5"
+          stroke-dasharray="124 207" stroke-dashoffset="0" transform="rotate(-90 440 543)"/>
+  <circle cx="440" cy="543" r="27" fill="url(#shutterDepth)" stroke="rgba(0,0,0,0.12)" stroke-width="0.5"/>
+  <circle cx="440" cy="543" r="22" fill="none" stroke="rgba(232,160,32,0.48)" stroke-width="1.5"/>
+  <text x="440" y="549" text-anchor="middle" font-family="system-ui" font-size="17" font-weight="700" fill="#E8A020">8</text>
+  <rect x="301" y="519" width="58" height="42" rx="11" fill="#1C1208" stroke="rgba(255,255,255,0.13)" stroke-width="1"/>
+  <text x="330" y="533" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="500" fill="rgba(255,255,255,0.38)">last</text>
+  <rect x="308" y="538" width="44" height="12" rx="3" fill="#E8A020"/>
+  <text x="330" y="547" text-anchor="middle" font-family="system-ui" font-size="7" font-weight="800" fill="#000">▶ LIVE</text>
+  <text x="534" y="538" text-anchor="middle" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.46)">double-tap</text>
+  <text x="534" y="552" text-anchor="middle" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.46)">to flip</text>
+
+  <!-- Home indicator -->
+  <rect x="390" y="566" width="100" height="4" rx="2" fill="rgba(255,255,255,0.25)"/>
+
+  <!-- ANNOTATION LINES — LEFT -->
+  <line x1="288" y1="86" x2="155" y2="52" stroke="#6B4EFF" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="151" y="46" text-anchor="end" font-family="system-ui" font-size="11" fill="#6B4EFF">A — Top bar · 64pt</text>
+  <text x="151" y="58" text-anchor="end" font-family="system-ui" font-size="10" fill="#888">Liquid Glass overlay · on preview</text>
+
+  <line x1="288" y1="318" x2="155" y2="220" stroke="#BA7517" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="151" y="214" text-anchor="end" font-family="system-ui" font-size="11" fill="#BA7517">B — Viewfinder</text>
+  <text x="151" y="226" text-anchor="end" font-family="system-ui" font-size="10" fill="#888">Full bleed · no chrome mid-frame</text>
+
+  <line x1="288" y1="444" x2="155" y2="432" stroke="#888" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="151" y="426" text-anchor="end" font-family="system-ui" font-size="11" fill="#888">Mode anchor</text>
+  <text x="151" y="438" text-anchor="end" font-family="system-ui" font-size="10" fill="#888">12pt/600 · letter-spacing 5px</text>
+
+  <line x1="288" y1="487" x2="155" y2="487" stroke="#E8A020" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="151" y="483" text-anchor="end" font-family="system-ui" font-size="11" fill="#E8A020">C — Preset bar · 46pt</text>
+  <text x="151" y="495" text-anchor="end" font-family="system-ui" font-size="10" fill="#888">9pt dot · 17/900 name · swatches</text>
+
+  <line x1="288" y1="543" x2="155" y2="543" stroke="#C4B5FD" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="151" y="537" text-anchor="end" font-family="system-ui" font-size="11" fill="#C4B5FD">D — Shutter row</text>
+  <text x="151" y="549" text-anchor="end" font-family="system-ui" font-size="10" fill="#888">58×42 thumb · ▶ LIVE · ~60% arc</text>
+
+  <!-- ANNOTATION LINES — RIGHT -->
+  <line x1="592" y1="38" x2="720" y2="38" stroke="#888" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="724" y="34" font-family="system-ui" font-size="10" fill="#888">Dynamic Island · di-std</text>
+  <text x="724" y="46" font-family="system-ui" font-size="10" fill="#888">AMALFI preset + roll arc (17)</text>
+
+  <line x1="592" y1="86" x2="720" y2="68" stroke="#E8A020" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="724" y="56" font-family="system-ui" font-size="10" fill="#E8A020">LEFT ①: Flash (amber active)</text>
+  <text x="724" y="68" font-family="system-ui" font-size="10" fill="#888">LEFT ②: Timer</text>
+  <text x="724" y="80" font-family="system-ui" font-size="10" fill="#888">RIGHT ①: Live · RIGHT ②: More</text>
+
+  <line x1="592" y1="487" x2="720" y2="465" stroke="#E8A020" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="724" y="457" font-family="system-ui" font-size="10" fill="#E8A020">Accent color bar = 2pt</text>
+  <text x="724" y="469" font-family="system-ui" font-size="10" fill="#E8A020">top edge of preset bar</text>
+  <text x="724" y="481" font-family="system-ui" font-size="10" fill="#E8A020">matches active preset</text>
+
+  <line x1="592" y1="543" x2="720" y2="515" stroke="#E8A020" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="724" y="509" font-family="system-ui" font-size="10" fill="#E8A020">90pt-class ring · 72pt body</text>
+  <text x="724" y="521" font-family="system-ui" font-size="10" fill="#E8A020">58pt inner · countdown</text>
+</svg>
+<div class="wf-caption">Figure 2 — Capture Hub v1.8. <strong>Live preview is full-bleed from just below the Dynamic Island</strong> to the top of Zone C (same vertical stacking as iOS Camera). <strong>Zone A</strong> is a <strong>64pt Liquid Glass overlay on the preview</strong>. Icon order (left → right): <strong>Flash ①</strong> (amber, leftmost — iOS Camera parity) · <strong>Timer ②</strong> · Film Strip Counter (centre) · <strong>Live Photo ①</strong> (right) · <strong>More ②</strong> (right). AF Lock is contextual (§4.1a) — not a persistent button.</div>
+</div>
+
+<div class="two-col">
+  <div class="spec-card">
+    <div class="label">Change 1 — Preset bar replaces strip</div>
+    <p>The five-circle horizontal strip is replaced by a single <strong>active-preset name bar</strong> spanning the full width. The preset name (e.g., AMALFI) is displayed in spaced caps with a 5pt accent dot matching the preset color. A 2pt color strip runs along the top edge of the bar. Swipe left/right on the bar to cycle presets. Long-press expands a full preset picker overlay from the bottom — discovery interaction, not always-visible menu.</p>
+  </div>
+  <div class="spec-card">
+    <div class="label">Change 2 — Flip moved to gesture</div>
+    <p>The flip camera button is removed from the shutter row entirely. <strong>Double-tap anywhere on the viewfinder</strong> flips the camera, matching the gesture users already know from native iOS Camera (introduced iOS 17). This frees the shutter row to breathe — only the last-capture thumbnail and the shutter remain. A ghost hint "double-tap to flip" is shown once per session for new users, then never again.</p>
+  </div>
+  <div class="spec-card">
+    <div class="label">Change 3 — Liquid Glass materials</div>
+    <p>All overlay surfaces — top bar, preset bar, shutter row — use iOS 26 Liquid Glass (<code>backdrop-filter</code> with zone-specific blur, saturate, and brightness). They refract and blur the viewfinder content behind them, creating depth rather than blocking it. The top bar feels like it floats above the viewfinder. The shutter row feels physically present without masking the scene.</p>
+  </div>
+  <div class="spec-card">
+    <div class="label">Change 4 — Persistent mode anchor</div>
+    <p>The invisible swipe zone is replaced by a <strong>persistent mode name</strong> rendered at 28% opacity at the base of the viewfinder, with three dot indicators (previous · active · next) below it. The active dot is larger and at 55% opacity. This gives the swipe gesture a visible anchor without adding real chrome — the label is decorative but also functional orientation.</p>
+  </div>
+</div>
+
+<h3>Zone A — Top Bar <span class="updated-badge">UPDATED v1.8</span></h3>
+
+<p><strong>Stacking (iOS Camera–like):</strong> The <strong>camera preview</strong> fills the screen from <strong>just below the Dynamic Island</strong> through the main capture area. Zone A is a <strong>semi-transparent Liquid Glass layer on top of the live preview</strong> — controls sit <strong>on</strong> the preview, not in a separate opaque strip that shortens the preview. The Dynamic Island remains in its own row and does not overlap Zone A content.</p>
+
+<p><strong>Height:</strong> 64pt (v1.8 — reduced from 72pt to match iOS Camera proportions). The 64pt height accommodates 40×40pt icon pills with 12pt top padding and 12pt bottom padding while remaining proportionally consistent with native iOS Camera.</p>
+
+<p><strong>Material (iOS 26 Liquid Glass):</strong><br/>
+<code>background: rgba(8,8,8,.22); backdrop-filter: blur(28px) saturate(200%) brightness(1.12); -webkit-backdrop-filter: blur(28px) saturate(200%) brightness(1.12);</code><br/>
+Inner edge glows: <code>box-shadow: inset 0 1px 0 rgba(255,255,255,.07), inset 0 -1px 0 rgba(255,255,255,.04);</code><br/>
+Bottom border: <code>border-bottom: .5px solid rgba(255,255,255,.10);</code><br/>
+<strong>Do not use flat <code>rgba(0,0,0,.36) blur(20px)</code> — this is the deprecated iOS 17/18 frosted glass specification. iOS 26 requires the saturate+brightness formula above.</strong></p>
+
+<p><strong>Layout:</strong> Left group (2 icon pills) | Flex center (Film Strip Counter) | Right group (2 icon pills). Gap between pills: 8pt. Padding: 12pt top, 14pt left/right. Icon center y = Zone A top + 32pt.</p>
+
+<h4>Icon Pills — Specification</h4>
+
+<p>All four Zone A controls use the identical pill container with the following spec:</p>
+
+<div class="two-col">
+  <div class="spec-card">
+    <div class="label">Pill container — default (inactive)</div>
+    <p>Size: 40×40pt circular.<br/>Background: <code>rgba(255,255,255,.09)</code><br/>Border: <code>.5px solid rgba(255,255,255,.12)</code><br/>Backdrop: <code>blur(10px) saturate(160%)</code><br/>Inner glow: <code>inset 0 1px 0 rgba(255,255,255,.08)</code></p>
+  </div>
+  <div class="spec-card">
+    <div class="label">Pill container — active state</div>
+    <p>Size: 40×40pt circular.<br/>Background: <code>rgba(232,160,32,.18)</code><br/>Border: <code>.5px solid rgba(232,160,32,.40)</code><br/>Use for: Flash (when On — default active), Timer (when timer is set). Live Photo uses white-tinted active: <code>rgba(255,255,255,.20)</code>.</p>
+  </div>
+</div>
+
+<table>
+  <thead><tr><th>Position</th><th>Function</th><th>Icon description</th><th>SVG guidance</th><th>Default state</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Left ①</td>
+      <td>Flash</td>
+      <td>Filled lightning bolt</td>
+      <td>Filled path (not stroked). Fill: <code>rgba(232,160,32,.92)</code> (On) or <code>rgba(255,255,255,.50)</code> (Off). Never use ⚡ emoji. Pill uses amber active treatment when Flash is On.</td>
+      <td><strong>On (amber)</strong> — Flash defaults on for most lighting conditions. This is the leftmost position, matching iOS Camera muscle memory.</td>
+    </tr>
+    <tr>
+      <td>Left ②</td>
+      <td>Self-Timer</td>
+      <td>Clock face with hands indicating a countdown; top crown bar</td>
+      <td>Circle <code>r=5.5</code> centred at (9,10.5); clock hands as path pointing 10 and 2; crown as horizontal line at top. Stroke: <code>rgba(255,255,255,.82)</code>, weight 1.3. Never use ⏱ emoji.</td>
+      <td>Off (neutral pill) — amber active pill when timer is set to 3s or 10s</td>
+    </tr>
+    <tr>
+      <td>Right ①</td>
+      <td>Live Photo</td>
+      <td>Centre circle (filled dot) + concentric ring + four cardinal dots at compass points</td>
+      <td>Centre circle <code>r=2</code> filled. Outer ring <code>r=5</code> stroked. Four dots <code>r=1</code> at top/bottom/left/right at <code>r=7</code>. Stroke/fill: <code>rgba(255,255,255,.82)</code>. Never use emoji. Active state: white-tinted pill <code>rgba(255,255,255,.20)</code> with filled glyph.</td>
+      <td>On (white-tint active) when in Live mode; Off (neutral) in Still/Clip/Echo/Atmosphere</td>
+    </tr>
+    <tr>
+      <td>Right ②</td>
+      <td>More / Overflow</td>
+      <td>Three horizontal dots</td>
+      <td>Three circles, <code>r=1.5</code>, equally spaced horizontally. Fill: <code>rgba(255,255,255,.78)</code>. Never use ··· or … text characters.</td>
+      <td>Always neutral pill. Tap opens overflow tray (aspect ratio, grid overlay, exposure lock, histogram).</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4>Film Strip Counter — Zone A Centre</h4>
+
+<p>The centre of Zone A displays the Film Strip Counter — a visual indicator of used/remaining shots in the current roll (Roll Mode only; hidden if Roll Mode is off).</p>
+
+<table>
+  <thead><tr><th>Element</th><th>Spec</th></tr></thead>
+  <tbody>
+    <tr><td>Film frame strip</td><td>Row of 9 frame chips (7×10pt each, 1.5px border-radius, 2pt gap). Used frames: amber fill <code>#E8A020</code> with <code>#BA7517</code> border. Empty frames: <code>rgba(255,255,255,.09)</code> background. Roll-complete state: all frames amber with 4pt glow <code>rgba(232,160,32,.4)</code>.</td></tr>
+    <tr><td>Shot counter</td><td>Numeric label to the right of the strip. Format: "N left". 14px/700. Color: <code>rgba(255,255,255,.92)</code>. At zero (roll complete): amber <code>#E8A020</code>.</td></tr>
+    <tr><td>Dynamic Island integration</td><td>When Roll Mode is active: Dynamic Island shows preset name (dot + name, 8px/600) on the left and shot arc countdown on the right (17×17pt ring, amber fill from top). The arc represents shots-used / total-shots as a radial fill.</td></tr>
+    <tr><td>Hidden state</td><td>When Roll Mode is off, the centre of Zone A is empty — only the left and right icon groups are visible. No placeholder element.</td></tr>
+  </tbody>
+</table>
+
+<h3>Zone A — §4.1a: AF/AE Lock — Contextual Overlay <span class="new-badge">NEW v1.8</span></h3>
+
+<p>AF Lock is <strong>not a persistent top-bar button</strong>. It is a contextual state indicator that appears only when the user has locked focus and exposure by tap-holding the viewfinder. This matches the iOS Camera pattern exactly. Engineering must not render an AF Lock button in Zone A at any time.</p>
+
+<table>
+  <thead><tr><th>Trigger</th><th>Visual</th><th>Dismiss</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>User tap-holds anywhere on the live viewfinder for 600ms+</td>
+      <td>A yellow banner pill appears at the top of the viewfinder, horizontally centred, 20pt below Zone A bottom edge. Content: "AE/AF LOCK" in 11px/700, letter-spacing .08em, color <code>#E8A020</code>. Pill background: <code>rgba(232,160,32,.18)</code>, border: <code>.5px solid rgba(232,160,32,.40)</code>, border-radius: 20px. Entrance: fade + scale from 0.88 over 240ms ease-out. A pulsing amber dot (4pt, opacity 0.6→1.0, 1.2s loop) appears at the tap point.</td>
+      <td>Single tap anywhere on the viewfinder removes the lock and dismisses both the banner and the dot. Changing mode (swipe) also dismisses.</td>
+    </tr>
+    <tr>
+      <td>Lock active + Flash fires</td>
+      <td>The AE/AE LOCK banner dims to 40% opacity during the flash burst (80ms) and returns to full opacity after.</td>
+      <td>—</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout amber">Implementation note: the tap-hold gesture for AF/AE Lock must not conflict with the double-tap gesture for camera flip. The tap-hold (600ms hold) is detected independently by a UILongPressGestureRecognizer. Double-tap (UITapGestureRecognizer with numberOfTapsRequired: 2) is a distinct gesture. They do not interfere because a double-tap completes in under 600ms.</div>
+
+<h3>Zone C — Preset Bar — Peek Swatches <span class="new-badge">NEW v1.7</span></h3>
+
+<p>In addition to the existing preset name and hold hint, Zone C now includes a horizontal row of five preset colour swatches immediately to the right of the preset name. These show the user which other presets are available without requiring them to enter the preset picker.</p>
+
+<table>
+  <thead><tr><th>Element</th><th>Spec</th></tr></thead>
+  <tbody>
+    <tr><td>Swatch row</td><td>5 circular colour dots, 12px gap between</td></tr>
+    <tr><td>Active preset swatch</td><td>12×12pt dot, opacity 1.0, border <code>rgba(255,255,255,.38)</code></td></tr>
+    <tr><td>Inactive preset swatches</td><td>9×9pt dots, opacity 0.50, border <code>rgba(255,255,255,.14)</code></td></tr>
+    <tr><td>Order</td><td>Left of active: adjacent presets; active swatch centred; right of active: remaining presets. Swipe on the swatch row scrolls preset selection.</td></tr>
+    <tr><td>Zone C material</td><td>iOS 26 Liquid Glass: <code>background: rgba(0,0,0,.26); backdrop-filter: blur(28px) saturate(180%) brightness(1.08)</code>.</td></tr>
+  </tbody>
+</table>
+
+<h3>Zone D — Shutter Row Backdrop</h3>
+<p>Zone D uses iOS 26 Liquid Glass consistent with the capture surface: apply <code>backdrop-filter: blur(28px) saturate(200%) brightness(1.12)</code> over a dark translucent base (e.g. <code>rgba(0,0,0,.28)</code>–<code>.35</code>), plus inner edge treatment matching Zone C. Do not use flat opaque black fills without the blur stack.</p>
+
+<h2>4.2 Mode Navigation — Swipe Interaction</h2>
+<table>
+  <thead><tr><th>Gesture</th><th>Target zone</th><th>Result</th><th>Feedback</th></tr></thead>
+  <tbody>
+    <tr><td>Swipe left</td><td>Lower third of viewfinder (mode anchor zone)</td><td>Advance mode: Still→Live→Clip→Echo→Atmosphere→Still</td><td>Mode anchor label updates. Ghost label flashes at 10% opacity center-frame (500ms). Dot indicators shift. Subtle haptic.</td></tr>
+    <tr><td>Swipe right</td><td>Lower third</td><td>Reverse mode sequence</td><td>Same as above.</td></tr>
+    <tr><td>Fast swipe (&gt;800pt/s)</td><td>Lower third</td><td>Advance exactly one mode (no skip)</td><td>Same as above.</td></tr>
+    <tr><td>Swipe left / right</td><td>Preset bar (Zone C)</td><td>Cycle to next / previous preset</td><td>Preset name updates in place with a crossfade (120ms). Accent dot and 2pt top-strip color transition. Shutter ring color updates. Subtle haptic.</td></tr>
+    <tr><td>Long-press</td><td>Preset bar (Zone C)</td><td>Expand full preset picker overlay from bottom</td><td>Overlay slides up over the shutter row. Shows all presets as large swatches with names and vibe descriptors. Tap to select. Swipe down to dismiss.</td></tr>
+    <tr><td>Double-tap</td><td>Anywhere on viewfinder</td><td>Flip camera (rear ↔ front)</td><td>Flip animation (horizontal mirror transition, 200ms). Mode anchor and top bar indicators update. One-time ghost hint "double-tap to flip" shown on first use only.</td></tr>
+    <tr><td>Tap-hold (600ms)</td><td>Anywhere on viewfinder</td><td>Lock AF/AE at tap point (§4.1a)</td><td>AE/AF LOCK banner appears. Amber pulsing dot at tap point.</td></tr>
+    <tr><td>Swipe up (full screen)</td><td>Anywhere outside shutter row</td><td>Navigate to Film Archive</td><td>Sheet transition — capture pauses, Film feed slides up.</td></tr>
+  </tbody>
+</table>
+
+<h2>4.3 Shutter Interactions by Mode</h2>
+<table>
+  <thead><tr><th>Mode</th><th>Shutter action</th><th>Telemetry UI</th><th>Completion feedback</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge bp">Still</span></td><td>Tap → instant capture</td><td>None</td><td>White flash frame (80ms). Haptic. Thumbnail updates.</td></tr>
+    <tr><td><span class="badge bt">Live</span></td><td>Tap → capture (buffers 1.5s before+after)</td><td>Live indicator dot (top-left, pulsing)</td><td>White flash. Haptic. Loop icon on thumbnail.</td></tr>
+    <tr><td><span class="badge ba">Clip</span></td><td>Hold → records. Release = early stop. Slide up = lock.</td><td>Amber ring fills clockwise + countdown inside ring</td><td>Ring completes. Strong haptic. Ring snaps to empty.</td></tr>
+    <tr><td><span class="badge bc">Echo</span></td><td>Tap start / Tap stop</td><td>Radial waveform pulses to audio amplitude. MM:SS count-up inside.</td><td>Waveform stills. Gentle haptic. Echo icon on thumbnail.</td></tr>
+    <tr><td><span class="badge bg2">Atmosphere</span></td><td>Tap → still captured, then auto-records audio for configured duration</td><td>Phase 1: flash. Phase 2: mini waveform ring around shutter.</td><td>Composite asset saved. Atmosphere icon on thumbnail.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout amber">Amber warning: when a Clip or Echo is within 5 seconds of its ceiling, the ring / waveform transitions from white to #BA7517 (amber). A subtle repeating haptic pulse (0.1s interval) begins. This is the only use of amber in the capture surface — it must remain distinct from preset accents.</div>
+
+<h2>4.4 Capture Hub — Additional UI Elements</h2>
+
+<table>
+  <thead><tr><th>Element</th><th>Location</th><th>Appearance</th><th>Behavior</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Secondary camera indicator</strong></td>
+      <td>Top-left of viewfinder, next to location dot</td>
+      <td>Dual-lens icon, 16×16pt, 60% opacity. Visible only when dual-camera contextual capture is enabled (default: on).</td>
+      <td>Tap shows a one-line tooltip: "Also capturing context for richer moment tagging." Disappears after 3s. Max 1 per session.</td>
+    </tr>
+    <tr>
+      <td><strong>Self-timer countdown</strong></td>
+      <td>Overlay on viewfinder (centre-screen)</td>
+      <td>Large numeric countdown in 80px/900, color <code>rgba(255,255,255,.90)</code>. Circular timer ring around shutter ring in Zone D counts down simultaneously.</td>
+      <td>Appears at shutter tap when Timer is active. Fires at T=0. Both cameras fire simultaneously. Timer resets to Off post-capture unless persistent preference set.</td>
+    </tr>
+    <tr>
+      <td><strong>Preset bar auto-hide</strong></td>
+      <td>Preset bar (Zone C)</td>
+      <td>Bar collapses to a 2pt accent color line only after 5s of active Clip or Echo recording. The line remains as a passive indicator of the active preset color.</td>
+      <td>Single tap on the collapsed bar restores it. Bar always returns to full height when recording ends. Applies to Clip and Echo modes only.</td>
+    </tr>
+    <tr>
+      <td><strong>Preset accent indicators</strong></td>
+      <td>Preset bar top edge (2pt strip) + accent dot beside preset name + shutter ring color + Dynamic Island mode dot</td>
+      <td>All four surface points show the active preset accent color simultaneously. Changing preset via swipe updates all four in a coordinated 120ms crossfade.</td>
+      <td>Consistent accent color across all four surfaces reinforces the aesthetic identity of the active preset throughout capture.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout">Secondary camera indicator design rule: the dual-lens icon must not compete with the location indicator for attention. Use identical sizing (16×16pt), same opacity (60%), and same horizontal alignment. Never place both on the same side simultaneously — location indicator takes the right slot; secondary camera icon takes the left slot.</div>
+
+<h2>4.5 Post-Capture Overlay <span class="new-badge">NEW v1.7</span></h2>
+
+<div class="callout amber"><strong>The Post-Capture Overlay fires over the still-frozen viewfinder after every Still or Live capture. See PRD §3.9 for the full behavioral specification. This section covers UI/visual specifications only.</strong></div>
+
+<h3>4.5.1 Overlay Surface</h3>
+<p>The post-capture overlay occupies the entire Zone B (viewfinder area). It does not cover Zone A, Zone C, or Zone D — all four zones remain interactive during the overlay window. The overlay renders the captured image as a frozen background with the active preset's vibe tint, grain, and light-leak layers applied.</p>
+
+<h3>4.5.2 Location Vibe Chip</h3>
+<p>Positioned: absolute top, horizontally centred within Zone B, 20pt from the top edge of Zone B.</p>
+<table>
+  <thead><tr><th>Property</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Background</td><td><code>rgba(0,0,0,.52); backdrop-filter: blur(12px)</code></td></tr>
+    <tr><td>Border</td><td><code>.5px solid rgba(255,255,255,.12); border-radius: 20px</code></td></tr>
+    <tr><td>Content</td><td>Pin emoji + location + vibe descriptor: "📍 Hongdae · Seoul · golden hour". Font: 12px/500, color <code>rgba(255,255,255,.72)</code></td></tr>
+    <tr><td>Entrance animation</td><td>Fade + scale from 0.9 over 280ms, <code>ease-out</code>, delay 200ms after overlay open</td></tr>
+  </tbody>
+</table>
+
+<h3>4.5.3 Vibe Tag Prompt — Sticker Chips</h3>
+<p>Four sticker chips are displayed in a 2×2 grid centred vertically in Zone B (at ~46% from top). Each chip is unique in tilt angle, border-radius, and entrance delay.</p>
+
+<table>
+  <thead><tr><th>Chip</th><th>Tilt (--cr)</th><th>Delay</th><th>Border-radius</th><th>Colour treatment</th></tr></thead>
+  <tbody>
+    <tr><td>Chip A (row 1, left)</td><td>−2.5°</td><td>0ms</td><td>28px</td><td>Amber accent: bg <code>rgba(232,160,32,.22)</code>, border <code>rgba(232,160,32,.48)</code>, text <code>#E8A020</code></td></tr>
+    <tr><td>Chip B (row 1, right)</td><td>+1.8°</td><td>58ms</td><td>18px</td><td>Neutral glass: bg <code>rgba(255,255,255,.08)</code>, border <code>rgba(255,255,255,.17)</code>, text <code>rgba(255,255,255,.88)</code></td></tr>
+    <tr><td>Chip C (row 2, left)</td><td>−1.2°</td><td>116ms</td><td>22px</td><td>Neutral glass (same as B)</td></tr>
+    <tr><td>Chip D (row 2, right)</td><td>+2.2°</td><td>174ms</td><td>26px</td><td>Neutral glass (same as B)</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Chip entrance animation:</strong><br/>
+<code>@keyframes chipBounce { 0%{opacity:0; transform: scale(.28) rotate(var(--cr))} 68%{transform: scale(1.1) rotate(var(--cr))} 100%{opacity:1; transform: scale(1) rotate(var(--cr))} }</code><br/>
+Timing: <code>cubic-bezier(.34,1.56,.64,1)</code>, duration 420ms.<br/>
+Each chip maintains its tilt angle at rest — it is not zero-rotation at equilibrium.</p>
+
+<p><strong>Chip typography:</strong> 13px/700. Padding: 8pt top/bottom, 15pt left/right. Leading emoji at 13px.</p>
+
+<p><strong>Prompt label:</strong> "add a vibe" — 10px/800, uppercase, letter-spacing .10em, color <code>rgba(255,255,255,.38)</code>. Positioned 12pt above the chip grid. Fades out when a chip is selected (200ms ease-out).</p>
+
+<h3>4.5.4 Quick Share Pill</h3>
+<p>Appears 420ms after the Vibe Tag Prompt window opens. Positioned: absolute bottom, 78pt from bottom of Zone B, horizontally centred.</p>
+
+<table>
+  <thead><tr><th>Property</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Background</td><td><code>rgba(107,78,255,.24); backdrop-filter: blur(14px)</code></td></tr>
+    <tr><td>Border</td><td><code>1px solid rgba(107,78,255,.48); border-radius: 30px</code></td></tr>
+    <tr><td>Content</td><td>Left: up to 3 friend avatar circles (22×22pt, stacked with −6pt overlap). Right: "send to close friends" in 12px/700, color <code>rgba(255,255,255,.88)</code></td></tr>
+    <tr><td>Entrance animation</td><td>Slide up 14pt + scale from 0.9 over 440ms, <code>cubic-bezier(.34,1.36,.64,1)</code></td></tr>
+    <tr><td>Auto-dismiss</td><td>After 3 seconds if not tapped</td></tr>
+    <tr><td>Tap action</td><td>Opens <code>UIActivityViewController</code> for the captured asset</td></tr>
+  </tbody>
+</table>
+
+<h3>4.5.5 Zone D During Post-Capture Overlay</h3>
+<p>The shutter remains fully active during the post-capture overlay. Tapping the shutter while the overlay is visible immediately dismisses the overlay (without saving a vibe tag if not yet selected) and fires the next capture. The "last" thumbnail in Zone D updates to show the just-captured asset with a "▶ NEW" badge.</p>
+
+<hr/>
+<!-- ══════════════════════════════════════════ -->
+<h1>4b. Dual-Camera Contextual Capture — UI</h1>
+
+<h2>4b.1 Overview</h2>
+<p>When the user captures a Still or Live asset, the secondary camera (whichever is not primary) fires silently within 50ms. The secondary image is <strong>never shown to the user, never stored as a viewable photo, and never exported</strong>. It is processed on-device immediately to extract contextual metadata, then discarded. The UI requirement is to surface just enough to maintain trust without adding cognitive load.</p>
+
+<div class="callout teal">Privacy-first UI rule: the dual-camera capture is metadata infrastructure, not an asset. The UI must never present it as a "hidden photo" — the indicator and tooltip together communicate exactly what it is: context for richer tagging.</div>
+
+<h2>4b.2 Bidirectional Logic — UI Implications</h2>
+<table>
+  <thead><tr><th>Primary camera</th><th>Secondary capture</th><th>Metadata enrichment visible in UI</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Rear</strong> (scene capture)</td><td>Front camera fires silently</td><td>Social context tag appears in vibe panel: Solo / Intimate / Group / Crowd. Nudge questions may reference social context.</td></tr>
+    <tr><td><strong>Front</strong> (selfie / portrait)</td><td>Rear camera fires silently</td><td>Scene type, lighting condition, and place enrichment appear in vibe panel. Moment label gains scene context (e.g., "Selfie · Golden hour · coastal cliff").</td></tr>
+  </tbody>
+</table>
+
+<h2>4b.3 Indicator States</h2>
+<table>
+  <thead><tr><th>State</th><th>Indicator appearance</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Feature enabled (default)</td><td>Dual-lens icon visible top-left of viewfinder at 60% opacity</td><td>Always visible during Still and Live modes. Not shown during Clip, Echo, or Atmosphere.</td></tr>
+    <tr><td>Tooltip visible</td><td>Small pill below the icon: "Also capturing context for richer moment tagging."</td><td>Appears on tap. Auto-dismisses after 3s. Max 1 per session.</td></tr>
+    <tr><td>Feature disabled</td><td>Icon absent</td><td>No visual change to shutter or viewfinder.</td></tr>
+  </tbody>
+</table>
+
+<h2>4b.4 Settings Entry Point</h2>
+<p>Settings → Capture → <strong>"Contextual context capture"</strong>: toggle (default: On). Below the toggle: <em>"When on, the secondary camera captures scene context at the same moment as your photo — helping niftyMomnt tag your moments more accurately. The secondary image is never saved or shown to you."</em></p>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>4c. Sound Stamp — Ambient Audio for Still Captures</h1>
+
+<h2>4c.1 Overview</h2>
+<p>Sound Stamp is an opt-in feature that silently records <strong>1.5 seconds of ambient audio</strong> during every Still capture — 0.5s pre-roll from an always-on microphone buffer plus 1s post-shutter. The audio buffer is analysed on-device for acoustic vibe tags, then <strong>immediately discarded</strong>. It is never stored as a playable file, never exported, and never surfaced to the user as content. It is metadata infrastructure — identical in philosophy to the dual-camera contextual capture.</p>
+
+<div class="callout teal">Privacy-first rule: Sound Stamp audio is never written to disk. The 1.5s buffer exists only in memory, passes through the on-device acoustic classifier, and is released. iOS's orange microphone indicator will appear briefly during capture — this is intentional and correct. It signals transparency, not a problem.</div>
+
+<div class="callout amber">Opt-in requirement: Sound Stamp is <strong>off by default</strong>. It must be offered as a named opt-in during onboarding Step 5 and as a clearly labelled toggle in Settings → Capture. The feature name "Sound Stamp" must be used consistently — never "audio capture" or "microphone recording."</div>
+
+<h2>4c.2 Shutter Feedback — Sound Stamp Active</h2>
+<table>
+  <thead><tr><th>Moment</th><th>Visual</th><th>Duration</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Pre-shutter</td><td>No indicator. Mic is buffering silently.</td><td>Always-on during Still mode when Sound Stamp enabled</td><td>iOS orange mic dot may appear in status bar — do not attempt to suppress. It is a system-level privacy signal.</td></tr>
+    <tr><td>Post-shutter (0–1.5s)</td><td>Three concentric arcs expanding outward from the shutter ring, fading from the active preset accent color to transparent. Amplitude is fixed (not reactive to actual audio level).</td><td>1.5s, then fades</td><td>Reduced Motion: static arc appears at 30% opacity for 1s, then fades. No animation.</td></tr>
+    <tr><td>Analysis complete</td><td>No additional feedback. Tags silently appear in the asset's metadata.</td><td>Under 300ms after buffer completes</td><td>Tags visible in Moment detail vibe panel — identical appearance to acoustically-tagged Echo assets.</td></tr>
+  </tbody>
+</table>
+
+<h2>4c.3 Settings — Sound Stamp</h2>
+<table>
+  <thead><tr><th>Surface</th><th>Label</th><th>Default</th><th>Copy / explanation</th></tr></thead>
+  <tbody>
+    <tr><td>Onboarding Step 5</td><td><strong>Sound Stamp</strong></td><td>Off</td><td>"Capture 1.5 seconds of ambient sound with every photo — niftyMomnt uses it to tag the vibe (rainy, crowded, quiet) and immediately discards the audio. Nothing is stored or shared."</td></tr>
+    <tr><td>Settings → Capture → Sound Stamp</td><td><strong>Sound Stamp</strong> toggle + sub-label</td><td>Off</td><td>Sub-label: "1.5s ambient audio at capture. Analysed on-device, never stored." Below toggle: a "Learn more" link expanding to a 3-line explanation.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">Naming discipline: "Sound Stamp" is the only permitted name for this feature in all user-facing surfaces. Never use "ambient recording," "microphone capture," "audio sample," or similar. The name signals brevity (stamp = a quick impression) and output type (a tag, not a file).</div>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>5. Film Archive</h1>
+
+<h2>5.1 Film Archive Layout — Editorial Card Feed</h2>
+<p>The Film Archive is a reverse-chronological roll card feed on a dark editorial surface (<code>#0F0D0B</code>). Each Moment is one card. Cards display the hero asset, place label, dominant vibe tags, asset count, and an ambient metadata line. The emotional character of the Moment is the headline — the timestamp is secondary. Visual continuity with the Capture Hub avoids a jarring brightness-mode switch when moving between capture and browse.</p>
+
+<div class="wf">
+<svg width="100%" viewBox="0 0 860 620" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="filmHeroA" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1E0A00"/><stop offset="40%" stop-color="#7A3A00"/><stop offset="100%" stop-color="#E8A020"/>
+    </linearGradient>
+    <linearGradient id="filmHeroN" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#050A18"/><stop offset="45%" stop-color="#152050"/><stop offset="100%" stop-color="#3A58C0"/>
+    </linearGradient>
+  </defs>
+  <rect x="260" y="10" width="340" height="600" rx="36" fill="#0A0908" stroke="#333" stroke-width="1.5"/>
+  <rect x="270" y="20" width="320" height="580" rx="28" fill="#0F0D0B"/>
+  <text x="286" y="44" font-family="system-ui" font-size="11" font-weight="600" fill="rgba(255,255,255,0.65)">9:41</text>
+  <text x="292" y="78" font-family="system-ui" font-size="26" font-weight="900" fill="#fff" letter-spacing="-0.5">Film</text>
+  <rect x="368" y="62" width="72" height="22" rx="11" fill="rgba(232,160,32,0.16)" stroke="rgba(232,160,32,0.30)" stroke-width="0.5"/>
+  <text x="404" y="77" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="700" fill="#E8A020">12 rolls</text>
+  <circle cx="548" cy="72" r="17" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.10)" stroke-width="0.5"/>
+  <circle cx="548" cy="72" r="4.5" stroke="rgba(255,255,255,0.60)" stroke-width="1.2" fill="none"/>
+  <path d="M552 76 L556 80" stroke="rgba(255,255,255,0.60)" stroke-width="1.2" stroke-linecap="round"/>
+  <circle cx="576" cy="72" r="17" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.10)" stroke-width="0.5"/>
+  <rect x="571" y="67" width="4.5" height="4.5" rx="1" stroke="rgba(255,255,255,0.60)" stroke-width="1" fill="none"/>
+  <rect x="577.5" y="67" width="4.5" height="4.5" rx="1" stroke="rgba(255,255,255,0.60)" stroke-width="1" fill="none"/>
+  <rect x="571" y="73.5" width="4.5" height="4.5" rx="1" stroke="rgba(255,255,255,0.60)" stroke-width="1" fill="none"/>
+  <rect x="577.5" y="73.5" width="4.5" height="4.5" rx="1" stroke="rgba(255,255,255,0.60)" stroke-width="1" fill="none"/>
+  <text x="286" y="108" font-family="system-ui" font-size="10" font-weight="800" fill="rgba(255,255,255,0.22)" letter-spacing="0.08em">THIS WEEK · MAR 28–31</text>
+  <!-- Card 1 — AMALFI -->
+  <rect x="278" y="118" width="304" height="218" rx="18" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+  <rect x="278" y="118" width="304" height="130" rx="18" fill="url(#filmHeroA)"/>
+  <rect x="278" y="118" width="3" height="130" fill="#E8A020"/>
+  <rect x="520" y="128" width="52" height="20" rx="10" fill="rgba(0,0,0,0.62)"/>
+  <text x="546" y="142" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#fff">24 shots</text>
+  <text x="292" y="228" font-family="system-ui" font-size="15" font-weight="900" fill="#fff">AMALFI · Hongdae Walk</text>
+  <text x="292" y="244" font-family="system-ui" font-size="10" font-weight="500" fill="rgba(255,255,255,0.55)">Sat, Mar 28 · golden hour</text>
+  <rect x="286" y="252" width="38" height="28" rx="6" fill="url(#filmHeroA)"/>
+  <rect x="328" y="252" width="38" height="28" rx="6" fill="#2A1808"/>
+  <rect x="370" y="252" width="38" height="28" rx="6" fill="#4A2808"/>
+  <rect x="412" y="252" width="38" height="28" rx="6" fill="#6B3A10"/>
+  <rect x="454" y="252" width="38" height="28" rx="6" fill="rgba(255,255,255,0.06)"/>
+  <text x="473" y="270" text-anchor="middle" font-family="system-ui" font-size="10" fill="rgba(255,255,255,0.28)">+20</text>
+  <text x="290" y="302" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.40)">✨ golden hour  ·  🌊 wandering</text>
+  <circle cx="556" cy="296" r="18" fill="#E8A020"/>
+  <text x="556" y="301" text-anchor="middle" font-family="system-ui" font-size="13" fill="#fff">▶</text>
+  <!-- Card 2 — NORDIC -->
+  <rect x="278" y="352" width="304" height="188" rx="18" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+  <rect x="278" y="352" width="304" height="130" rx="18" fill="url(#filmHeroN)"/>
+  <rect x="278" y="352" width="3" height="130" fill="#3A58C0"/>
+  <rect x="520" y="362" width="52" height="20" rx="10" fill="rgba(0,0,0,0.62)"/>
+  <text x="546" y="376" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#fff">18 shots</text>
+  <text x="292" y="462" font-family="system-ui" font-size="15" font-weight="900" fill="#fff">NORDIC · Itaewon Night</text>
+  <text x="292" y="478" font-family="system-ui" font-size="10" font-weight="500" fill="rgba(255,255,255,0.55)">Fri, Mar 27 · midnight</text>
+  <rect x="286" y="486" width="38" height="28" rx="6" fill="#050A18"/>
+  <rect x="328" y="486" width="38" height="28" rx="6" fill="#152050"/>
+  <rect x="370" y="486" width="38" height="28" rx="6" fill="#030812"/>
+  <rect x="412" y="486" width="38" height="28" rx="6" fill="rgba(255,255,255,0.06)"/>
+  <text x="431" y="504" text-anchor="middle" font-family="system-ui" font-size="10" fill="rgba(255,255,255,0.28)">+15</text>
+  <text x="290" y="528" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.40)">🌃 city night  ·  ⚡ electric</text>
+  <circle cx="556" cy="522" r="18" fill="#3A58C0"/>
+  <text x="556" y="527" text-anchor="middle" font-family="system-ui" font-size="13" fill="#fff">▶</text>
+  <!-- Floating glass pill tab bar -->
+  <rect x="282" y="558" width="296" height="58" rx="29" fill="rgba(20,16,12,0.76)" stroke="rgba(255,255,255,0.13)" stroke-width="0.5"/>
+  <g transform="translate(318,572)">
+    <circle cx="10" cy="10" r="7" stroke="rgba(255,255,255,0.26)" stroke-width="1.4" fill="none"/>
+    <circle cx="10" cy="10" r="2.5" stroke="rgba(255,255,255,0.26)" stroke-width="1.4" fill="none"/>
+  </g>
+  <text x="328" y="604" text-anchor="middle" font-family="system-ui" font-size="9" font-weight="700" fill="rgba(255,255,255,0.26)">Capture</text>
+  <g transform="translate(410,572)">
+    <rect x="2" y="6" width="16" height="11" rx="2" stroke="#C4B5FD" stroke-width="1.4" fill="none"/>
+    <path d="M2 9.5H18" stroke="#C4B5FD" stroke-width="1.4"/>
+    <rect x="7" y="2" width="2" height="5" rx="1" fill="#C4B5FD"/>
+    <rect x="11" y="2" width="2" height="5" rx="1" fill="#C4B5FD"/>
+  </g>
+  <text x="430" y="604" text-anchor="middle" font-family="system-ui" font-size="9" font-weight="700" fill="#C4B5FD">Film</text>
+  <circle cx="430" cy="608" r="2" fill="#C4B5FD"/>
+  <g transform="translate(500,572)">
+    <rect x="3" y="3" width="14" height="14" rx="3" stroke="rgba(255,255,255,0.26)" stroke-width="1.4" fill="none"/>
+    <path d="M8.5 3V17M3 8H8.5M3 12H8.5" stroke="rgba(255,255,255,0.26)" stroke-width="1.4"/>
+  </g>
+  <text x="510" y="604" text-anchor="middle" font-family="system-ui" font-size="9" font-weight="700" fill="rgba(255,255,255,0.26)">Vault</text>
+  <line x1="258" y1="168" x2="140" y2="120" stroke="#6B4EFF" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="135" y="116" text-anchor="end" font-family="system-ui" font-size="11" fill="#6B4EFF">3pt accent strip</text>
+  <text x="135" y="128" text-anchor="end" font-family="system-ui" font-size="10" fill="#888">hero gradient + grain</text>
+  <line x1="258" y1="210" x2="140" y2="210" stroke="#E8A020" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="135" y="206" text-anchor="end" font-family="system-ui" font-size="11" fill="#E8A020">Roll title + date</text>
+  <line x1="258" y1="270" x2="140" y2="288" stroke="#C4B5FD" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="135" y="284" text-anchor="end" font-family="system-ui" font-size="11" fill="#C4B5FD">Thumbs + ▶ play</text>
+</svg>
+<div class="wf-caption">Figure 3 — Film Archive. Status 9:41; header "Film" 26/900 + amber "12 rolls" badge + search/grid glass buttons. Section label "This Week · Mar 28–31". Cards: hero gradients, left 3pt accent strip, shot count badge, title + date, thumb row + overflow, vibe tags row, preset-coloured ▶ circle. Floating 29px-radius glass tab bar — Film active (lavender + dot).</div>
+</div>
+
+<div class="wf">
+<svg width="100%" viewBox="0 0 900 640" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mdPhoto" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#180A00"/>
+      <stop offset="52%" stop-color="#B06820"/>
+      <stop offset="100%" stop-color="#FFE8B0"/>
+    </linearGradient>
+  </defs>
+  <rect x="280" y="12" width="340" height="616" rx="40" fill="#0A0A0A" stroke="#2A2A2A" stroke-width="2"/>
+  <rect x="290" y="22" width="320" height="596" rx="32" fill="#100C08"/>
+  <rect x="396" y="28" width="108" height="28" rx="14" fill="#000"/>
+  <circle cx="412" cy="42" r="4" fill="#E8A020"/>
+  <text x="422" y="46" font-family="system-ui" font-size="8" font-weight="600" fill="rgba(255,255,255,0.5)">AMALFI</text>
+  <rect x="290" y="60" width="320" height="68" fill="rgba(8,6,4,0.22)"/>
+  <line x1="290" y1="128" x2="610" y2="128" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+  <circle cx="308" cy="94" r="20" fill="rgba(255,255,255,0.09)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+  <path d="M314 88 L304 94 L314 100" stroke="rgba(255,255,255,0.82)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="450" y="98" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="900" letter-spacing="0.07em" fill="rgba(255,255,255,0.88)">AMALFI · Hongdae Walk</text>
+  <circle cx="592" cy="94" r="20" fill="rgba(107,78,255,0.18)" stroke="rgba(107,78,255,0.36)" stroke-width="0.5"/>
+  <g transform="translate(580,81)" fill="none">
+    <path d="M12 3V12M8.5 6.5L12 3L15.5 6.5" stroke="#C4B5FD" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M7 11V15.5C7 15.5 7.22 16 7.5 16H16.5C16.78 16 17 15.78 17 15.5V11" stroke="#C4B5FD" stroke-width="1.4" stroke-linecap="round"/>
+  </g>
+  <rect x="290" y="128" width="320" height="340" fill="url(#mdPhoto)"/>
+  <rect x="338" y="150" width="224" height="30" rx="15" fill="rgba(0,0,0,0.52)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+  <text x="352" y="170" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.75)">📍 Hongdae · Seoul · golden hour</text>
+  <g transform="translate(302,268) rotate(-3.5)">
+    <rect x="0" y="0" width="118" height="34" rx="22" fill="rgba(232,160,32,0.22)" stroke="rgba(232,160,32,0.48)" stroke-width="1.5"/>
+    <text x="59" y="23" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="700" fill="#E8A020">✨ golden hour</text>
+  </g>
+  <g transform="translate(468,318) rotate(2.5)">
+    <rect x="0" y="0" width="124" height="34" rx="22" fill="rgba(255,255,255,0.09)" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+    <text x="62" y="23" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="700" fill="rgba(255,255,255,0.88)">🌊 wandering</text>
+  </g>
+  <circle cx="424" cy="430.5" r="2.5" fill="rgba(255,255,255,0.28)"/>
+  <rect x="432" y="428" width="16" height="5" rx="2.5" fill="rgba(255,255,255,0.76)"/>
+  <circle cx="454" cy="430.5" r="2.5" fill="rgba(255,255,255,0.28)"/>
+  <circle cx="462" cy="430.5" r="2.5" fill="rgba(255,255,255,0.28)"/>
+  <rect x="290" y="470" width="320" height="148" fill="rgba(12,9,6,0.82)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+  <rect x="432" y="480" width="36" height="4" rx="2" fill="rgba(255,255,255,0.18)"/>
+  <text x="306" y="514" font-family="system-ui" font-size="14" font-weight="900" fill="rgba(255,255,255,0.88)">Shot 8 of 24</text>
+  <text x="598" y="514" text-anchor="end" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.38)">Sat, Mar 28 · 6:42 PM</text>
+  <rect x="306" y="526" width="92" height="26" rx="14" fill="rgba(232,160,32,0.14)" stroke="rgba(232,160,32,0.28)" stroke-width="1"/>
+  <text x="352" y="543" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#E8A020">✨ golden hour</text>
+  <rect x="404" y="526" width="88" height="26" rx="14" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.13)" stroke-width="1"/>
+  <text x="448" y="543" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="rgba(255,255,255,0.56)">🌊 wandering</text>
+  <rect x="498" y="526" width="96" height="26" rx="14" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.13)" stroke-width="1"/>
+  <text x="546" y="543" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="rgba(255,255,255,0.56)">📍 Hongdae</text>
+  <rect x="306" y="562" width="170" height="40" rx="12" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+  <circle cx="324" cy="582" r="5" stroke="rgba(255,255,255,0.65)" stroke-width="1.3" fill="none"/>
+  <path d="M320 582 L322 584 L328 578" stroke="rgba(255,255,255,0.65)" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+  <text x="384" y="587" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="700" fill="rgba(255,255,255,0.78)">Fix this shot</text>
+  <rect x="484" y="562" width="110" height="40" rx="12" fill="rgba(107,78,255,0.20)" stroke="rgba(107,78,255,0.38)" stroke-width="0.5"/>
+  <text x="539" y="587" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="700" fill="#C4B5FD">Share</text>
+  <rect x="602" y="562" width="40" height="40" rx="12" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.10)" stroke-width="0.5"/>
+  <circle cx="614" cy="582" r="1.3" fill="rgba(255,255,255,0.58)"/>
+  <circle cx="622" cy="582" r="1.3" fill="rgba(255,255,255,0.58)"/>
+  <circle cx="630" cy="582" r="1.3" fill="rgba(255,255,255,0.58)"/>
+  <rect x="420" y="608" width="60" height="4" rx="2" fill="rgba(255,255,255,0.16)"/>
+</svg>
+<div class="wf-caption">Figure 3a — Moment Detail. Dynamic Island di-sm (narrow): amber dot + "AMALFI". Zone A: back · 13px/900 title · lavender share glyph. Full-bleed graded photo; 📍 location chip; tilted stickers (amber + glass). Pagination pill + dots. Liquid Glass sheet: shot row, three vibe chips, Fix this shot + Share + ···.</div>
+</div>
+
+<h2>5.2 Moment Detail Screen <span class="updated-badge">UPDATED v1.7</span></h2>
+
+<p>The Moment Detail screen is the single-asset view reached from any roll card in the Film Archive. It presents one captured asset full-screen with all associated metadata and quick actions.</p>
+
+<h3>5.2.1 Zone A — Detail Navigation Bar</h3>
+<p>Height: 68pt. Material: iOS 26 Liquid Glass — <code>background: rgba(8,6,4,.22); backdrop-filter: blur(28px) saturate(200%) brightness(1.12)</code> + inner glow <code>inset 0 1px 0 rgba(255,255,255,.06)</code>. Bottom border: <code>.5px solid rgba(255,255,255,.08)</code>.</p>
+
+<div class="two-col">
+  <div class="spec-card">
+    <div class="label">Back button (left)</div>
+    <p>40×40pt circular glass pill: <code>rgba(255,255,255,.09)</code> bg, <code>.5px solid rgba(255,255,255,.12)</code> border. SVG chevron-left (stroke 1.5pt, <code>rgba(255,255,255,.82)</code>). Tap: slide-right back to Film Archive, Spring transition 320ms.</p>
+  </div>
+  <div class="spec-card">
+    <div class="label">Roll + moment title (centre)</div>
+    <p>13px/900 weight, letter-spacing .07em, color <code>rgba(255,255,255,.88)</code>. Format: "[PRESET NAME] · [Location/title]". Truncate at 24 characters with ellipsis.</p>
+  </div>
+</div>
+<div class="two-col">
+  <div class="spec-card">
+    <div class="label">Share button (right)</div>
+    <p>40×40pt circular pill, lavender tint: bg <code>rgba(107,78,255,.18)</code>, border <code>.5px solid rgba(107,78,255,.36)</code>. SVG upload/share glyph in lavender <code>#C4B5FD</code>. Tap: <code>UIActivityViewController</code>.</p>
+  </div>
+  <div class="spec-card">
+    <div class="label">Dynamic Island</div>
+    <p>Shows preset name + dot (amber if Roll Mode active). Same as Capture Hub DI treatment. Hidden when Roll Mode is off.</p>
+  </div>
+</div>
+
+<h3>5.2.2 Photo Zone — Full Bleed</h3>
+<p>The captured asset fills from the bottom of Zone A to the top of the Glass Bottom Sheet. Width: 100% screen width. No padding or margins. The photo is rendered with the active preset's vibe overlays (grain, tint, light-leak) using the same Metal shader pipeline as the live viewfinder.</p>
+
+<h4>Photo Zone — Layered Overlays (top to bottom rendering order)</h4>
+<ol>
+  <li>Floating sticker vibe chips (z-index highest)</li>
+  <li>Location vibe chip (top of photo zone, centred)</li>
+  <li>Pagination indicator (bottom of photo zone)</li>
+  <li>Light-leak overlay (right-edge gradient, blur 18px)</li>
+  <li>Film grain (SVG noise, opacity .05, mix-blend-mode overlay)</li>
+  <li>Vibe tint (radial gradient, preset-specific colour)</li>
+  <li>Photo image (base layer)</li>
+</ol>
+
+<h4>Floating Sticker Vibes</h4>
+<p>Each vibe tag assigned during the post-capture Vibe Tag Prompt is rendered as a tilted sticker chip over the photo at a fixed position. Position, tilt, and border-radius values are derived from the chip's original post-capture prompt spec (§4.5.3) and are stored per-asset. Maximum 3 stickers shown simultaneously; excess tags visible in the bottom sheet tag row.</p>
+<p>Tap interaction: tapping a sticker chip opens an inline tag-edit micro-overlay anchored to the chip. The user can change, delete, or add a tag.</p>
+
+<h4>Swipe Navigation</h4>
+<p>Swipe left = next shot in the roll. Swipe right = previous shot. Spring transition, duration 280ms, spring damping 0.72. The pagination indicator updates synchronously. The bottom sheet content cross-fades to the new shot's data over 180ms.</p>
+
+<h4>Pagination Indicator</h4>
+<p>Current shot shown as a 16×5pt rounded pill in <code>rgba(255,255,255,.76)</code>; other shots shown as 5×5pt dots in <code>rgba(255,255,255,.28)</code>. Maximum 7 indicators visible. Positioned 14pt from bottom of photo zone, horizontally centred.</p>
+
+<h3>5.2.3 Glass Bottom Sheet</h3>
+<p>Material: iOS 26 Liquid Glass — <code>background: rgba(12,9,6,.82); backdrop-filter: blur(28px) saturate(200%) brightness(1.12)</code>. Top border: <code>.5px solid rgba(255,255,255,.12)</code>. Inner top glow: <code>inset 0 1px 0 rgba(255,255,255,.08)</code>.</p>
+<p><strong>Drag handle:</strong> 36×4pt rounded bar, <code>rgba(255,255,255,.18)</code>, centred at top of sheet, 10pt from sheet top. Dragging downward past 60pt dismisses the sheet.</p>
+
+<table>
+  <thead><tr><th>Row</th><th>Content</th><th>Typography</th></tr></thead>
+  <tbody>
+    <tr><td>Shot info row</td><td>Left: "Shot N of 24" — roll position. Right: date + time (e.g. "Sat, Mar 28 · 6:42 PM")</td><td>Left: 14px/900, <code>rgba(255,255,255,.88)</code>. Right: 11px/400, <code>rgba(255,255,255,.38)</code>.</td></tr>
+    <tr><td>Vibe tags row</td><td>Horizontal scrollable chip row. User-selected tags: amber accent. AI-derived (location, acoustic): neutral glass. Tap: edit. Up to 5 visible before scroll.</td><td>11px/600 per chip. Chip padding: 3pt v, 10pt h. Border-radius: 14px.</td></tr>
+    <tr><td>Actions row</td><td>3 buttons: Fix this shot + Share + ••• overflow</td><td>See below</td></tr>
+    <tr><td>Safe area</td><td>Bottom padding: <code>env(safe-area-inset-bottom)</code> + 8pt additional</td><td>—</td></tr>
+  </tbody>
+</table>
+
+<div class="two-col">
+  <div class="spec-card">
+    <div class="label">Fix this shot</div>
+    <p>Flex-1 width, 40pt height, border-radius 12px. Background: <code>rgba(255,255,255,.07)</code>. Border: <code>.5px solid rgba(255,255,255,.12)</code>. SVG circle-check glyph + "Fix this shot" in 12px/700, <code>rgba(255,255,255,.78)</code>.</p>
+  </div>
+  <div class="spec-card">
+    <div class="label">Share</div>
+    <p>Flex-1 width, 40pt height, border-radius 12px. Background: <code>rgba(107,78,255,.20)</code>. Border: <code>.5px solid rgba(107,78,255,.38)</code>. SVG share glyph + "Share" in 12px/700, lavender <code>#C4B5FD</code>.</p>
+  </div>
+</div>
+<p><strong>More (•••):</strong> 40×40pt, border-radius 12px, glass background. Opens contextual menu: Delete Shot / Add to Vault / Copy Image / Remove from Roll.</p>
+
+<h2>5.3 Fix Modal — Still &amp; Live Photo Corrections</h2>
+<p>Fix is a lightweight, non-destructive correction overlay for Still and Live assets only. Scoped to <strong>geometry corrections</strong> — crop, rotate, and flip. The word "Fix" is used everywhere; "Edit" never appears in this flow.</p>
+
+<div class="callout teal">Non-destructive rule: the original captured asset is always preserved in the vault unchanged. Fix writes a derivative version alongside it. If the user deletes the fix, the original is restored as the primary.</div>
+
+<h2>5.3a Fix — Interaction Spec per Tool</h2>
+<table>
+  <thead><tr><th>Tool</th><th>Gesture / trigger</th><th>Behavior</th><th>Constraints</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Crop</strong></td><td>Drag any edge or corner handle. Pinch on photo to zoom and reposition within crop frame.</td><td>Crop frame updates in real time. Dimmed overlay shows excluded area instantly. Rule-of-thirds grid always visible during crop. Double-tap photo resets crop to full frame.</td><td>Minimum crop size: 200×200pt. Aspect ratio is free (no locked ratio in v1.0). Preset vibe applied to preview throughout.</td></tr>
+    <tr><td><strong>Rotate 90°</strong></td><td>Single tap on the Rotate tool. Repeatable — four taps = full rotation.</td><td>Photo rotates 90° clockwise per tap with a spring animation (200ms). Crop frame auto-adjusts. The rule-of-thirds grid reorients with the photo.</td><td>No free-angle rotation dial — 90° increments only. Counter-clockwise not a separate option: 3 clockwise taps = 270°.</td></tr>
+    <tr><td><strong>Flip</strong></td><td>Single tap on Flip reveals a two-option sub-row: Horizontal · Vertical. Tap either to apply.</td><td>Flip applies instantly with a mirror animation (150ms). A second tap on the active flip option reverses it. Both H and V can be active simultaneously.</td><td>Flip state is independent of Rotate state. "Revert to original" clears all corrections including flip state.</td></tr>
+  </tbody>
+</table>
+
+<h2>5.3b Fix — States &amp; Entry Points</h2>
+<table>
+  <thead><tr><th>State / entry point</th><th>Behavior</th></tr></thead>
+  <tbody>
+    <tr><td>Entry — long-press asset in Moment detail</td><td>Context menu: Share · Set as hero · <strong>Fix</strong> · Delete. Fix option only for Still and Live assets.</td></tr>
+    <tr><td>No changes made</td><td>Tapping Done with no modifications dismisses the modal without writing any derivative. Identical to Cancel.</td></tr>
+    <tr><td>Changes made → Done</td><td>A derivative asset is written to the vault alongside the original. A small "Fixed" badge appears on the asset thumbnail. Single tap on badge shows: "Original preserved · Revert."</td></tr>
+    <tr><td>Revert to original</td><td>Available from the Fix modal and from the "Fixed" badge. Revert deletes the derivative and restores the original. Confirmation: "Remove fix? Your original photo will be shown." with Revert · Keep Fix options.</td></tr>
+    <tr><td>Live Photo behavior</td><td>Fix applies to the Still frame only. The MOV motion component is not cropped or rotated. A one-line note below the Fix tool bar: "Motion clip not affected."</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">"Fix" label discipline: the word "Edit" must never appear in this flow. Every surface uses "Fix" (verb) or "Fixed" (past state). This distinction is load-bearing for brand positioning.</div>
+
+<h2>5.4 Film Archive Screen Layout <span class="new-badge">NEW v1.7</span></h2>
+
+<h3>5.4.1 Screen Background and Surfaces</h3>
+<p><strong>Background:</strong> <code>#0F0D0B</code> (<code>--color-film-bg</code>) — always dark, never adaptive. The Film Archive is a continuation of the dark capture aesthetic.</p>
+
+<h3>5.4.2 Header Bar</h3>
+<table>
+  <thead><tr><th>Element</th><th>Spec</th></tr></thead>
+  <tbody>
+    <tr><td>Material</td><td>iOS 26 Liquid Glass: <code>background: rgba(12,10,8,.92); backdrop-filter: blur(28px) saturate(200%) brightness(1.12)</code>. Height: 60pt.</td></tr>
+    <tr><td>Title</td><td>"Film" in 26px/900 weight, white, letter-spacing −0.5px. Aligned left at 18pt inset.</td></tr>
+    <tr><td>Roll count badge</td><td>Amber-tinted glass chip: bg <code>rgba(232,160,32,.16)</code>, border <code>rgba(232,160,32,.30)</code>, text <code>#E8A020</code>. Format: "N rolls".</td></tr>
+    <tr><td>Right actions</td><td>Search icon + Grid-toggle icon. Each in 34×34pt glass circle pills. SVG glyphs: magnifying glass + 2×2 grid squares.</td></tr>
+  </tbody>
+</table>
+
+<h3>5.4.3 Roll Cards</h3>
+<table>
+  <thead><tr><th>Zone</th><th>Spec</th></tr></thead>
+  <tbody>
+    <tr><td>Card container</td><td>Background: <code>rgba(255,255,255,.04)</code>. Border: <code>.5px solid rgba(255,255,255,.08)</code>. Border-radius: 18px.</td></tr>
+    <tr><td>Hero zone (130pt)</td><td>Full-width gradient representing the roll's dominant preset hue range. Film grain overlay opacity .06. Left-edge accent strip 3pt wide in the roll's preset accent colour.</td></tr>
+    <tr><td>Hero overlay elements</td><td>Top-right: shot count pill (<code>rgba(0,0,0,.62)</code> glass). Bottom-left: roll name 15px/900 + date 10px/500 <code>rgba(255,255,255,.55)</code>.</td></tr>
+    <tr><td>Thumbnail strip</td><td>Below hero: horizontal row of 38×28pt gradient chips, 4pt gap, 10pt horizontal padding. First 4–5 shots shown; "+N" overflow chip for remainder. Border-radius 6px each.</td></tr>
+    <tr><td>Footer row</td><td>Left: vibe tags at 11px <code>rgba(255,255,255,.40)</code>. Right: Play circle CTA (36×36pt, background = preset accent colour, ▶ glyph in white).</td></tr>
+  </tbody>
+</table>
+
+<h3>5.4.4 Date Section Labels</h3>
+<p>Section separator labels between roll groups: 10px/800, uppercase, letter-spacing .08em, color <code>rgba(255,255,255,.22)</code>. Example: "THIS WEEK · MAR 28–31". Positioned 12pt above first card in the group.</p>
+
+<h3>5.4.5 Tab Bar — iOS 26 Floating Glass Pill</h3>
+<table>
+  <thead><tr><th>Property</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Position</td><td>Absolute, bottom 16pt, left 12pt, right 12pt</td></tr>
+    <tr><td>Height</td><td>58pt</td></tr>
+    <tr><td>Background</td><td><code>rgba(20,16,12,.76); backdrop-filter: blur(28px) saturate(200%) brightness(1.14)</code></td></tr>
+    <tr><td>Shape</td><td><code>border-radius: 29px</code> — fully rounded pill</td></tr>
+    <tr><td>Border + shadow</td><td>Border: <code>.5px solid rgba(255,255,255,.13)</code>. Shadow: <code>0 8px 32px rgba(0,0,0,.60)</code>. Inner glow: <code>inset 0 1px 0 rgba(255,255,255,.09)</code></td></tr>
+    <tr><td>Tabs</td><td>Three: Capture (lens/circle icon), Film (film-strip calendar icon, lavender active), Vault (grid-lock icon). SVG glyphs, 20×20pt. Never emoji.</td></tr>
+    <tr><td>Active tab treatment</td><td>Icon in lavender <code>#C4B5FD</code>. Label in lavender 9px/700. 4×4pt lavender dot below label.</td></tr>
+    <tr><td>Inactive tab treatment</td><td>Icon at <code>rgba(255,255,255,.26)</code>. Label in <code>rgba(255,255,255,.26)</code>. No dot.</td></tr>
+    <tr><td>Safe area</td><td>The pill sits 16pt above the home indicator safe area. Feed bottom padding: 88pt + <code>env(safe-area-inset-bottom)</code>.</td></tr>
+  </tbody>
+</table>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>6. Nudge Card</h1>
+
+<h2>6.1 Anatomy</h2>
+<p>The Nudge card is a bottom-sheet that appears when the NudgeEngine fires a trigger. It slides up from the bottom of the screen with a spring animation. It can appear over any surface — Capture Hub, Film Archive, or Vault. The card is dismissible by swipe-down or tapping outside.</p>
+
+<p><strong>Tone principle (MZ-first):</strong> Questions must feel like a friend texting you, not a journaling app prompting you. The register is casual, specific, and aesthetic — it re-inhabits the moment rather than asking you to explain it. Questions are phrased in the <em>language of vibes and sensation</em>, not narrative analysis.</p>
+
+<div class="callout">Writing rule for Nudge questions: if the question could appear on a therapy intake form or a UX research debrief, rewrite it. The test: would a 22-year-old send this exact phrasing to a friend in a text? If yes, it's right.</div>
+
+<div class="wf">
+<svg width="100%" viewBox="0 0 860 500" xmlns="http://www.w3.org/2000/svg">
+  <rect x="260" y="10" width="340" height="480" rx="36" fill="#1A1A1A"/>
+  <rect x="268" y="228" width="324" height="244" rx="20" fill="#fff"/>
+  <rect x="406" y="238" width="48" height="4" rx="2" fill="#D3D1C7"/>
+  <rect x="284" y="252" width="80" height="60" rx="10" fill="#2A2018"/>
+  <text x="324" y="287" text-anchor="middle" font-family="system-ui" font-size="9" fill="rgba(255,255,255,0.6)">hero asset</text>
+  <text x="376" y="266" font-family="system-ui" font-size="13" font-weight="600" fill="#1A1A1A">That market had a whole energy.</text>
+  <text x="376" y="284" font-family="system-ui" font-size="13" font-weight="600" fill="#1A1A1A">Golden hour? Chaotic? Both?</text>
+  <rect x="284" y="322" width="82" height="32" rx="16" fill="#EAE8FC" stroke="#6B4EFF" stroke-width="1"/>
+  <text x="325" y="342" text-anchor="middle" font-family="system-ui" font-size="12" fill="#3C3489">Golden</text>
+  <rect x="374" y="322" width="84" height="32" rx="16" fill="#F8F7F4" stroke="#D3D1C7" stroke-width="1"/>
+  <text x="416" y="342" text-anchor="middle" font-family="system-ui" font-size="12" fill="#1A1A1A">Chaotic</text>
+  <rect x="466" y="322" width="56" height="32" rx="16" fill="#F8F7F4" stroke="#D3D1C7" stroke-width="1"/>
+  <text x="494" y="342" text-anchor="middle" font-family="system-ui" font-size="12" fill="#1A1A1A">Both</text>
+  <rect x="284" y="362" width="108" height="32" rx="16" fill="#F8F7F4" stroke="#D3D1C7" stroke-width="1"/>
+  <text x="338" y="382" text-anchor="middle" font-family="system-ui" font-size="12" fill="#1A1A1A">Somewhere else</text>
+  <text x="284" y="418" font-family="system-ui" font-size="12" fill="#6B4EFF">🎙 Voice note</text>
+  <text x="386" y="418" font-family="system-ui" font-size="12" fill="#6B4EFF">✏️ Write</text>
+  <text x="454" y="418" font-family="system-ui" font-size="12" fill="#6B4EFF">😶‍🌫️ Emoji it</text>
+  <text x="536" y="418" font-family="system-ui" font-size="12" fill="#888780">Not now</text>
+  <rect x="268" y="30" width="324" height="190" rx="14" fill="#0F0D0B" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+  <text x="430" y="60" text-anchor="middle" font-family="system-ui" font-size="12" fill="rgba(255,255,255,0.35)">Film Archive visible behind</text>
+  <line x1="258" y1="275" x2="140" y2="248" stroke="#6B4EFF" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="135" y="244" text-anchor="end" font-family="system-ui" font-size="11" fill="#6B4EFF">AI question</text>
+  <text x="135" y="256" text-anchor="end" font-family="system-ui" font-size="10" fill="#888">aesthetic · felt · casual tone</text>
+  <line x1="258" y1="338" x2="140" y2="338" stroke="#C4B5FD" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="135" y="334" text-anchor="end" font-family="system-ui" font-size="11" fill="#C4B5FD">Quick-reply chips</text>
+  <text x="135" y="346" text-anchor="end" font-family="system-ui" font-size="10" fill="#888">2–4 · vibe-labeled · 1 tap submits</text>
+  <line x1="258" y1="418" x2="140" y2="418" stroke="#888" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="135" y="410" text-anchor="end" font-family="system-ui" font-size="11" fill="#888">Secondary actions</text>
+  <text x="135" y="422" text-anchor="end" font-family="system-ui" font-size="10" fill="#888">Voice · Write · Emoji · Dismiss</text>
+  <line x1="592" y1="338" x2="720" y2="320" stroke="#6B4EFF" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="724" y="316" font-family="system-ui" font-size="10" fill="#6B4EFF">Active chip =</text>
+  <text x="724" y="328" font-family="system-ui" font-size="10" fill="#6B4EFF">purple filled</text>
+  <line x1="592" y1="270" x2="720" y2="270" stroke="#888" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="724" y="266" font-family="system-ui" font-size="10" fill="#888">Hero thumbnail</text>
+  <text x="724" y="278" font-family="system-ui" font-size="10" fill="#888">from triggering Moment</text>
+</svg>
+<div class="wf-caption">Figure 4 — Nudge card bottom-sheet. Hero thumbnail + AI question (aesthetic/felt tone) + 2–4 vibe-labeled chips + four secondary actions including "Emoji it" tertiary. Background uses dark Film Archive (#0F0D0B). One chip tap = submitted, card dismisses with spring animation.</div>
+</div>
+
+<h2>6.2 Nudge Card States</h2>
+<table>
+  <thead><tr><th>State</th><th>Visual</th><th>Interaction</th></tr></thead>
+  <tbody>
+    <tr><td>Default</td><td>White card, question + chips visible. Four secondary actions: 🎙 Voice note · ✏️ Write · 😶‍🌫️ Emoji it · Not now.</td><td>Tap chip → submitted state. Swipe down → dismissed.</td></tr>
+    <tr><td>Chip selected (pre-submit)</td><td>Tapped chip fills purple, scale 1.05</td><td>Tap same chip again = deselect. Auto-submits after 400ms hold.</td></tr>
+    <tr><td>Submitted</td><td>Card shrinks to a small confirmation pill ("Saved ✓"), fades out over 600ms</td><td>No further interaction.</td></tr>
+    <tr><td>Voice note active</td><td>Echo-style mini waveform appears below question, replacing chips temporarily</td><td>Tap mic to stop. Transcript appears as preview. Confirm or discard.</td></tr>
+    <tr><td>Write mode</td><td>Chips hide, text field expands in their place</td><td>Keyboard appears. Submit on return or "Done."</td></tr>
+    <tr><td>Emoji mode</td><td>Chips hide. A compact curated grid of 24 vibe-relevant emojis opens. User selects up to 3. Selected emojis appear as large glyphs above the picker.</td><td>Tap emoji to select (adds to row). Tap again to deselect. "Done" submits the 1–3 emoji sequence as the response value. Stored as a string in nudge_responses.</td></tr>
+    <tr><td>Dismissed</td><td>Card slides down and off screen</td><td>"Not now" tap or swipe-down gesture.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout amber">Emoji picker curation rule: the 24 emojis in the Emoji mode picker are a fixed, vibe-curated set maintained by the product team — not the system default recents. They map to known vibe tags (e.g., 🌅 → Golden hour, 🌧 → Rainy, 🫶 → Intimate, ⚡ → Energetic). The mapping table must be maintained alongside the vibe tag taxonomy. Never use the full system emoji keyboard.</div>
+
+<h2>6.3 Question Template Tone Guide</h2>
+<table>
+  <thead><tr><th>Trigger pattern</th><th>Before (avoid)</th><th>After (use)</th><th>Chip examples</th></tr></thead>
+  <tbody>
+    <tr><td>Vibe shift detected</td><td>"The energy shifted from lively to calm. What changed?"</td><td>"That market had a whole energy. Golden hour? Chaotic? Both?"</td><td>Golden · Chaotic · Both · Somewhere else</td></tr>
+    <tr><td>Extended dwell (&gt;30 min)</td><td>"You spent 90 minutes at this location. What was it about that spot?"</td><td>"You were at that rooftop bar for nearly two hours. What kept you there?"</td><td>The vibe · The people · Lost track of time · Didn't want to leave</td></tr>
+    <tr><td>First-time location</td><td>"First time in this neighborhood. What surprised you most?"</td><td>"First time in Trastevere — what caught you off guard?"</td><td>How quiet it was · The smell · Felt familiar somehow · Nothing, actually</td></tr>
+    <tr><td>High Echo / acoustic signal</td><td>"You captured crowd noise near the port. What was happening?"</td><td>"You recorded a lot of crowd noise near the port. What was going on?"</td><td>Market day · Just passing through · Peak chaos · Actually loved it</td></tr>
+    <tr><td>Weather-notable</td><td>"It was raining the whole time. Did that change the experience?"</td><td>"It was raining the whole walk. Did that make it better or worse?"</td><td>Better · Worse · Honestly fine · Kind of perfect</td></tr>
+    <tr><td>Now Playing signal</td><td>"You were listening to Tame Impala. Does it fit?"</td><td>"You had Tame Impala on the whole walk. On purpose?"</td><td>Obviously · Total accident · Set the whole mood · Need to remember this</td></tr>
+    <tr><td>Generic fallback</td><td>"One word for this moment?"</td><td>"What was the after-vibe?" or "Best thing about it?"</td><td>Quieter · Warmer · Done · Still thinking about it</td></tr>
+  </tbody>
+</table>
+
+<div class="callout teal">Chip writing rule: chips should feel like autocomplete suggestions for what the user is already thinking. Read the chips aloud — if they sound like form labels, rewrite them. If they sound like texts, they're right. Maximum chip label length: 22 characters. Never use a chip that starts with "I felt" or "It was."</div>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>7. Share Sheet</h1>
+
+<h2>7.1 Share Sheet</h2>
+<p>The share sheet is a bottom-sheet triggered from any Moment card or asset long-press. It presents three clearly labeled destinations — the privacy hierarchy is visible at a glance.</p>
+
+<div class="wf">
+<svg width="100%" viewBox="0 0 860 400" xmlns="http://www.w3.org/2000/svg">
+  <rect x="260" y="10" width="340" height="380" rx="36" fill="#1A1A1A"/>
+  <rect x="268" y="160" width="324" height="222" rx="20" fill="#fff"/>
+  <rect x="406" y="168" width="48" height="4" rx="2" fill="#D3D1C7"/>
+  <text x="430" y="196" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="600" fill="#1A1A1A">Share "Rainy Walk · Siena"</text>
+  <rect x="284" y="210" width="292" height="52" rx="12" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+  <text x="316" y="232" font-family="system-ui" font-size="13" font-weight="600" fill="#712B13">Keep private</text>
+  <text x="316" y="250" font-family="system-ui" font-size="11" fill="#993C1D">Stays in your vault only</text>
+  <text x="556" y="240" text-anchor="end" font-family="system-ui" font-size="18" fill="#D85A30">🔒</text>
+  <rect x="284" y="270" width="292" height="52" rx="12" fill="rgba(42,175,124,0.12)" stroke="#2AAF7C" stroke-width="1"/>
+  <text x="316" y="292" font-family="system-ui" font-size="13" font-weight="600" fill="#1A6B4F">Share with your circle</text>
+  <text x="316" y="310" font-family="system-ui" font-size="11" fill="#2A8F65">Up to 10 people · secure link · no account needed</text>
+  <text x="556" y="300" text-anchor="end" font-family="system-ui" font-size="18" fill="#2AAF7C">👥</text>
+  <rect x="284" y="330" width="292" height="42" rx="12" fill="#F8F7F4" stroke="#D3D1C7" stroke-width="1"/>
+  <text x="316" y="348" font-family="system-ui" font-size="13" font-weight="600" fill="#1A1A1A">Share publicly</text>
+  <text x="316" y="364" font-family="system-ui" font-size="11" fill="#888780">Export to Instagram, TikTok, etc.</text>
+  <text x="556" y="354" text-anchor="end" font-family="system-ui" font-size="18" fill="#888780">↗</text>
+  <line x1="258" y1="236" x2="140" y2="200" stroke="#D85A30" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="135" y="196" text-anchor="end" font-family="system-ui" font-size="11" fill="#D85A30">Default state</text>
+  <text x="135" y="208" text-anchor="end" font-family="system-ui" font-size="10" fill="#888">private-first by design</text>
+  <line x1="258" y1="296" x2="140" y2="296" stroke="#2AAF7C" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="135" y="292" text-anchor="end" font-family="system-ui" font-size="11" fill="#2AAF7C">Trusted circle</text>
+  <text x="135" y="304" text-anchor="end" font-family="system-ui" font-size="10" fill="#888">no watermark · link-based</text>
+  <line x1="258" y1="351" x2="140" y2="351" stroke="#888" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="135" y="347" text-anchor="end" font-family="system-ui" font-size="11" fill="#888">Public export</text>
+  <text x="135" y="359" text-anchor="end" font-family="system-ui" font-size="10" fill="#888">watermark on free tier</text>
+</svg>
+<div class="wf-caption">Figure 5 — Share sheet. Three options in explicit privacy hierarchy: vault (default, coral), trusted circle (soft green #2AAF7C), public (neutral gray). Private is always the top option — never buried.</div>
+</div>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>8. Settings — AI &amp; Privacy</h1>
+
+<h2>8.1 AI &amp; Privacy Screen</h2>
+<p>The most important settings screen in the app. Two separate toggles — Enhanced AI and Lab Processing — with honest, plain-language explanations of what each one does and does not send.</p>
+
+<div class="wf">
+<svg width="100%" viewBox="0 0 860 580" xmlns="http://www.w3.org/2000/svg">
+  <rect x="260" y="10" width="340" height="560" rx="36" fill="#0A0A0A" stroke="#333" stroke-width="1"/>
+  <rect x="270" y="20" width="320" height="540" rx="28" fill="#0F0D0B"/>
+  <rect x="270" y="20" width="320" height="56" rx="28" fill="rgba(12,10,8,0.92)"/>
+  <line x1="270" y1="76" x2="590" y2="76" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+  <text x="430" y="51" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="600" fill="#F0EFE8">AI &amp; Privacy</text>
+  <text x="284" y="51" font-family="system-ui" font-size="13" fill="#C4B5FD">‹ Settings</text>
+  <text x="284" y="92" font-family="system-ui" font-size="11" font-weight="600" fill="rgba(255,255,255,0.38)">ON-DEVICE AI (ALWAYS ON)</text>
+  <rect x="278" y="100" width="304" height="64" rx="12" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.10)" stroke-width="0.5"/>
+  <text x="294" y="122" font-family="system-ui" font-size="13" font-weight="600" fill="#F0EFE8">Mode 0 — On-device</text>
+  <text x="294" y="140" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.52)">Capture · indexing · Film Archive · Reel assembly</text>
+  <text x="294" y="156" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.45)">Nothing leaves your device. Always active.</text>
+  <rect x="536" y="118" width="36" height="20" rx="10" fill="#34C759"/>
+  <text x="554" y="132" text-anchor="middle" font-family="system-ui" font-size="9" fill="#fff">ON</text>
+  <text x="284" y="180" font-family="system-ui" font-size="11" font-weight="600" fill="rgba(255,255,255,0.38)">ENHANCED AI</text>
+  <rect x="278" y="188" width="304" height="104" rx="12" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.10)" stroke-width="0.5"/>
+  <text x="294" y="210" font-family="system-ui" font-size="13" font-weight="600" fill="#F0EFE8">Enhanced AI</text>
+  <rect x="520" y="202" width="52" height="26" rx="13" fill="#6B4EFF"/>
+  <circle cx="560" cy="215" r="11" fill="#fff"/>
+  <text x="294" y="230" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.52)">Sends: tags and location name only.</text>
+  <text x="294" y="246" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.45)">Never sends photos or audio.</text>
+  <text x="294" y="262" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.45)">Powers: captions, prose rewrites, nudge questions.</text>
+  <rect x="278" y="300" width="304" height="30" rx="8" fill="rgba(196,181,253,0.12)" stroke="rgba(196,181,253,0.20)" stroke-width="0.5"/>
+  <text x="294" y="320" font-family="system-ui" font-size="11" fill="#C4B5FD">7 of 10 uses remaining this month</text>
+  <text x="556" y="320" text-anchor="end" font-family="system-ui" font-size="11" fill="#6B4EFF">Upgrade</text>
+  <text x="284" y="346" font-family="system-ui" font-size="11" font-weight="600" fill="rgba(255,255,255,0.38)">LAB PROCESSING</text>
+  <rect x="278" y="354" width="304" height="104" rx="12" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.10)" stroke-width="0.5"/>
+  <text x="294" y="376" font-family="system-ui" font-size="13" font-weight="600" fill="#F0EFE8">Lab Processing</text>
+  <rect x="520" y="368" width="52" height="26" rx="13" fill="rgba(255,255,255,0.22)"/>
+  <circle cx="532" cy="381" r="11" fill="#fff"/>
+  <text x="294" y="396" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.52)">Sends: encrypted photos &amp; clips to</text>
+  <text x="294" y="412" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.45)">secure cloud. Purged immediately after.</text>
+  <text x="294" y="428" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.45)">Requires consent every session.</text>
+  <rect x="278" y="466" width="304" height="30" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+  <text x="294" y="486" font-family="system-ui" font-size="11" fill="rgba(255,255,255,0.35)">View purge audit log →</text>
+  <text x="284" y="512" font-family="system-ui" font-size="11" font-weight="600" fill="rgba(255,255,255,0.38)">VAULT</text>
+  <rect x="278" y="520" width="304" height="28" rx="10" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.10)" stroke-width="0.5"/>
+  <text x="294" y="538" font-family="system-ui" font-size="13" fill="#F0EFE8">Vault lock timeout</text>
+  <text x="556" y="538" text-anchor="end" font-family="system-ui" font-size="13" fill="#C4B5FD">5 minutes ›</text>
+  <line x1="258" y1="215" x2="140" y2="215" stroke="#6B4EFF" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="135" y="211" text-anchor="end" font-family="system-ui" font-size="11" fill="#6B4EFF">Enhanced AI ON</text>
+  <text x="135" y="223" text-anchor="end" font-family="system-ui" font-size="10" fill="#888">toggle right = active</text>
+  <line x1="258" y1="381" x2="140" y2="381" stroke="#C4B5FD" stroke-width="0.5" stroke-dasharray="3,2"/>
+  <text x="135" y="377" text-anchor="end" font-family="system-ui" font-size="11" fill="#C4B5FD">Lab OFF (default)</text>
+  <text x="135" y="389" text-anchor="end" font-family="system-ui" font-size="10" fill="#888">toggle left = inactive</text>
+</svg>
+<div class="wf-caption">Figure 6 — AI &amp; Privacy settings. Screen background #0F0D0B; rows use glass cards on dark. Three clearly separated modes. Enhanced AI shows lavender-tint usage counter (10/month free tier). Lab toggle OFF by default. Back link uses lavender accent.</div>
+</div>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>8b. Live Activities &amp; Lock Screen Integration</h1>
+
+<h2>8b.1 Overview</h2>
+<p>niftyMomnt extends its capture surface to the iOS Lock Screen and Dynamic Island via ActivityKit Live Activities. This enables capture actions without unlocking the phone, consistent with the JOMO philosophy. Live Activities are active when a capture session is in progress or an asset was captured in the last 15 minutes.</p>
+
+<table>
+  <thead><tr><th>Element</th><th>Content</th><th>Tap behavior</th><th>Design notes</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Dynamic Island (compact)</strong></td>
+      <td>niftyMomnt icon + active mode indicator dot (color matches preset accent: white=Still, amber=Clip, coral=Echo)</td>
+      <td>Long press to expand</td>
+      <td>Visible when Capture Status active. Dot color must match the Quick Record Lock Screen widget dot.</td>
+    </tr>
+    <tr>
+      <td><strong>Dynamic Island (expanded)</strong></td>
+      <td>Current location name · last asset thumbnail · Moment asset count</td>
+      <td>Tap thumbnail → opens Moment in Film Archive</td>
+      <td>Expanded via long press from compact. Thumbnail styled with active preset.</td>
+    </tr>
+    <tr>
+      <td><strong>Lock Screen — Star location</strong></td>
+      <td>Location pin icon</td>
+      <td>Single tap — no unlock required. Pins current GPS coordinate as a starred point in the Film feed.</td>
+      <td>Must complete within 1s of tap on Face ID devices. Visual confirmation on Dynamic Island compact.</td>
+    </tr>
+    <tr>
+      <td><strong>Lock Screen — Voice note</strong></td>
+      <td>Mic icon</td>
+      <td>Tap → mic activates → tap again to stop. Saves Echo asset to current Moment cluster.</td>
+      <td>Mic active state must show a subtle recording indicator on the Lock Screen. Uses AppIntents framework — no full app launch.</td>
+    </tr>
+    <tr>
+      <td><strong>Lock Screen — Star moment</strong></td>
+      <td>Star icon</td>
+      <td>Single tap — marks current Moment as high-priority for story assembly and nudge engine.</td>
+      <td>Starred Moments shown as pins on Map View and receive higher asset scores in Reel assembly.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout amber">Lock Screen design constraint: all three Lock Screen actions must complete without requiring device unlock on Face ID devices. No action may display a blocking UI element on the Lock Screen.</div>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>9. Onboarding</h1>
+
+<h2>9.1 Flow Overview</h2>
+<p>Onboarding is a 7-step sequence. It introduces the privacy-first philosophy before requesting any permissions. Permissions are requested in the context of their benefit — never as a cold system prompt.</p>
+
+<table>
+  <thead><tr><th>Step</th><th>Screen</th><th>Permission requested</th><th>Key copy</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Welcome — "Every moment, made beautiful."</td><td>None</td><td>Brand intro. Single CTA: "Start capturing."</td></tr>
+    <tr><td>2</td><td>Private-first — vault explanation</td><td>None</td><td>"Everything you capture stays private until you choose to share it. No followers required."</td></tr>
+    <tr><td>3</td><td>Camera &amp; Mic permission</td><td>NSCameraUsageDescription, NSMicrophoneUsageDescription</td><td>"niftyMomnt needs your camera and mic to capture moments."</td></tr>
+    <tr><td>4</td><td>Location permission</td><td>NSLocationWhenInUseUsageDescription</td><td>"Location lets us name your moments and build your map."</td></tr>
+    <tr><td>5</td><td>Optional enrichments — one toggle screen</td><td>Apple Music (MusicKit), Journaling Suggestions, Speech Recognition</td><td>"These let niftyMomnt remember what you were listening to, suggest reflection prompts, and transcribe your voice notes. All optional."</td></tr>
+    <tr><td>6</td><td>Gesture tutorial — interactive</td><td>None</td><td>Interactive walkthrough of the lower-third swipe gesture for mode navigation and the Slide to Lock Clip gesture. User must successfully complete each gesture before advancing. Skip available after 2 failed attempts.</td></tr>
+    <tr><td>7</td><td>Daily capture prompt opt-in</td><td>Push notification permission (if not already granted)</td><td>"Want a gentle nudge to capture something each day? We'll pick the time that fits your rhythm." Toggle off by default.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout teal">Onboarding design rule: permissions are never requested before the benefit is explained. Steps 3–5 each show a visual preview of what the feature looks like before the system prompt fires. Users who deny a permission see a graceful fallback explanation — never an error state.</div>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>10. Widgets</h1>
+
+<h2>10.1 Widget Designs</h2>
+<table>
+  <thead><tr><th>Widget</th><th>Surface</th><th>Layout</th><th>Content spec</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Last Memory</strong></td>
+      <td>Home Screen — medium (2×2)</td>
+      <td>Full-bleed hero image. Moment label bottom-left in white. Preset accent color top-right dot. Timestamp bottom-right.</td>
+      <td>Hero image from most recent Moment, styled with active preset. Label: "[Vibe] · [Place]". Timestamp: relative ("2h ago"). Tap → opens Moment in Film Archive.</td>
+    </tr>
+    <tr>
+      <td><strong>Daily Streak</strong></td>
+      <td>Home Screen — small (1×1)</td>
+      <td>Large streak number centered. Flame icon above. "day streak" label below. Purple background.</td>
+      <td>Integer consecutive capture days. Resets at midnight if no capture. 0 state: shows "Start today." Tap → opens Capture Hub.</td>
+    </tr>
+    <tr>
+      <td><strong>Quick Record</strong></td>
+      <td>Lock Screen — accessory circular</td>
+      <td>niftyMomnt "n" monogram icon. Small color dot below icon indicates active mode (white=Still, amber=Clip, coral=Echo).</td>
+      <td>Tap → opens Capture Hub in last-used mode, target &lt;1s to capture-ready. No unlock required on Face ID devices.</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>11. Accessibility</h1>
+
+<table>
+  <thead><tr><th>Requirement</th><th>Implementation</th></tr></thead>
+  <tbody>
+    <tr><td>VoiceOver — Capture Hub</td><td>Every interactive element has an accessibilityLabel and accessibilityHint. Mode switch announces: "Switched to Clip mode. Hold shutter to record." Shutter announces: "Capture [mode name]." Flash button announces current state: "Flash on" or "Flash off."</td></tr>
+    <tr><td>VoiceOver — Film Archive</td><td>Moment card announces: "[Label], [asset count] captures, [dominant vibe tags]." Hero image has descriptive alt text generated from vibe tags.</td></tr>
+    <tr><td>Dynamic Type</td><td>All text supports Dynamic Type up to Accessibility Extra Large. Card layouts reflow — hero image shrinks, text stack grows. Minimum tap target: 44×44pt.</td></tr>
+    <tr><td>Reduced Motion</td><td>Ghost label: static fade instead of slide. Capture ring: static arc instead of animated fill. Nudge card: crossfade instead of slide-up. Waveform: static amplitude bar instead of animated pulse. Post-capture sticker chips: appear at rest tilt without the bounce entrance.</td></tr>
+    <tr><td>Colour independence</td><td>No UI state is communicated by color alone. Flash active: amber pill AND filled bolt icon AND amber label in accessibility mode. Active preset: both color swatch AND larger size AND white border ring.</td></tr>
+    <tr><td>Gesture alternatives</td><td>All swipe-based gestures (mode switch, Film Archive navigate) have AssistiveTouch button equivalents accessible from the accessibility menu. AF/AE Lock is also accessible via a long-press accessibility action on the viewfinder.</td></tr>
+    <tr><td>Minimum device</td><td>iPhone 15 minimum. iOS 26.0 minimum. Required for updated AI Intelligence frameworks, AVCaptureMultiCamSession (dual-camera), Neural Engine performance, Journaling Suggestions API, and computational photography APIs.</td></tr>
+  </tbody>
+</table>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>12. Lite Variant — UI Differences</h1>
+
+<p>niftyMomnt Lite uses the identical design system, typography, color tokens, and component library as the full app. The differences are feature omissions, not design changes. A user upgrading from Lite to full should recognize every screen immediately.</p>
+
+<table>
+  <thead><tr><th>Surface</th><th>Full app</th><th>Lite variant</th></tr></thead>
+  <tbody>
+    <tr><td>Capture Hub — modes</td><td>5 modes (Still, Live, Clip, Echo, Atmosphere)</td><td>2 modes (Still, Clip only). Mode swipe zone still present — wraps between Still and Clip only.</td></tr>
+    <tr><td>Preset strip</td><td>5 packs + scroll to marketplace</td><td>3 packs (Film Roll, Amalfi Golden, Disposable). No marketplace entry.</td></tr>
+    <tr><td>Capture Hub — top bar</td><td>Roll Mode counter when active. Live Photo toggle (Right ①) functional.</td><td>Roll Mode present and identical. Live Photo toggle present but limited to Still-only buffering behavior.</td></tr>
+    <tr><td>Film cards</td><td>Vibe tags + ambient meta + Nudge response + Make Reel</td><td>Vibe tags + ambient meta. No Nudge response card. Make Reel present (heuristic only — no Lab).</td></tr>
+    <tr><td>Settings</td><td>AI &amp; Privacy (all 3 modes), Storage, Sync</td><td>Settings simplified — no AI &amp; Privacy section. Storage only.</td></tr>
+    <tr><td>Upgrade prompt</td><td>Absent</td><td>Shown when user hits a Lite ceiling (e.g., tries Echo mode, tries Lab). Non-intrusive banner — never a blocking modal during capture.</td></tr>
+  </tbody>
+</table>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>13. Intelligence Graph &amp; Companion App Data Layer</h1>
+
+<h2>13.1 Overview</h2>
+<p>The intelligence graph is the on-device structured metadata layer that powers all four companion apps — Trip Planner, Annual Review, Travel Portfolio, and Shared Journey. This section covers UI requirements for surfaces that expose intelligence graph data. Raw assets remain exclusively in the niftyMomnt encrypted vault. Companion apps are read-only consumers of the graph.</p>
+
+<div class="callout">Architecture principle: companion apps never display raw assets directly without an explicit per-asset user authorization prompt. The intelligence graph — vibe tags, place history, mood data — is the only data that flows across app boundaries without a prompt.</div>
+
+<h2>13.2 Storage Management UI</h2>
+<table>
+  <thead><tr><th>UI element</th><th>Content</th><th>Interaction</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Storage dashboard</td>
+      <td>Bar chart showing: Raw assets (GB) · Intelligence graph (always &lt;50MB) · App overhead. Below: largest Moments list with size and archiving recommendation.</td>
+      <td>Tap a Moment → options: Archive (compress), Delete raw assets (keeps metadata), Delete all.</td>
+    </tr>
+    <tr>
+      <td>Smart archive toggle</td>
+      <td>Settings → Storage → "Auto-archive old assets." When on: Stills &gt;6 months compressed to JPEG 80%; Clips &gt;1 year downsampled to 720p.</td>
+      <td>Toggle (default: off). Threshold configurable. Intelligence graph unaffected by archiving.</td>
+    </tr>
+    <tr>
+      <td>Moment-level delete</td>
+      <td>Long-press a Moment card → "Delete raw assets (keep memory)." Removes HEIF/MP4/M4A files. Retains the Moment record, all vibe tags, place label, ambient metadata, and nudge responses.</td>
+      <td>Requires confirmation: "This will delete the photos and videos in this Moment. The memory — tags, place, and your notes — will be kept." Irreversible.</td>
+    </tr>
+    <tr>
+      <td>iCloud sync toggle</td>
+      <td>Settings → Sync &amp; Backup → "Sync intelligence to iCloud." Syncs the graph (not raw assets) to user's private iCloud CloudKit database for multi-device companion app access.</td>
+      <td>Toggle (default: off). Informational text: "Your photos stay on this iPhone. Only tags, places, and moment data sync." Phase 3 feature — requires niftyMomnt v2.0+.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>13.3 Companion App Authorization UI</h2>
+<table>
+  <thead><tr><th>UI element</th><th>Content</th><th>Behavior</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Companion Apps list</td>
+      <td>Each installed app that has requested intelligence graph access, with the data types it requested.</td>
+      <td>Toggle per app. Revoking access takes effect immediately — app shows "Access revoked" state on next launch.</td>
+    </tr>
+    <tr>
+      <td>Raw asset authorization prompt</td>
+      <td>System-style sheet: "[App name] wants to access photos from your [trip/moment name]. Allow?"</td>
+      <td>Per-request prompt. One-time or "always allow for this app" option. Deny sends app an empty response — no error thrown to user.</td>
+    </tr>
+    <tr>
+      <td>Schema version prompt</td>
+      <td>If a companion app's schema version is behind niftyMomnt's current schema: "Please update [companion app name] to access your latest moments."</td>
+      <td>Non-blocking. Companion app continues to show data up to the schema version it supports.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>13.4 Intelligence Graph — Film Archive UI Touchpoints</h2>
+<table>
+  <thead><tr><th>Graph field</th><th>Film Archive UI element</th><th>Displayed as</th></tr></thead>
+  <tbody>
+    <tr><td><code>place_name</code>, <code>place_label</code></td><td>Moment card label, detail view header</td><td>"Golden Hour · Williamsburg" — Vibe descriptor · Neighborhood/City · Day/Date</td></tr>
+    <tr><td><code>dominant_mood</code>, <code>emotional_palette</code></td><td>Mood Map path color, Emotional Palette card</td><td>Color-coded GPS path; 4–5 color horizontal bar with labels</td></tr>
+    <tr><td><code>acoustic_tags</code></td><td>Vibe tag row in Moment card and Moment Detail sheet</td><td>Glass chip: "🔊 crowded" or "🎵 music" alongside user-selected vibe chips</td></tr>
+    <tr><td><code>social_context</code></td><td>Ambient meta line on Moment card</td><td>Small label below date: "Solo · 2h · golden hour" or "Group · Intimate · 45 min"</td></tr>
+    <tr><td><code>nudge_responses</code></td><td>Nudge response card in Moment detail</td><td>Speech-bubble style card with the user's chip or voice response and timestamp</td></tr>
+    <tr><td><code>shot_arc</code></td><td>Dynamic Island arc + Zone A film strip counter</td><td>Radial fill showing shots used of total; numeric "N left" label</td></tr>
+  </tbody>
+</table>
+
+<hr/>
+
+<p style="font-size:12px;color:#888780;text-align:center;margin-top:40px;">niftyMomnt UI/UX Specification v1.8 · March 2026 · Han Wook Cho · Confidential</p>
+
+</body>
+</html>

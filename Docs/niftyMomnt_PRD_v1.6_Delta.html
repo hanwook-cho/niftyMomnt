@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>niftyMomnt PRD v1.6 — Change Package (Delta from v1.5)</title>
+<style>
+:root {
+  --purple:  #6B4EFF; --purple-l: #EAE8FC; --purple-d: #3C3489;
+  --teal:    #0F6E56; --teal-l:   #E1F5EE; --teal-d:   #085041;
+  --amber:   #BA7517; --amber-l:  #FAEEDA; --amber-d:  #633806;
+  --coral:   #D85A30; --coral-l:  #FAECE7; --coral-d:  #712B13;
+  --blue:    #185FA5; --blue-l:   #E6F1FB; --blue-d:   #0C447C;
+  --gray:    #444441; --gray-l:   #F1EFE8; --gray-d:   #2C2C2A;
+  --border:  #D3D1C7;
+  --text:    #1A1A1A; --text-m:   #5F5E5A; --text-s: #888780;
+  --bg:      #FFFFFF; --bg-soft:  #F8F7F4;
+  --new-bg:  #F0F7FF; --new-border: #185FA5;
+  --del-bg:  #FFF0F0; --del-border: #D85A30;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.7;color:var(--text);background:var(--bg);max-width:980px;margin:0 auto;padding:48px 40px 80px;}
+.cover{border-bottom:3px solid var(--purple);padding-bottom:40px;margin-bottom:56px;}
+.cover .app-name{font-size:52px;font-weight:700;color:var(--purple);letter-spacing:-1px;line-height:1;margin-bottom:8px;}
+.cover .doc-title{font-size:22px;color:var(--gray);font-weight:400;margin-bottom:24px;}
+.cover .meta{font-size:13px;color:var(--text-m);display:flex;flex-wrap:wrap;gap:24px;}
+.cover .meta span{display:flex;align-items:center;gap:6px;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--purple);flex-shrink:0;}
+.change-log{background:var(--blue-l);border:1px solid var(--blue);border-radius:10px;padding:20px 24px;margin-bottom:40px;}
+.change-log h3{font-size:14px;font-weight:700;color:var(--blue-d);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em;}
+h1{font-size:26px;font-weight:700;color:#fff;background:#1A1A2E;padding:14px 20px;border-radius:8px;margin:56px 0 24px;letter-spacing:-.3px;}
+h2{font-size:19px;font-weight:600;color:var(--purple);border-bottom:2px solid var(--purple-l);padding-bottom:6px;margin:40px 0 16px;}
+h3{font-size:16px;font-weight:600;color:var(--text);margin:28px 0 10px;}
+h4{font-size:14px;font-weight:600;color:var(--text-m);margin:18px 0 8px;text-transform:uppercase;letter-spacing:.05em;}
+p{margin-bottom:14px;}
+ul,ol{padding-left:24px;margin-bottom:14px;}
+li{margin-bottom:5px;}
+strong{font-weight:600;}
+code{font-family:'SF Mono',Menlo,'Courier New',monospace;font-size:12.5px;background:var(--gray-l);padding:2px 6px;border-radius:4px;color:var(--coral);}
+.callout{border-left:4px solid var(--purple);background:var(--purple-l);padding:12px 16px;border-radius:0 8px 8px 0;margin:18px 0;font-weight:600;color:var(--purple-d);font-size:13.5px;line-height:1.6;}
+.callout.teal{border-color:var(--teal);background:var(--teal-l);color:var(--teal-d);}
+.callout.amber{border-color:var(--amber);background:var(--amber-l);color:var(--amber-d);}
+.callout.coral{border-color:var(--coral);background:var(--coral-l);color:var(--coral-d);}
+.callout.blue{border-color:var(--blue);background:var(--blue-l);color:var(--blue-d);}
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:13px;}
+th{background:#1A1A2E;color:#fff;padding:8px 12px;text-align:left;font-weight:600;font-size:12px;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+tr:nth-child(even) td{background:var(--bg-soft);}
+tr:last-child td{border-bottom:none;}
+.new-row td{background:var(--new-bg) !important;border-left:3px solid var(--new-border);}
+.new-row td:first-child{padding-left:10px;}
+.del-row td{background:var(--del-bg) !important;border-left:3px solid var(--del-border); text-decoration:line-through; color:#888;}
+.new-badge{background:var(--blue-l);color:var(--blue-d);border:1px solid var(--blue);font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle;}
+.updated-badge{background:var(--amber-l);color:var(--amber-d);border:1px solid var(--amber);font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle;}
+.new-section{border:2px solid var(--blue);border-radius:10px;padding:2px 20px 16px;margin:24px 0;background:var(--new-bg);}
+.new-section-label{font-size:11px;font-weight:700;color:var(--blue-d);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 2px;}
+.del-section{border:2px solid var(--coral);border-radius:10px;padding:2px 20px 16px;margin:24px 0;background:var(--del-bg); opacity:.65;}
+.del-section-label{font-size:11px;font-weight:700;color:var(--coral-d);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 2px;}
+hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
+/* Delta package specific */
+.delta-header{background:#1A1A2E;color:#fff;padding:18px 24px;border-radius:10px;margin-bottom:32px;}
+.delta-header h2{color:#EAE8FC;border:none;margin:0 0 8px;font-size:22px;}
+.delta-header p{color:#9C9A92;margin:0;font-size:13px;}
+.section-target{background:#F0F7FF;border:2px solid var(--blue);border-radius:8px;padding:4px 14px;margin:32px 0 14px;font-size:13px;font-weight:700;color:var(--blue-d);display:flex;align-items:center;gap:10px;}
+.section-target .loc{font-size:11px;font-weight:600;background:#185FA5;color:#fff;padding:2px 8px;border-radius:6px;}
+.resolved{background:#E1F5EE;border:1px solid var(--teal);border-radius:8px;padding:10px 14px;margin:10px 0;font-size:13px;color:var(--teal-d);}
+.resolved strong{color:var(--teal);}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="app-name">niftyMomnt</div>
+  <div class="doc-title">PRD v1.6 — Change Package (Delta from v1.5)</div>
+  <div class="meta">
+    <span><span class="dot"></span>Delta document — apply to PRD v1.5 master</span>
+    <span><span class="dot"></span>March 2026</span>
+    <span><span class="dot"></span>Author: Han Wook Cho · hwcho99@gmail.com</span>
+  </div>
+</div>
+
+<div class="delta-header">
+  <h2>How to use this document</h2>
+  <p>Each section below identifies the exact location in PRD v1.5 that requires change, shows what to remove (if anything), and provides the exact replacement text. Sections are ordered as they appear in the document. After applying all changes, update the cover to read "Version 1.6".</p>
+</div>
+
+<!-- CHANGE LOG -->
+<div class="change-log">
+  <h3>v1.6 Change Log — append this table block to the existing change-log in PRD v1.5</h3>
+  <table>
+    <thead><tr><th>Section</th><th>Change</th><th>Driven by</th></tr></thead>
+    <tbody>
+      <tr class="new-row"><td>§1.3 Scope</td><td>Added Post-Capture Vibe Tag Prompt, Quick Share Pill (UIActivityViewController), Film Strip Counter, Live Vibe Preview toggle as MVP rows. "Journal" → "Film" throughout scope table.</td><td>MZ design critique v1.9/v2.0; product decisions session</td></tr>
+      <tr class="new-row"><td>§1.3 Scope</td><td>Trusted-circle share flow moved to Post-MVP (was listed inline with Quick Share)</td><td>Product decision: iOS UIActivityViewController is MVP share mechanism</td></tr>
+      <tr class="new-row"><td>§2.3 Settings</td><td>Added Live Vibe Preview toggle row (Settings → Capture → Live Vibe Preview, default On)</td><td>Q11 resolution: Metal shader latency risk mitigation</td></tr>
+      <tr class="new-row"><td>§3.5 (new §3.9)</td><td>Added Post-Capture Overlay UX specification — sequential flow, Vibe Tag Prompt, location chip, Quick Share Pill, Nudge Engine sequencing</td><td>MZ design critique; product decision session</td></tr>
+      <tr class="new-row"><td>§3.5 Capture Hub UX</td><td>Updated Zone A icon spec — SVG SF Symbol-style icons, 40×40pt glass pills, iOS 26 Liquid Glass backdrop-filter spec</td><td>v2.0 design critique Q03</td></tr>
+      <tr class="new-row"><td>§5 Film (was Journal)</td><td>"Journal" → "Film" throughout; layout updated to dark editorial (#0F0D0B); iOS 26 floating pill tab bar added</td><td>MZ design critique; v2.0 Review</td></tr>
+      <tr class="new-row"><td>§5.2 Moment Detail</td><td>Full screen spec added: Zone A (back/title/share), full-bleed photo, floating sticker vibes, glass bottom sheet (Fix/Share/more)</td><td>v2.0 design critique Q05 — screen was missing</td></tr>
+      <tr class="new-row"><td>§7 AI Nudge Engine</td><td>Sequencing updated: Vibe Tag Prompt fires first → tags written to metadata → Nudge Engine reads stored tags after window closes</td><td>Product decision: Q11 / vibe tag ↔ nudge sequencing</td></tr>
+      <tr class="new-row"><td>§9.1 Preset colours</td><td>Tokyo Neon accent updated #00E5CC → #C4B5FD (soft lavender); brand colour updated #5B4FCF → #6B4EFF</td><td>v2.0 colour system (Q02); lavender replaces dated cyan</td></tr>
+      <tr class="new-row"><td>§12 Open Questions</td><td>Q10 (location chip derivation) and Q11 (Metal shader toggle) marked Resolved</td><td>Product decision session</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>§1.3 — Scope Table Changes</h1>
+
+<div class="section-target"><span class="loc">§1.3</span> Add these rows to the "In scope (v1.0)" column of the Scope table, grouped with the UX/capture rows</div>
+
+<p>Add the following rows to the existing §1.3 scope table, in the "In scope (v1.0)" column:</p>
+
+<table>
+  <thead><tr><th>In scope (v1.0) — NEW ROWS TO ADD</th><th>Post-MVP</th><th>Future</th></tr></thead>
+  <tbody>
+    <tr class="new-row"><td><strong>Post-Capture Vibe Tag Prompt</strong> <span class="new-badge">NEW v1.6</span> — 4-second emoji chip overlay after every Still/Live capture; direct user vibe tag input; feeds AI Nudge Engine metadata</td><td></td><td></td></tr>
+    <tr class="new-row"><td><strong>Quick Share Pill</strong> <span class="new-badge">NEW v1.6</span> — <code>UIActivityViewController</code> iOS share sheet triggered 3s after post-capture vibe tag window; appears as purple-tinted glass pill</td><td>Trusted-circle share flow (named recipients, persistent album)</td><td></td></tr>
+    <tr class="new-row"><td><strong>Film Strip Counter</strong> <span class="new-badge">NEW v1.6</span> — Zone A visual indicator showing used/remaining shots in current roll as amber film-frame strip + numeric counter</td><td></td><td></td></tr>
+    <tr class="new-row"><td><strong>Live Vibe Preview</strong> <span class="new-badge">NEW v1.6</span> — Real-time Metal shader rendering (grain, vibe tint, light leak) on live viewfinder. Toggleable via Settings → Capture → Live Vibe Preview (default: On); disableable if capture latency exceeds 300ms target on iPhone 15</td><td></td><td></td></tr>
+    <tr class="new-row"><td><strong>Location Vibe Chip</strong> <span class="new-badge">NEW v1.6</span> — On-device location + weather vibe derivation (CoreLocation + WeatherKit + optional SoundAnalysis/Vision); displayed in post-capture overlay (not live viewfinder); resolves in &lt;100ms</td><td></td><td></td></tr>
+  </tbody>
+</table>
+
+<div class="section-target"><span class="loc">§1.3</span> Rename: "Journal" → "Film" in scope table and all references in §1–§5</div>
+
+<p>All occurrences of "Journal," "Auto moment journal," and "Moment journal" in §1.3 and elsewhere in the PRD should be updated to "Film," "Film archive," and "Moment Film," respectively. The tab label, icon (🎞), and screen title all change. The exception: "Apple Journaling Suggestions API" retains its Apple-branded name.</p>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>§2.3 — Asset Settings Table Change</h1>
+
+<div class="section-target"><span class="loc">§2.3</span> Add row to the Asset Settings table (after the existing Sound Stamp row)</div>
+
+<table>
+  <thead><tr><th>Asset type</th><th>Setting</th><th>Default</th><th>Options</th></tr></thead>
+  <tbody>
+    <tr class="new-row"><td>All types (Still/Live) <span class="new-badge">NEW v1.6</span></td><td>Live Vibe Preview</td><td>On</td><td>On / Off (Settings → Capture → Live Vibe Preview). When Off, preset vibe tint, grain, and light-leak shaders are applied post-capture only — not to the live viewfinder. Engineering may default Off on iPhone 15 if performance testing shows &gt;300ms capture latency.</td></tr>
+  </tbody>
+</table>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>§3.5 — Capture Hub UX Rules — Zone A Update</h1>
+
+<div class="section-target"><span class="loc">§3.5</span> Add this subsection to §3.5 Capture Hub UX Rules, after the existing Zone A specification</div>
+
+<div class="new-section">
+<div class="new-section-label">New in v1.6</div>
+<h3>3.5.x Zone A Icon Specification <span class="new-badge">NEW v1.6</span></h3>
+
+<p>Zone A contains four icon pill buttons arranged as two groups: left group (Timer, AF Lock) and right group (Flash, More). All buttons use SVG SF Symbol-style glyphs — never emoji or Unicode placeholder characters. All pills are 40×40pt circular hit targets, exceeding Apple's 44pt minimum when accounting for touch tolerance expansion.</p>
+
+<table>
+  <thead><tr><th>Position</th><th>Icon</th><th>Glyph type</th><th>Active state</th><th>Default state</th></tr></thead>
+  <tbody>
+    <tr><td>Zone A left ①</td><td>Timer</td><td>SVG clock face with hour hand, top crossbar for crown</td><td>Amber pill background <code>rgba(232,160,32,.18)</code> + amber border <code>rgba(232,160,32,.40)</code></td><td>Glass pill <code>rgba(255,255,255,.09)</code></td></tr>
+    <tr><td>Zone A left ②</td><td>AF Lock / Focus frame</td><td>SVG corner-bracket frame with centre dot</td><td>Amber pill background when AF locked</td><td>Glass pill</td></tr>
+    <tr><td>Zone A right ①</td><td>Flash</td><td>SVG filled lightning bolt</td><td><strong>Amber pill</strong> — Flash On is the default active visual state. Bolt fill: <code>rgba(232,160,32,.92)</code></td><td>Glass pill (Off state)</td></tr>
+    <tr><td>Zone A right ②</td><td>More / Overflow</td><td>SVG three horizontal dots</td><td>Glass pill (opens overlay)</td><td>Glass pill</td></tr>
+  </tbody>
+</table>
+
+<p><strong>iOS 26 Liquid Glass backdrop specification for all Zone A glass pills:</strong><br/>
+<code>backdrop-filter: blur(10px) saturate(160%)</code> with inner top-edge glow: <code>inset 0 1px 0 rgba(255,255,255,.08)</code>. Pill border: <code>.5px solid rgba(255,255,255,.12)</code>.</p>
+
+<p><strong>Zone A bar background (iOS 26 Liquid Glass):</strong><br/>
+<code>background: rgba(8,8,8,.22); backdrop-filter: blur(28px) saturate(200%) brightness(1.12)</code> with dual inner-edge glows: <code>inset 0 1px 0 rgba(255,255,255,.07)</code> and <code>inset 0 -1px 0 rgba(255,255,255,.04)</code>. This replaces the flat <code>rgba(0,0,0,.36) blur(20px)</code> from the v1.5 spec — flat frosted glass is iOS 17/18 only; iOS 26 requires the saturate+brightness Liquid Glass formula.</p>
+</div>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>§3.9 (NEW) — Post-Capture Overlay UX</h1>
+
+<div class="section-target"><span class="loc">§3.9 NEW</span> Insert as a new section after §3.8 Still Photo Fix</div>
+
+<div class="new-section">
+<div class="new-section-label">New Section in v1.6</div>
+<h2>3.9 Post-Capture Overlay UX <span class="new-badge">NEW v1.6</span></h2>
+
+<div class="callout amber"><strong>Timing principle:</strong> The post-capture overlay must not interrupt the user's next capture. The full overlay sequence (Vibe Tag Prompt → Quick Share Pill) completes in 7 seconds total, then the overlay dismisses automatically. Users can dismiss at any point by tapping the shutter again.</div>
+
+<h3>3.9.1 Sequential Flow</h3>
+<p>The post-capture overlay fires immediately after every Still or Live capture. The sequence is strictly ordered — no element fires early or late:</p>
+<ol>
+  <li><strong>T+0ms:</strong> Capture completes. Viewfinder freezes on the captured image for 300ms (flash effect).</li>
+  <li><strong>T+300ms:</strong> Post-capture overlay renders over the frozen frame. Location Vibe Chip appears at the top (resolved from on-device sources — see §3.9.3). Vibe Tag Prompt sticker chips animate in with spring-bounce (staggered 0/58/116/174ms delays).</li>
+  <li><strong>T+4s or user tap:</strong> Vibe Tag Prompt window closes. Selected tags are written to the asset's metadata record in the intelligence graph. The Nudge Engine queues these tags for reading when it fires (see §7).</li>
+  <li><strong>T+4.3s:</strong> Quick Share Pill slides up from Zone D (spring animation). Auto-dismisses after 3 seconds if not tapped.</li>
+  <li><strong>T+7.5s:</strong> Overlay clears. Viewfinder returns to live camera. Film strip counter decrements.</li>
+</ol>
+
+<h3>3.9.2 Vibe Tag Prompt</h3>
+<p>The Vibe Tag Prompt presents four sticker chip options. Each chip is a tilted glass pill with a unique rotation angle (−2.5°, +1.8°, −1.2°, +2.2°), varied border-radius (18–28px), and a spring-bounce entrance animation (<code>cubic-bezier(.34,1.56,.64,1)</code>, 420ms). The first chip uses the amber accent colour; remaining chips use neutral glass.</p>
+
+<p>Chip content is AI-suggested based on the active preset, on-device location, time of day, and weather. The user can tap one chip to confirm the vibe tag, or swipe to dismiss without tagging. Tapping a chip plays a subtle haptic (UIImpactFeedbackGenerator .light).</p>
+
+<p>Prompt label copy: "add a vibe" in uppercase, letter-spacing .10em, opacity .38 — does not compete with the chips.</p>
+
+<h3>3.9.3 Location Vibe Chip</h3>
+<p>The Location Vibe Chip appears at the top of the post-capture overlay (not in the live viewfinder — zero chrome impact on capture). It displays the resolved location name + contextual vibe descriptor (e.g., "Hongdae · Seoul · golden hour").</p>
+
+<p>Derivation pipeline (entirely on-device, &lt;100ms):</p>
+<ul>
+  <li>CoreLocation reverse geocoding → neighbourhood + city name</li>
+  <li>WeatherKit → current conditions → mapped to vibe descriptor (golden hour, rainy evening, etc.)</li>
+  <li>Optional: SoundAnalysis ambient classifier or Vision scene classifier (if enabled by Live Vibe Preview setting)</li>
+  <li>Never uses cloud geocoding or third-party location services</li>
+</ul>
+
+<h3>3.9.4 Quick Share Pill</h3>
+<p>The Quick Share Pill uses <code>UIActivityViewController</code> — the standard iOS share sheet. It is the MVP share mechanism. The pill is styled as a purple-tinted glass button (<code>background: rgba(91,79,207,.24); border: 1px solid rgba(107,78,255,.48)</code>) showing up to three close-friends avatars and the label "send to close friends."</p>
+
+<p>Tapping the pill opens the system <code>UIActivityViewController</code> pre-populated with the captured asset. The Trusted-Circle share flow (named recipients, persistent albums) is a Post-MVP feature and is not present in v1.0.</p>
+
+<h3>3.9.5 Nudge Engine Sequencing</h3>
+<p>The AI Nudge Engine reads vibe tags from the intelligence graph — it does not fire during the post-capture window. The exact sequencing is:</p>
+<ol>
+  <li>Vibe Tag Prompt fires and the user selects a tag (or the window auto-closes)</li>
+  <li>Selected tags (if any) are written to the asset's metadata record</li>
+  <li>The Nudge Engine fires after the post-capture window closes, reads the stored tags, and generates a reflection card prompt that incorporates the user's vibe selection</li>
+</ol>
+<p>This ensures the Nudge Engine always has access to the most recent user-provided vibe signal, making its reflection prompts more contextually accurate.</p>
+</div>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>§5 — Film Archive (was Journal)</h1>
+
+<div class="section-target"><span class="loc">§5 header</span> Update section title and all "Journal" references in this section</div>
+
+<p>Rename the section from "§5 Journal" to "§5 Film Archive." Update all in-section references: "journal" → "Film archive," "Journal tab" → "Film tab," "journal card" → "Film card." The iOS tab label reads "Film" with icon 🎞 (or equivalent SF Symbol <code>film</code>). The screen title reads "Film" in 900-weight typography.</p>
+
+<div class="section-target"><span class="loc">§5.1</span> Add this specification block for Film Archive visual layout</div>
+
+<div class="new-section">
+<div class="new-section-label">New in v1.6</div>
+<h3>5.1.x Film Archive — Visual Layout Specification <span class="new-badge">NEW v1.6</span></h3>
+
+<p><strong>Background:</strong> Dark editorial — <code>#0F0D0B</code> (warm near-black). Not adaptive — Film archive is always dark, consistent with the capture surface. This eliminates the jarring light→dark transition of the v1.5 spec.</p>
+
+<p><strong>Header:</strong> "Film" in 26px/900 weight + amber roll-count badge (e.g., "12 rolls"). Right side: search icon + grid-toggle icon (each 34×34pt glass pills). iOS 26 Liquid Glass backdrop.</p>
+
+<p><strong>Roll cards:</strong>
+<ul>
+  <li>Background: <code>rgba(255,255,255,.04)</code> glass; border: <code>.5px solid rgba(255,255,255,.08)</code>; border-radius: 18px</li>
+  <li>Hero zone (130pt height): gradient simulation of the roll's dominant preset colours + film grain overlay (opacity .06) + 3pt accent strip at left edge in the preset's accent colour</li>
+  <li>Shot count pill (top right of hero): <code>rgba(0,0,0,.62)</code> glass backdrop</li>
+  <li>Roll name + date (bottom left of hero): 15px/900 + 10px/500</li>
+  <li>Thumbnail strip (below hero): horizontal row of 38×28pt thumbnail chips showing the first 4–5 shots; "+N" chip at end for overflow</li>
+  <li>Vibe tags + Play circle CTA (below thumbnails): tags in rgba(255,255,255,.40); play circle in the preset's accent colour</li>
+</ul>
+</p>
+
+<p><strong>Tab bar:</strong> iOS 26 floating glass pill. Positioned 16pt above screen edge, 12pt inset left/right. Height 58pt. border-radius 29pt. Background: <code>rgba(20,16,12,.76)</code> with <code>backdrop-filter: blur(28px) saturate(200%) brightness(1.14)</code>. Three tabs: Capture (camera icon), Film (film-strip icon, lavender active dot), Vault (grid-lock icon). Active tab uses lavender <code>#C4B5FD</code> for icon and label; inactive tabs at <code>rgba(255,255,255,.26)</code>.</p>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>§5.2 — Moment Detail Screen (New Full Spec)</h1>
+
+<div class="section-target"><span class="loc">§5.2</span> Replace existing stub with this full specification</div>
+
+<div class="new-section">
+<div class="new-section-label">Expanded in v1.6</div>
+<h2>5.2 Moment Detail Screen <span class="updated-badge">UPDATED v1.6</span></h2>
+
+<p>The Moment Detail screen opens when the user taps any roll card in the Film Archive. It presents a single captured asset (Still or Live) full-screen with metadata, tags, and quick actions accessible via a glass bottom sheet.</p>
+
+<h3>5.2.1 Zone A — Navigation Bar</h3>
+<table>
+  <thead><tr><th>Element</th><th>Position</th><th>Spec</th></tr></thead>
+  <tbody>
+    <tr><td>Back button</td><td>Left</td><td>40×40pt glass circle pill. SVG chevron-left glyph. Tap: slide-right transition back to Film Archive.</td></tr>
+    <tr><td>Roll name + moment title</td><td>Center</td><td>13px/900 weight, letter-spacing .07em. Format: "[PRESET] · [Location]" e.g. "AMALFI · Hongdae Walk". Truncates with ellipsis.</td></tr>
+    <tr><td>Share button</td><td>Right</td><td>40×40pt glass circle pill, purple tint (<code>rgba(107,78,255,.18)</code>, border <code>rgba(107,78,255,.36)</code>). SVG upload/share glyph in lavender <code>#C4B5FD</code>. Tap: opens <code>UIActivityViewController</code> for this asset.</td></tr>
+  </tbody>
+</table>
+<p>Zone A uses iOS 26 Liquid Glass: <code>background: rgba(8,6,4,.22); backdrop-filter: blur(28px) saturate(200%) brightness(1.12)</code>. Height: 68pt.</p>
+
+<h3>5.2.2 Full-Bleed Photo Zone</h3>
+<p>The captured asset fills the screen edge-to-edge below Zone A and above the glass bottom sheet. The active vibe preset's grain, tint, and light-leak overlays are rendered on top (same Metal shaders as the live viewfinder, if Live Vibe Preview is enabled). Film grain overlay: opacity .05, mix-blend-mode overlay.</p>
+
+<p><strong>Navigation:</strong> Swipe left/right to navigate to the previous/next shot within the same roll. A pagination indicator (pill-dot row) at the bottom of the photo zone shows current position within the roll.</p>
+
+<p><strong>Location Vibe Chip:</strong> Displayed at the top of the photo zone, centered. Same glass pill treatment as the post-capture overlay. Auto-hidden after 2 seconds of viewing; reappears on photo tap.</p>
+
+<p><strong>Floating Sticker Vibes:</strong> Vibe tags from the post-capture Vibe Tag Prompt are rendered as tilted sticker chips over the photo (same tilt angles and glass treatment as the post-capture prompt). Each chip is positioned at a fixed location per shot (not randomised per view). Tapping a sticker chip opens a tag-edit overlay allowing the user to change or remove the vibe tag. If no vibe tags were assigned, no stickers are shown — the location chip remains.</p>
+
+<h3>5.2.3 Glass Bottom Sheet</h3>
+<p>The bottom sheet uses iOS 26 Liquid Glass: <code>background: rgba(12,9,6,.82); backdrop-filter: blur(28px) saturate(200%) brightness(1.12)</code>. It overlaps the bottom of the photo zone and extends to the home indicator. The sheet is drag-dismissible (downward) to reveal the full photo.</p>
+
+<table>
+  <thead><tr><th>Element</th><th>Spec</th></tr></thead>
+  <tbody>
+    <tr><td>Handle</td><td>36×4pt rounded bar, <code>rgba(255,255,255,.18)</code>, centered, top of sheet</td></tr>
+    <tr><td>Shot info row</td><td>Left: "Shot N of 24" in 14px/900 weight. Right: date + time in 11px/400 <code>rgba(255,255,255,.38)</code></td></tr>
+    <tr><td>Vibe tags row</td><td>Horizontal row of glass chip pills. User-selected tags use amber accent; AI-derived tags (location, acoustic) use neutral glass. Tappable to edit.</td></tr>
+    <tr><td>Action row</td><td>Three buttons: (1) "Fix this shot" — opens §5.3 Fix Modal. (2) "Share" — opens <code>UIActivityViewController</code>. (3) "•••" overflow menu (Delete, Add to Vault, Copy). Fix and Share are equal-width flex buttons; overflow is 40×40pt.</td></tr>
+    <tr><td>Safe area</td><td>Bottom padding: <code>env(safe-area-inset-bottom)</code> — covers home indicator on all iPhone 15–16 sizes</td></tr>
+  </tbody>
+</table>
+
+<h3>5.2.4 Entry Points</h3>
+<ul>
+  <li>Tap on a thumbnail in a Film Archive roll card → opens Moment Detail at that specific shot</li>
+  <li>Tap on the roll card hero → opens Moment Detail at shot 1 of the roll</li>
+  <li>Tap on the "last" thumbnail in Zone D of the Capture Hub → opens Moment Detail for the most recently captured asset</li>
+</ul>
+</div>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>§7 — AI Nudge Engine Sequencing Update</h1>
+
+<div class="section-target"><span class="loc">§7</span> Add or replace the trigger sequencing paragraph</div>
+
+<div class="new-section">
+<div class="new-section-label">Updated in v1.6</div>
+<h3>7.x Post-Capture Trigger Sequencing <span class="updated-badge">UPDATED v1.6</span></h3>
+
+<p>The AI Nudge Engine does not fire during the post-capture overlay window. The confirmed sequencing is:</p>
+<ol>
+  <li>Capture event fires → Post-Capture Overlay opens (§3.9)</li>
+  <li>Vibe Tag Prompt is presented (T+300ms, 4-second window)</li>
+  <li>User-selected vibe tags are written to the asset's metadata record in the intelligence graph</li>
+  <li>Post-Capture Overlay closes (T+7.5s or on user dismissal)</li>
+  <li>AI Nudge Engine fires, reads the intelligence graph including any user-provided vibe tags from step 3, and generates a reflection card prompt calibrated to those tags</li>
+</ol>
+
+<div class="callout teal"><strong>Why this order matters:</strong> Firing the Nudge Engine after the user's vibe selection — not during the prompt — ensures the AI has access to the user's actual emotional signal before generating the reflection question. A Nudge card for a "golden hour" tag should feel different from one for "city night."</div>
+</div>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>§9 — Preset System Colour Update</h1>
+
+<div class="section-target"><span class="loc">§9.1 or §9.2</span> Update preset accent colours</div>
+
+<table>
+  <thead><tr><th>Preset</th><th>v1.5 accent</th><th>v1.6 accent</th><th>Rationale</th></tr></thead>
+  <tbody>
+    <tr><td>Film Roll</td><td>#C8A882</td><td>#C8A882 (unchanged)</td><td>—</td></tr>
+    <tr><td>Amalfi Golden</td><td>#E8A020</td><td>#E8A020 (unchanged, hero colour)</td><td>—</td></tr>
+    <tr class="new-row"><td><strong>Tokyo Neon</strong> <span class="updated-badge">UPDATED</span></td><td>#00E5CC (cyan)</td><td><strong>#C4B5FD (soft lavender)</strong></td><td>Cyan #00E5CC was a 2018-era fintech teal — dated for a Gen Z film aesthetic app. Soft lavender #C4B5FD is trending in 2025–2026 across Gen Z apps (Notion, Arc, Locket). Retains a distinctly "night/neon" feel without the dated tech connotation.</td></tr>
+    <tr><td>Nordic Still</td><td>#8EB4D4</td><td>#8EB4D4 (unchanged)</td><td>—</td></tr>
+    <tr><td>Disposable</td><td>#FF6B6B</td><td>#FF6B6B (unchanged)</td><td>—</td></tr>
+  </tbody>
+</table>
+
+<p>Also update the brand token in §9.3 (and wherever else referenced):</p>
+<table>
+  <thead><tr><th>Token</th><th>v1.5</th><th>v1.6</th><th>Rationale</th></tr></thead>
+  <tbody>
+    <tr class="new-row"><td><code>--color-brand</code></td><td>#5B4FCF</td><td><strong>#6B4EFF</strong></td><td>Deepened for stronger contrast against dark capture surface (#0A0A0A). The new value also reads distinctively against lavender (#C4B5FD) — they no longer compete in the same hue range.</td></tr>
+  </tbody>
+</table>
+
+<hr/>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>§12 — Open Questions Resolution</h1>
+
+<div class="section-target"><span class="loc">§12</span> Update open questions table — mark Q10 and Q11 as resolved</div>
+
+<p>In the §12.1 Open Questions table, update the following rows:</p>
+
+<div class="resolved">
+  <strong>Q10 — Location chip derivation: RESOLVED</strong><br/>
+  Decision: On-device only. CoreLocation reverse geocoding + WeatherKit API + optional on-device SoundAnalysis / Vision classification (Apple SDK). No cloud geocoding. No third-party location services. Must resolve in &lt;100ms to meet the post-capture overlay display timing. See §3.9.3 for full derivation pipeline specification.
+</div>
+
+<div class="resolved">
+  <strong>Q11 — Metal shader performance toggle: RESOLVED</strong><br/>
+  Decision: Add "Live Vibe Preview" toggle in Settings → Capture → Live Vibe Preview. Default: On. Engineering may ship with it On and advise users to disable if they notice capture lag on iPhone 15 minimum target. The toggle gives engineering a product-sanctioned mitigation path without removing the feature entirely. See §2.3 for the full settings row specification.
+</div>
+
+<hr/>
+
+<div class="callout blue"><strong>Apply these changes in sequence to PRD v1.5 to produce PRD v1.6.</strong> After all changes are applied, update the cover version number to "1.6", update the change log header to "v1.6 Change Log — Updates from v1.5", and update the companion reference to "UI/UX Specification v1.7".</div>
+
+</body>
+</html>

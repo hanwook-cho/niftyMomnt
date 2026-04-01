@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>niftyMomnt — Capture Hub Enhanced Proposal v1.7</title>
+<style>
+:root {
+  --capture-bg: #0A0A0A;
+  --brand: #5B4FCF;
+  --brand-l: #EAE8FC;
+  --accent-amber: #E8A020;
+  --text-primary: rgba(255,255,255,0.92);
+  --text-secondary: rgba(255,255,255,0.55);
+  --text-hint: rgba(255,255,255,0.45);
+  --glass-dark: rgba(0,0,0,0.35);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0F0F1E;
+  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  min-height: 100vh;
+  padding: 48px 32px 80px;
+}
+
+/* ─── Page header ─── */
+.page-header {
+  max-width: 1200px;
+  margin: 0 auto 48px;
+  border-bottom: 1px solid rgba(91,79,207,0.3);
+  padding-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.page-header h1 { font-size: 28px; font-weight: 700; color: #EAE8FC; letter-spacing: -0.4px; }
+.page-header h1 span { color: #5B4FCF; }
+.page-header p { font-size: 13px; color: rgba(255,255,255,0.40); margin-top: 4px; }
+.version-badge {
+  background: #5B4FCF; color: #fff;
+  font-size: 11px; font-weight: 700;
+  padding: 4px 12px; border-radius: 20px;
+  letter-spacing: 0.04em;
+}
+
+/* ─── Layout ─── */
+.stage {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr 300px;
+  gap: 48px;
+  align-items: start;
+}
+
+.phone-col { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.col-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; padding: 4px 14px;
+  border-radius: 20px;
+}
+.col-label.before { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.45); }
+.col-label.after  { background: rgba(91,79,207,0.3); color: #EAE8FC; }
+
+/* ─── Phone frame ─── */
+.phone {
+  width: 390px;
+  height: 844px;
+  background: #0A0A0A;
+  border-radius: 50px;
+  border: 2px solid #2A2A2A;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+}
+
+/* Dynamic Island */
+.di {
+  position: absolute;
+  top: 14px; left: 50%;
+  transform: translateX(-50%);
+  width: 126px; height: 36px;
+  background: #000; border-radius: 18px;
+  z-index: 20;
+  display: flex; align-items: center;
+  justify-content: flex-end;
+  padding-right: 12px; gap: 6px;
+}
+.di-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent-amber); opacity: 0.9; }
+.di-text { font-size: 9px; color: rgba(255,255,255,0.45); }
+
+/* ════════════════════════
+   ZONE A — Top Bar
+════════════════════════ */
+.zone-a {
+  display: flex; align-items: center;
+  padding: 0 14px;
+  flex-shrink: 0;
+  position: relative; z-index: 5;
+  background: var(--glass-dark);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 0.5px solid rgba(255,255,255,0.07);
+}
+/* BEFORE */
+.zone-a.v1 { height: 56px; padding-top: 12px; gap: 8px; }
+.zone-a.v1 .icon-pill { width: 30px; height: 22px; font-size: 11px; }
+.zone-a.v1 .roll-counter { font-size: 11px; font-weight: 500; }
+/* AFTER */
+.zone-a.v2 { height: 72px; padding-top: 14px; gap: 10px; }
+.zone-a.v2 .icon-pill { width: 40px; height: 32px; font-size: 15px; }
+.zone-a.v2 .roll-counter { font-size: 16px; font-weight: 600; }
+
+.icon-pill {
+  background: rgba(255,255,255,0.12);
+  border-radius: 50px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.zone-a-center { flex: 1; display: flex; justify-content: center; }
+.roll-counter { color: var(--text-primary); letter-spacing: 0.3px; }
+.zone-a-right { display: flex; gap: 8px; }
+.zone-a.v2 .zone-a-right { gap: 10px; }
+
+/* ════════════════════════
+   ZONE B — Viewfinder
+════════════════════════ */
+.zone-b {
+  flex: 1;
+  background: #1A1208;
+  position: relative;
+  overflow: hidden;
+}
+.glow-1 {
+  position: absolute; width: 300px; height: 200px;
+  background: radial-gradient(ellipse, rgba(122,74,16,0.32) 0%, transparent 70%);
+  top: 28%; left: 8%; border-radius: 50%; filter: blur(32px);
+}
+.glow-2 {
+  position: absolute; width: 200px; height: 260px;
+  background: radial-gradient(ellipse, rgba(74,40,8,0.38) 0%, transparent 70%);
+  top: 18%; right: 4%; border-radius: 50%; filter: blur(42px);
+}
+.warm-streak {
+  position: absolute; width: 320px; height: 60px;
+  background: radial-gradient(ellipse, rgba(200,120,32,0.10) 0%, transparent 70%);
+  top: 44%; left: 50%; transform: translateX(-50%); filter: blur(20px);
+}
+
+/* Low-light pill — NEW in v2 */
+.low-light-pill {
+  position: absolute;
+  bottom: 58px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(0,0,0,0.52);
+  backdrop-filter: blur(10px);
+  border: 0.5px solid rgba(255,255,255,0.12);
+  border-radius: 24px;
+  padding: 6px 14px 6px 9px;
+  white-space: nowrap;
+}
+.ll-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent-amber);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.45;transform:scale(0.8)} }
+.ll-text { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.68); letter-spacing: 0.15px; }
+
+/* Mode anchor */
+.mode-anchor {
+  position: absolute; bottom: 14px; width: 100%;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+/* BEFORE */
+.mode-anchor.v1 .mode-ghost { font-size: 11px; letter-spacing: 4px; color: rgba(255,255,255,0.28); }
+.mode-anchor.v1 .m-dot     { width: 4px; height: 4px; }
+.mode-anchor.v1 .m-dot.act { width: 5px; height: 5px; }
+/* AFTER */
+.mode-anchor.v2 .mode-ghost { font-size: 13px; letter-spacing: 5px; color: rgba(255,255,255,0.42); }
+.mode-anchor.v2 .m-dot     { width: 5px; height: 5px; }
+.mode-anchor.v2 .m-dot.act { width: 7px; height: 7px; }
+
+.mode-ghost { font-weight: 500; }
+.mode-dots  { display: flex; gap: 8px; align-items: center; }
+.m-dot { border-radius: 50%; background: rgba(255,255,255,0.22); }
+.m-dot.act { background: rgba(255,255,255,0.65); }
+
+/* ════════════════════════
+   ZONE C — Preset Bar
+════════════════════════ */
+.zone-c {
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.32);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex; align-items: center;
+  position: relative;
+}
+.zone-c::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0;
+  background: var(--accent-amber); opacity: 0.85;
+}
+/* BEFORE */
+.zone-c.v1 { height: 36px; padding: 0 14px; gap: 8px; }
+.zone-c.v1::before { height: 1.5px; }
+.zone-c.v1 .preset-dot  { width: 6px; height: 6px; }
+.zone-c.v1 .preset-name { font-size: 12px; font-weight: 600; letter-spacing: 1px; }
+.zone-c.v1 .preset-hint { font-size: 10px; color: rgba(255,255,255,0.30); }
+/* AFTER */
+.zone-c.v2 { height: 48px; padding: 0 18px; gap: 10px; }
+.zone-c.v2::before { height: 2px; }
+.zone-c.v2 .preset-dot  { width: 9px; height: 9px; }
+.zone-c.v2 .preset-name { font-size: 15px; font-weight: 700; letter-spacing: 1.5px; }
+.zone-c.v2 .preset-hint { font-size: 13px; color: rgba(255,255,255,0.55); }
+
+.preset-dot  { border-radius: 50%; background: var(--accent-amber); flex-shrink: 0; }
+.preset-name { color: rgba(255,255,255,0.95); }
+.preset-hint { margin-left: auto; }
+
+/* ════════════════════════
+   ZONE D — Shutter Row
+════════════════════════ */
+.zone-d {
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.40);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex; align-items: center;
+  justify-content: center;
+  position: relative;
+}
+/* BEFORE: no safe area padding */
+.zone-d.v1 { height: 80px; padding: 0 18px; }
+/* AFTER: safe area included */
+.zone-d.v2 { padding: 14px 20px calc(34px + 14px); }
+
+/* Last thumbnail */
+.thumb {
+  position: absolute;
+  background: #1A1208;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 3px;
+}
+.zone-d.v1 .thumb { left: 18px; top: 50%; transform: translateY(-50%); width: 52px; height: 36px; border-radius: 10px; }
+.zone-d.v2 .thumb { left: 20px; top: 14px; width: 64px; height: 46px; border-radius: 12px; }
+.thumb-label {
+  font-weight: 500;
+  color: rgba(255,255,255,0.45);
+}
+.zone-d.v1 .thumb-label { font-size: 9px; }
+.zone-d.v2 .thumb-label { font-size: 11px; }
+.live-badge {
+  background: var(--accent-amber); color: #000;
+  font-size: 8px; font-weight: 700;
+  padding: 1px 5px; border-radius: 3px;
+  letter-spacing: 0.03em;
+}
+
+/* Shutter */
+.shutter-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+.zone-d.v1 .shutter-wrap { width: 68px; height: 68px; }
+.zone-d.v2 .shutter-wrap { width: 96px; height: 96px; }
+
+.sh-outer-track {
+  position: absolute; border-radius: 50%;
+  border-style: solid; border-color: rgba(255,255,255,0.12);
+}
+.zone-d.v1 .sh-outer-track { width: 68px; height: 68px; border-width: 2.5px; }
+.zone-d.v2 .sh-outer-track { width: 96px; height: 96px; border-width: 3px; }
+
+.sh-progress {
+  position: absolute; border-radius: 50%;
+  border-style: solid; border-color: transparent;
+  border-top-color: var(--accent-amber);
+  border-right-color: var(--accent-amber);
+  transform: rotate(-90deg);
+}
+.zone-d.v1 .sh-progress { width: 68px; height: 68px; border-width: 2.5px; }
+.zone-d.v2 .sh-progress { width: 96px; height: 96px; border-width: 3px; }
+
+.sh-body {
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, #ffffff 0%, #e8e8e8 65%, #cccccc 100%);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2;
+}
+.zone-d.v1 .sh-body {
+  width: 54px; height: 54px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 0 1.5px rgba(232,160,32,0.5);
+}
+.zone-d.v2 .sh-body {
+  width: 78px; height: 78px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.5), 0 0 0 2px rgba(232,160,32,0.55);
+}
+
+.sh-inner {
+  border-radius: 50%; border-style: solid;
+  border-color: rgba(232,160,32,0.55);
+  display: flex; align-items: center; justify-content: center;
+}
+.zone-d.v1 .sh-inner { width: 44px; height: 44px; border-width: 1.5px; }
+.zone-d.v2 .sh-inner { width: 62px; height: 62px; border-width: 1.5px; }
+
+.sh-count {
+  font-weight: 700; color: var(--accent-amber);
+}
+.zone-d.v1 .sh-count { font-size: 13px; }
+.zone-d.v2 .sh-count { font-size: 18px; }
+
+/* Flip hint */
+.flip-hint {
+  position: absolute;
+  text-align: center;
+}
+.zone-d.v1 .flip-hint {
+  right: 18px; top: 50%; transform: translateY(-60%);
+}
+.zone-d.v2 .flip-hint {
+  right: 20px; top: 14px;
+}
+.flip-line { display: block; line-height: 1.5; }
+.zone-d.v1 .flip-line { font-size: 9px; color: rgba(255,255,255,0.28); }
+.zone-d.v2 .flip-line { font-size: 12px; color: rgba(255,255,255,0.50); }
+
+/* Home indicator */
+.home-bar {
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  width: 120px; height: 5px;
+  background: rgba(255,255,255,0.25); border-radius: 3px;
+}
+
+/* ════════════════════════
+   Annotation panel
+════════════════════════ */
+.ann-panel {
+  padding-top: 48px;
+  display: flex; flex-direction: column; gap: 0;
+}
+.ann-section-title {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: rgba(255,255,255,0.35);
+  margin-bottom: 16px;
+}
+.ann-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.ann-item:last-child { border-bottom: none; }
+.ann-zone {
+  width: 26px; height: 26px; border-radius: 50%;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.z-a { background: #5B4FCF; color: #fff; }
+.z-b { background: #E8A020; color: #000; }
+.z-b2 { background: #0F6E56; color: #fff; }
+.z-c { background: #D85A30; color: #fff; }
+.z-d { background: #185FA5; color: #fff; }
+.z-d2 { background: #444441; color: #fff; }
+.ann-title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.90); margin-bottom: 4px; }
+.ann-body  { font-size: 12px; color: rgba(255,255,255,0.50); line-height: 1.55; }
+.ann-body code {
+  font-family: 'SF Mono', Menlo, monospace;
+  font-size: 10.5px; color: #E8A020;
+  background: rgba(232,160,32,0.12);
+  padding: 1px 5px; border-radius: 3px;
+}
+.ann-body .new-badge {
+  display: inline-block;
+  background: rgba(15,110,86,0.25); color: #5FD4AA;
+  font-size: 9px; font-weight: 700;
+  padding: 1px 6px; border-radius: 10px;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+}
+
+/* Responsive note */
+.responsive-note {
+  margin-top: 32px;
+  background: rgba(91,79,207,0.12);
+  border: 1px solid rgba(91,79,207,0.25);
+  border-radius: 10px;
+  padding: 16px;
+}
+.responsive-note .rn-title {
+  font-size: 12px; font-weight: 700; color: #EAE8FC; margin-bottom: 8px;
+}
+.responsive-note p {
+  font-size: 12px; color: rgba(255,255,255,0.50); line-height: 1.6;
+}
+.responsive-note code {
+  font-family: 'SF Mono', Menlo, monospace;
+  font-size: 10.5px; color: #E8A020;
+  background: rgba(232,160,32,0.12);
+  padding: 1px 5px; border-radius: 3px;
+}
+.size-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.chip {
+  font-size: 10px; font-weight: 600;
+  padding: 3px 9px; border-radius: 20px;
+  background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.55);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+/* diff arrows between phones */
+.diff-col {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 4px; padding-top: 80px; opacity: 0.5;
+}
+</style>
+</head>
+<body>
+
+<!-- Page header -->
+<div class="page-header">
+  <div>
+    <h1><span>niftyMomnt</span> — Capture Hub</h1>
+    <p>Enhanced Design Proposal · v1.6 → v1.7 · March 2026 · Han Wook Cho</p>
+  </div>
+  <span class="version-badge">v1.7 Proposal</span>
+</div>
+
+<!-- Main stage -->
+<div class="stage">
+
+  <!-- ─── BEFORE ─── -->
+  <div class="phone-col">
+    <div class="col-label before">Current · v1.6</div>
+    <div class="phone">
+      <div class="di"><span class="di-text">niftyMomnt</span><div class="di-dot"></div></div>
+
+      <!-- Zone A: v1 -->
+      <div class="zone-a v1">
+        <div class="icon-pill">⏱</div>
+        <div class="icon-pill">⊙</div>
+        <div class="zone-a-center"><span class="roll-counter">24 left</span></div>
+        <div class="zone-a-right">
+          <div class="icon-pill">⚡</div>
+          <div class="icon-pill">···</div>
+        </div>
+      </div>
+
+      <!-- Zone B: v1 (no low-light) -->
+      <div class="zone-b">
+        <div class="glow-1"></div>
+        <div class="glow-2"></div>
+        <div class="warm-streak"></div>
+        <div class="mode-anchor v1">
+          <div class="mode-ghost">CLIP</div>
+          <div class="mode-dots">
+            <div class="m-dot"></div>
+            <div class="m-dot act"></div>
+            <div class="m-dot"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zone C: v1 -->
+      <div class="zone-c v1">
+        <div class="preset-dot"></div>
+        <span class="preset-name">AMALFI</span>
+        <span class="preset-hint">hold to change</span>
+      </div>
+
+      <!-- Zone D: v1 -->
+      <div class="zone-d v1">
+        <div class="thumb">
+          <span class="thumb-label">last</span>
+        </div>
+        <div class="shutter-wrap">
+          <div class="sh-outer-track"></div>
+          <div class="sh-progress"></div>
+          <div class="sh-body">
+            <div class="sh-inner">
+              <span class="sh-count">8</span>
+            </div>
+          </div>
+        </div>
+        <div class="flip-hint">
+          <span class="flip-line">double-tap</span>
+          <span class="flip-line">to flip</span>
+        </div>
+        <!-- No home indicator coverage ↓ bare black strip here -->
+      </div>
+
+      <!-- bare black strip = the bug -->
+      <div style="height:34px;background:#0A0A0A;flex-shrink:0;"></div>
+    </div>
+  </div>
+
+  <!-- ─── AFTER ─── -->
+  <div class="phone-col">
+    <div class="col-label after">Enhanced · v1.7</div>
+    <div class="phone">
+      <div class="di"><span class="di-text">niftyMomnt</span><div class="di-dot"></div></div>
+
+      <!-- Zone A: v2 -->
+      <div class="zone-a v2">
+        <div class="icon-pill">⏱</div>
+        <div class="icon-pill">⊙</div>
+        <div class="zone-a-center"><span class="roll-counter">🎞 24 left</span></div>
+        <div class="zone-a-right">
+          <div class="icon-pill">⚡</div>
+          <div class="icon-pill">···</div>
+        </div>
+      </div>
+
+      <!-- Zone B: v2 (with low-light pill) -->
+      <div class="zone-b">
+        <div class="glow-1"></div>
+        <div class="glow-2"></div>
+        <div class="warm-streak"></div>
+
+        <!-- NEW: low-light active indicator -->
+        <div class="low-light-pill">
+          <div class="ll-dot"></div>
+          <span class="ll-text">Low light — camera active</span>
+        </div>
+
+        <div class="mode-anchor v2">
+          <div class="mode-ghost">CLIP</div>
+          <div class="mode-dots">
+            <div class="m-dot"></div>
+            <div class="m-dot act"></div>
+            <div class="m-dot"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zone C: v2 -->
+      <div class="zone-c v2">
+        <div class="preset-dot"></div>
+        <span class="preset-name">AMALFI</span>
+        <span class="preset-hint">hold to change</span>
+      </div>
+
+      <!-- Zone D: v2 (covers safe area) -->
+      <div class="zone-d v2">
+        <div class="thumb">
+          <span class="thumb-label">last</span>
+          <span class="live-badge">▶ LIVE</span>
+        </div>
+        <div class="shutter-wrap">
+          <div class="sh-outer-track"></div>
+          <div class="sh-progress"></div>
+          <div class="sh-body">
+            <div class="sh-inner">
+              <span class="sh-count">8</span>
+            </div>
+          </div>
+        </div>
+        <div class="flip-hint">
+          <span class="flip-line">double-tap</span>
+          <span class="flip-line">to flip</span>
+        </div>
+        <div class="home-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Annotations ─── -->
+  <div class="ann-panel">
+    <div class="ann-section-title">Change log · v1.7</div>
+
+    <div class="ann-item">
+      <div class="ann-zone z-a">A</div>
+      <div>
+        <div class="ann-title">Top Bar height + icon size</div>
+        <div class="ann-body">
+          Height <code>56pt → 72pt</code>. Icon pills <code>30×22pt → 40×32pt</code>.
+          Glyphs <code>11px → 15px</code>. Roll counter <code>11px/500 → 16px/600</code>.
+          Film icon reinforces the roll metaphor for new users.
+        </div>
+      </div>
+    </div>
+
+    <div class="ann-item">
+      <div class="ann-zone z-b">B</div>
+      <div>
+        <div class="ann-title">Low-light indicator <span class="new-badge">NEW</span></div>
+        <div class="ann-body">
+          Pulsing amber dot + "Low light — camera active" glass pill.
+          Confirms the camera is alive in dark scenes — prevents the dark
+          viewfinder from reading as a crash or freeze state.
+        </div>
+      </div>
+    </div>
+
+    <div class="ann-item">
+      <div class="ann-zone z-b2">B</div>
+      <div>
+        <div class="ann-title">Mode ghost label + swipe dots</div>
+        <div class="ann-body">
+          Ghost opacity <code>0.28 → 0.42</code>. Label size <code>11px → 13px</code>.
+          Dots <code>4pt/5pt → 5pt/7pt</code>. Improves discoverability of
+          swipe-left / swipe-right mode switching.
+        </div>
+      </div>
+    </div>
+
+    <div class="ann-item">
+      <div class="ann-zone z-c">C</div>
+      <div>
+        <div class="ann-title">Preset Bar taller + bolder text</div>
+        <div class="ann-body">
+          Height <code>36pt → 48pt</code>. Preset name <code>12px/600 → 15px/700</code>.
+          Accent dot <code>6pt → 9pt</code>. "Hold to change" hint
+          <code>10px / opacity 0.30 → 13px / 0.55</code>. Passes glare contrast.
+        </div>
+      </div>
+    </div>
+
+    <div class="ann-item">
+      <div class="ann-zone z-d">D</div>
+      <div>
+        <div class="ann-title">Shutter button — larger</div>
+        <div class="ann-body">
+          Outer ring <code>68pt → 96pt ⌀</code>. Button body <code>54pt → 78pt ⌀</code>.
+          Count label <code>13px → 18px/700</code>. Ring stroke <code>2.5pt → 3pt</code>.
+          Exceeds 44pt min tap target by a wide margin.
+        </div>
+      </div>
+    </div>
+
+    <div class="ann-item">
+      <div class="ann-zone z-d2">D</div>
+      <div>
+        <div class="ann-title">Safe area coverage</div>
+        <div class="ann-body">
+          Zone D background extends <code>+34pt</code> below the shutter
+          (home indicator safe area). Eliminates the bare <code>#0A0A0A</code>
+          strip visible on iPhone 15/16 at the bottom edge.
+        </div>
+      </div>
+    </div>
+
+    <div class="ann-item">
+      <div class="ann-zone z-d2">D</div>
+      <div>
+        <div class="ann-title">Flip hint + thumbnail</div>
+        <div class="ann-body">
+          "Double-tap to flip" <code>9px / opacity 0.28 → 12px / 0.50</code>.
+          Thumbnail <code>52×36pt → 64×46pt</code> with LIVE badge.
+          Both changes pass WCAG AA large-text threshold.
+        </div>
+      </div>
+    </div>
+
+    <!-- Responsive note -->
+    <div class="responsive-note">
+      <div class="rn-title">📐 Responsive — 6.1″ to 6.9″</div>
+      <p>
+        All zones use <code>flex</code> layout with no hardcoded pixel heights except
+        the safe-area inset (<code>env(safe-area-inset-bottom)</code> in production).
+        The shutter row uses <code>align-items: center</code> + dynamic bottom
+        padding so the layout reflows correctly across all supported device sizes.
+      </p>
+      <div class="size-chips">
+        <span class="chip">iPhone 15 · 6.1″ · 390pt</span>
+        <span class="chip">iPhone 15 Plus · 6.7″ · 430pt</span>
+        <span class="chip">iPhone 16 Pro · 6.3″ · 402pt</span>
+        <span class="chip">iPhone 16 Pro Max · 6.9″ · 440pt</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
