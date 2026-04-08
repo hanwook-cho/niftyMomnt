@@ -26,7 +26,8 @@ struct RootView: View {
                 // ── Layer 0: Capture Hub (always present beneath the journal) ──
                 CaptureHubView(
                     container: container,
-                    onNavigateToJournal: { openJournal() }
+                    onNavigateToJournal: { openJournal() },
+                    isCaptureActive: !showJournal && dragOffset == 0
                 )
                 .ignoresSafeArea()
 

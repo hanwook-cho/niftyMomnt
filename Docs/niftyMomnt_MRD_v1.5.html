@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>niftyMomnt — Market Requirements Document v1.5</title>
+<style>
+:root {
+  --purple:  #6B4EFF; --purple-l: #EAE8FC; --purple-d: #3C3489;
+  --teal:    #0F6E56; --teal-l:   #E1F5EE; --teal-d:   #085041;
+  --amber:   #BA7517; --amber-l:  #FAEEDA; --amber-d:  #633806;
+  --coral:   #D85A30; --coral-l:  #FAECE7; --coral-d:  #712B13;
+  --blue:    #185FA5; --blue-l:   #E6F1FB; --blue-d:   #0C447C;
+  --gray:    #444441; --gray-l:   #F1EFE8; --gray-d:   #2C2C2A;
+  --border:  #D3D1C7;
+  --text:    #1A1A1A; --text-m:   #5F5E5A; --text-s: #888780;
+  --bg:      #FFFFFF; --bg-soft:  #F8F7F4;
+  --new-bg:  #F0F7FF; --new-border: #185FA5;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.7;color:var(--text);background:var(--bg);max-width:980px;margin:0 auto;padding:48px 40px 80px;}
+.cover{border-bottom:3px solid var(--purple);padding-bottom:40px;margin-bottom:56px;}
+.cover .app-name{font-size:52px;font-weight:700;color:var(--purple);letter-spacing:-1px;line-height:1;margin-bottom:8px;}
+.cover .doc-title{font-size:22px;color:var(--gray);font-weight:400;margin-bottom:24px;}
+.cover .meta{font-size:13px;color:var(--text-m);display:flex;flex-wrap:wrap;gap:24px;}
+.cover .meta span{display:flex;align-items:center;gap:6px;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--purple);flex-shrink:0;}
+.change-log{background:var(--blue-l);border:1px solid var(--blue);border-radius:10px;padding:20px 24px;margin-bottom:40px;}
+.change-log h3{font-size:14px;font-weight:700;color:var(--blue-d);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em;}
+.change-log table{font-size:13px;margin:0;}
+.change-log th{background:var(--blue-d);font-size:11px;}
+.change-log td{border-color:#C5D9EE;}
+h1{font-size:26px;font-weight:700;color:#fff;background:#1A1A2E;padding:14px 20px;border-radius:8px;margin:56px 0 24px;letter-spacing:-.3px;}
+h2{font-size:19px;font-weight:600;color:var(--purple);border-bottom:2px solid var(--purple-l);padding-bottom:6px;margin:40px 0 16px;}
+h3{font-size:16px;font-weight:600;color:var(--text);margin:28px 0 10px;}
+h4{font-size:14px;font-weight:600;color:var(--text-m);margin:18px 0 8px;text-transform:uppercase;letter-spacing:.05em;}
+p{margin-bottom:14px;}
+ul,ol{padding-left:24px;margin-bottom:14px;}
+li{margin-bottom:5px;}
+strong{font-weight:600;}
+code{font-family:'SF Mono',Menlo,'Courier New',monospace;font-size:12.5px;background:var(--gray-l);padding:2px 6px;border-radius:4px;color:var(--coral);}
+.callout{border-left:4px solid var(--purple);background:var(--purple-l);padding:12px 16px;border-radius:0 8px 8px 0;margin:18px 0;font-weight:600;color:var(--purple-d);font-size:13.5px;line-height:1.6;}
+.callout.teal{border-color:var(--teal);background:var(--teal-l);color:var(--teal-d);}
+.callout.amber{border-color:var(--amber);background:var(--amber-l);color:var(--amber-d);}
+.callout.coral{border-color:var(--coral);background:var(--coral-l);color:var(--coral-d);}
+.callout.blue{border-color:var(--blue);background:var(--blue-l);color:var(--blue-d);}
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:13px;}
+th{background:#1A1A2E;color:#fff;padding:8px 12px;text-align:left;font-weight:600;font-size:12px;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+tr:nth-child(even) td{background:var(--bg-soft);}
+tr:last-child td{border-bottom:none;}
+.new-row td{background:var(--new-bg) !important;border-left:3px solid var(--new-border);}
+.new-row td:first-child{padding-left:10px;}
+.badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.new-badge{background:var(--blue-l);color:var(--blue-d);border:1px solid var(--blue);font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle;}
+.updated-badge{background:var(--amber-l);color:var(--amber-d);border:1px solid var(--amber);font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle;}
+.new-section{border:2px solid var(--blue);border-radius:10px;padding:2px 20px 16px;margin:24px 0;background:var(--new-bg);}
+.new-section-label{font-size:11px;font-weight:700;color:var(--blue-d);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 2px;}
+hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
+.resolved{background:#E1F5EE;border:1px solid var(--teal);border-radius:8px;padding:10px 14px;margin:10px 0;font-size:13px;color:var(--teal-d);}
+.resolved strong{color:var(--teal);}
+@media print{body{max-width:100%;padding:20px;font-size:13px;}h1{break-before:page;}table{break-inside:avoid;}}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="app-name">niftyMomnt</div>
+  <div class="doc-title">Market Requirements Document (MRD)</div>
+  <div class="meta">
+    <span><span class="dot"></span>Version 1.5</span>
+    <span><span class="dot"></span>April 2026 — Updated: includes L4C v0.3.5</span>
+    <span><span class="dot"></span>Confidential</span>
+    <span><span class="dot"></span>Author: Han Wook Cho · hwcho99@gmail.com</span>
+    <span><span class="dot"></span>Platform: iOS · Market: US</span>
+    <span><span class="dot"></span>Companion to PRD v1.7 · UI/UX Spec v1.8</span>
+  </div>
+</div>
+
+<!-- CHANGE LOG -->
+<div class="change-log">
+  <h3>v1.4 → v1.5 Change Log — Updates from v1.4</h3>
+  <table>
+    <thead><tr><th>Section</th><th>Change</th><th>Driven by</th></tr></thead>
+    <tbody>
+      <tr><td>§3 Core User Needs</td><td>Playful social formats need (N-05) added — L4C photo-booth strip called out as a distinct market need with no direct iOS equivalent</td><td>L4C feature v0.3.5</td></tr>
+      <tr><td>§4 Feature Priorities</td><td>Life Four Cuts (Photo Booth) row added — version v0.3.5, High priority, viral format rationale</td><td>L4C feature v0.3.5</td></tr>
+      <tr><td>§6 Success Metrics</td><td>L4C strips shared per DAU metric added (target ≥ 0.15 per DAU)</td><td>L4C feature v0.3.5</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<hr/>
+
+<h1>1. Market Opportunity</h1>
+
+<h2>1.1 Problem Space</h2>
+<p>Contemporary mobile photo capture suffers from a tension that the native camera app has never resolved: the tools optimised for quality (wide-angle, Portrait mode, 4K video) are the same tools used for throwaway snapshots, casual social moments, and playful self-expression. The result is that the majority of social-native photography is either over-processed or lost entirely in the camera roll alongside screenshots, receipts, and duplicates.</p>
+
+<p>At the same time, social platforms have conditioned a generation of users to expect curated-but-casual output — content that feels spontaneous yet aesthetically distinct. TikTok and Instagram Stories have trained audiences to value format (aspect ratio, speed, mood) as signal of authenticity. A plain 12MP still is perceived as low-effort; the same scene captured in a specific aesthetic format reads as intentional.</p>
+
+<div class="callout amber"><strong>Insight:</strong> The market gap is not in megapixels or AI enhancement — it is in <em>capture formats that match how people want to share</em>. The moment of capture needs to feel as designed as the output.</div>
+
+<h2>1.2 Photo-Sharing Fatigue</h2>
+<p>Research across social platforms consistently shows declining organic photo-post frequency among 18–30 year olds, despite increased device camera usage. The primary driver is not reduced desire to share — it is friction and anxiety in the path from capture to post:</p>
+<ul>
+  <li><strong>Curation paralysis:</strong> Too many nearly-identical shots; no clear "best" selection heuristic.</li>
+  <li><strong>Edit overhead:</strong> Native editing tools require multi-step deliberate effort; filters feel dated; the result often does not match the aesthetic the user had in mind at capture time.</li>
+  <li><strong>Platform mismatch:</strong> The 4:3 camera crop is not the 9:16 phone screen; users crop manually or accept black bars.</li>
+  <li><strong>Memory decay:</strong> Photos taken but never reviewed accumulate and lose meaning. The moment is captured but never revisited.</li>
+</ul>
+
+<h2>1.3 The iOS-First Opportunity</h2>
+<p>iOS commands a disproportionate share of the high-value social creator demographic in the US market. iPhone camera hardware has outpaced software experience: the capture pipeline supports real-time depth, multi-frame compositing, and precise timing at the API level, yet third-party apps have historically replicated native camera UX rather than reimagining it. The opportunity is to build a capture-first experience that leverages AVFoundation's power for format-native, vibe-native output — eliminating the post-processing step that currently mediates between capture and share.</p>
+
+<hr/>
+
+<h1>2. Target Users</h1>
+
+<h2>2.1 Primary Segment — Social Creators (18–30)</h2>
+<p>iPhone-primary users who post regularly to Instagram, TikTok, or BeReal. They value aesthetic coherence across their feed, are sensitive to format trends, and share casually but deliberately. They are not professional photographers — they do not want a settings-heavy tool. They expect the app to handle the aesthetic decision within the capture flow, not after it.</p>
+
+<table>
+  <thead><tr><th>Attribute</th><th>Detail</th></tr></thead>
+  <tbody>
+    <tr><td>Age range</td><td>18–30 (core); 31–35 (extended reach)</td></tr>
+    <tr><td>Device</td><td>iPhone 15 or newer (primary); iOS 26+</td></tr>
+    <tr><td>Platform context</td><td>Instagram, TikTok, BeReal; posts 3–7×/week</td></tr>
+    <tr><td>Capture behavior</td><td>Captures in bursts; selects 1–2 to post; deletes rarely; uses Stories format heavily</td></tr>
+    <tr><td>Aesthetic awareness</td><td>High sensitivity to vibe and format; aware of filter trends; rejects overtly processed looks</td></tr>
+    <tr><td>Pain point</td><td>Time between capture and shareable output is too long; native camera roll is chaotic</td></tr>
+  </tbody>
+</table>
+
+<h2>2.2 Secondary Segment — Memory Keepers (25–40)</h2>
+<p>Users who prioritise preservation over social sharing. They want their memories organised automatically, annotated with context (location, time, mood), and retrievable years later. They are willing to grant location and audio permissions because the value proposition of contextual recall is clear to them. They are not early adopters of social trends but respond strongly to moments of genuine nostalgia.</p>
+
+<table>
+  <thead><tr><th>Attribute</th><th>Detail</th></tr></thead>
+  <tbody>
+    <tr><td>Age range</td><td>25–40</td></tr>
+    <tr><td>Device</td><td>iPhone 13 or newer; iOS 17+</td></tr>
+    <tr><td>Capture behavior</td><td>Captures at meaningful occasions; low daily frequency; values search and recall</td></tr>
+    <tr><td>Pain point</td><td>Camera roll is unstructured; Photos app search is keyword-only; memories are hard to surface</td></tr>
+    <tr><td>Value driver</td><td>Automatic clustering, vibe tags, location labels, and temporal narrative of Film Archive</td></tr>
+  </tbody>
+</table>
+
+<hr/>
+
+<h1>3. Core User Needs</h1>
+
+<h2>3.1 Need Matrix</h2>
+<table>
+  <thead><tr><th>#</th><th>Need</th><th>Segment</th><th>Current solution</th><th>Gap</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>N-01</td>
+      <td><strong>Low-friction capture</strong> — from pocket to captured in under 3 seconds with zero manual settings</td>
+      <td>Primary, Secondary</td>
+      <td>Native Camera app</td>
+      <td>No vibe context, no format intelligence, no automatic organisation</td>
+    </tr>
+    <tr>
+      <td>N-02</td>
+      <td><strong>Spontaneous aesthetic formats</strong> — capture modes that produce format-native output (9:16, strip, live) without post-processing</td>
+      <td>Primary</td>
+      <td>VSCO, Halide</td>
+      <td>VSCO edits after capture; Halide is a manual exposure tool; neither produces format-native social output at shutter tap</td>
+    </tr>
+    <tr>
+      <td>N-03</td>
+      <td><strong>Shareable output at capture time</strong> — the captured asset is share-ready immediately; no crop, filter, or edit step required</td>
+      <td>Primary</td>
+      <td>BeReal, native Camera</td>
+      <td>BeReal is dual-cam only, no format variety; native Camera output requires Stories formatting manually</td>
+    </tr>
+    <tr>
+      <td>N-04</td>
+      <td><strong>Automatic memory organisation</strong> — captured assets clustered by moment, tagged with vibe and context, retrievable via search</td>
+      <td>Secondary, Primary</td>
+      <td>Apple Photos, Google Photos</td>
+      <td>Apple Photos requires manual album curation; Google Photos object search lacks aesthetic/mood dimension</td>
+    </tr>
+    <tr class="new-row">
+      <td>N-05</td>
+      <td><strong>Playful social formats</strong> <span class="new-badge">NEW v1.5</span> — capture modes that reference social/cultural formats (photo booth, disposable, etc.) and produce ready-to-share composite output distinctly different from a native camera shot</td>
+      <td>Primary</td>
+      <td>No direct equivalent on iOS</td>
+      <td>No iOS app offers a natively integrated photo-booth strip format with frame overlays, 4-shot countdown, and single-tap share. Life Four Cuts (Korean photo booth trend) has strong cultural resonance in the 18–25 Gen Z cohort and high shareability — composite strips naturally tag the format and generate earned reach.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>3.2 Jobs to Be Done</h2>
+<ul>
+  <li><strong>JTBD-01:</strong> When I'm out with friends, I want to capture the vibe of the moment in a format that's ready to share — so I don't have to spend time editing before posting.</li>
+  <li><strong>JTBD-02:</strong> When I look back at my camera roll months later, I want to find photos by mood and place — not scroll through 2,000 identical frames.</li>
+  <li><strong>JTBD-03:</strong> When I'm in a playful, social setting, I want to do a photo-booth sequence with friends and get a strip I can send immediately — so the memory is tangible and shareable in the moment.</li>
+  <li><strong>JTBD-04:</strong> When I capture audio or ambient sound alongside a photo, I want that acoustic context attached — so I can recall what it actually felt like, not just what it looked like.</li>
+</ul>
+
+<hr/>
+
+<h1>4. Feature Priorities</h1>
+
+<h2>4.1 Feature Priority Table</h2>
+<p>Features are classified by ship version and market priority. "Must Have" features are blockers for launch of their respective version; "High" indicates strong market differentiation; "Medium" indicates quality-of-life improvement with measurable retention impact; "Low" is scheduled for a future major version.</p>
+
+<table>
+  <thead><tr><th>Feature</th><th>Version</th><th>Priority</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Still Photo Capture</strong></td>
+      <td>v0.1</td>
+      <td>Must Have</td>
+      <td>Core capture primitive; AVCapturePhotoOutput; 12MP HEIF; front/rear flip</td>
+    </tr>
+    <tr>
+      <td><strong>Live Photo Capture</strong></td>
+      <td>v0.1</td>
+      <td>Must Have</td>
+      <td>AVCapturePhotoOutput Live Photo; 3-second motion loop; same tap trigger as Still</td>
+    </tr>
+    <tr>
+      <td><strong>Clip (Short Video)</strong></td>
+      <td>v0.1</td>
+      <td>Must Have</td>
+      <td>12–30s H.264; hold-to-record gesture; preset vibe colour grade applied at capture</td>
+    </tr>
+    <tr>
+      <td><strong>Vibe Preset System</strong></td>
+      <td>v0.1</td>
+      <td>Must Have</td>
+      <td>Real-time Metal shader preview; 5 bundled presets (Fuji Film, etc.); user-selectable at capture time</td>
+    </tr>
+    <tr>
+      <td><strong>Film Archive (Moment clustering)</strong></td>
+      <td>v0.2</td>
+      <td>Must Have</td>
+      <td>Automatic time/location clustering into Moments; reverse-chronological feed; dark editorial UI</td>
+    </tr>
+    <tr>
+      <td><strong>Echo (Spatial Audio Capture)</strong></td>
+      <td>v0.2</td>
+      <td>High</td>
+      <td>Binaural ambient audio clip attached to still; acoustic vibe tags extracted via CoreML; differentiated from native voice memo</td>
+    </tr>
+    <tr>
+      <td><strong>Atmosphere (Sky / Environment)</strong></td>
+      <td>v0.2</td>
+      <td>High</td>
+      <td>Wide-angle environment capture; AI scene classification; contextual memory anchor</td>
+    </tr>
+    <tr>
+      <td><strong>AI Nudge Engine</strong></td>
+      <td>v0.2</td>
+      <td>High</td>
+      <td>Contextual prompt cards in Film feed; MZ-tuned felt-register questions; drives journaling engagement</td>
+    </tr>
+    <tr>
+      <td><strong>Sound Stamp</strong></td>
+      <td>v0.3</td>
+      <td>High</td>
+      <td>Still mode: optional ambient audio clip (3s) attached to photo; acoustic vibe tag; visual arc feedback animation</td>
+    </tr>
+    <tr>
+      <td><strong>Still Photo Fix</strong></td>
+      <td>v0.3</td>
+      <td>Medium</td>
+      <td>Non-destructive crop, rotate, flip; derivative asset state; no destructive edit of original</td>
+    </tr>
+    <tr class="new-row">
+      <td><strong>Life Four Cuts (Photo Booth)</strong> <span class="new-badge">NEW v1.5</span></td>
+      <td>v0.3.5</td>
+      <td>High</td>
+      <td>Viral photo-booth format; differentiated from native camera; 4-shot countdown sequence (3-2-1 per shot, white flash) → composite 9:16 JPEG strip (1080×1920px) with Featured Frame PNG overlay and border colour selection; source stills hidden from Film feed; L4CMomentCardView with "&#10022; BOOTH" badge; strongly resonant with 18–25 Gen Z social creators referencing the Korean Life Four Cuts photo booth trend</td>
+    </tr>
+    <tr>
+      <td><strong>Trusted-Circle Share Flow</strong></td>
+      <td>v1.0+</td>
+      <td>Medium</td>
+      <td>Post-MVP; direct share to defined contact groups without leaving app</td>
+    </tr>
+    <tr>
+      <td><strong>Widget &amp; Lock Screen</strong></td>
+      <td>v1.0+</td>
+      <td>Low</td>
+      <td>WidgetKit integration; recent Moment hero on lock screen</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr/>
+
+<h1>5. Competitive Landscape</h1>
+
+<h2>5.1 Direct and Indirect Competitors</h2>
+
+<table>
+  <thead><tr><th>App</th><th>Capture formats</th><th>Organisation / memory</th><th>Social / share</th><th>niftyMomnt gap</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Apple Camera + Photos</strong></td>
+      <td>Still, Live, Video, Portrait, Panorama, Slow-mo, Cinematic</td>
+      <td>Auto-albums, Memories, Shared Albums, search (object / place / date)</td>
+      <td>AirDrop, Messages, social extensions</td>
+      <td>No vibe/mood dimension. No format-native social output (still requires crop + filter externally). No photo-booth strip format. Memory clustering is object-based, not felt/moment-based.</td>
+    </tr>
+    <tr>
+      <td><strong>BeReal</strong></td>
+      <td>Dual front+rear simultaneous; 2-minute window capture; no format variety</td>
+      <td>Memory feed; no clustering or search</td>
+      <td>Friend feed; social-first; reaction system</td>
+      <td>Format is fixed (single dual-cam snap); no aesthetic control; no booth or strip format; no vibe tagging; no acoustic context.</td>
+    </tr>
+    <tr>
+      <td><strong>VSCO</strong></td>
+      <td>Still photo only at capture; filter applied post-capture, not in live preview</td>
+      <td>Studio grid; no moment clustering; no AI organisation</td>
+      <td>VSCO community feed; no direct social share API</td>
+      <td>Capture is a standard camera hand-off — vibe selection is a post-process step. No capture modes (live, echo, booth). No memory narrative.</td>
+    </tr>
+    <tr>
+      <td><strong>Halide Mark III</strong></td>
+      <td>RAW still; manual exposure controls; no video; no strip or booth mode</td>
+      <td>None — exports to Photos</td>
+      <td>None native — exports only</td>
+      <td>Professional / enthusiast tool; no social-native formats; no organisation; no photo-booth mode; high friction for the casual 18–30 user.</td>
+    </tr>
+    <tr>
+      <td><strong>Locket Widget</strong></td>
+      <td>Still only; friend-facing capture; widget display</td>
+      <td>None</td>
+      <td>Friend-to-widget direct share</td>
+      <td>Single-use relationship capture; no memory, no booth, no vibe.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>5.2 Competitive Summary</h2>
+<div class="callout teal"><strong>No competitor on iOS offers:</strong> (1) real-time vibe preset preview at capture time, (2) automatic felt-register memory clustering, (3) a natively integrated photo-booth strip mode (Life Four Cuts), and (4) acoustic context capture — all within the same capture surface. This combination defines niftyMomnt's differentiated market position.</div>
+
+<hr/>
+
+<h1>6. Success Metrics</h1>
+
+<h2>6.1 North Star Metric</h2>
+<p>The North Star Metric for niftyMomnt v1.0 is <strong>Weekly Active Capturers</strong> — users who open the app and complete at least one capture (any mode) in a 7-day window. This metric aligns the product around its core value proposition: being the capture tool people reach for over the native camera.</p>
+
+<h2>6.2 Key Performance Indicators</h2>
+
+<table>
+  <thead><tr><th>Metric</th><th>Target (90 days post-launch)</th><th>Measurement</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Daily Active Users (DAU)</strong></td>
+      <td>D7 retention ≥ 30%</td>
+      <td>App open + at least one UI interaction</td>
+    </tr>
+    <tr>
+      <td><strong>Captures per session</strong></td>
+      <td>≥ 3 captures per active session</td>
+      <td>Count of completed capture events (all modes) per session</td>
+    </tr>
+    <tr>
+      <td><strong>Mode breadth</strong></td>
+      <td>≥ 40% of active users try ≥ 2 capture modes within first 3 sessions</td>
+      <td>Unique capture modes triggered per user within first 3 app sessions</td>
+    </tr>
+    <tr>
+      <td><strong>Shares per session</strong></td>
+      <td>≥ 1 share event per 3 active sessions</td>
+      <td>UIActivityViewController present events per session</td>
+    </tr>
+    <tr class="new-row">
+      <td><strong>L4C strips shared per DAU</strong> <span class="new-badge">NEW v1.5</span></td>
+      <td>≥ 0.15 strips per DAU (15% of daily active users complete and share a BOOTH strip)</td>
+      <td>Save &amp; Share tap events in StripPreviewSheet / UIActivityViewController present from L4C flow</td>
+    </tr>
+    <tr>
+      <td><strong>Film Archive engagement</strong></td>
+      <td>≥ 50% of DAU open Film Archive at least once per day</td>
+      <td>FilmArchiveView appear events per DAU</td>
+    </tr>
+    <tr>
+      <td><strong>Nudge response rate</strong></td>
+      <td>≥ 20% of nudge cards tapped (not dismissed)</td>
+      <td>NudgeCard tap events / NudgeCard appear events</td>
+    </tr>
+    <tr>
+      <td><strong>Permission grant rate</strong></td>
+      <td>Location: ≥ 70% · Microphone: ≥ 55%</td>
+      <td>First-prompt grant events / first-prompt appear events</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>6.3 Qualitative Success Signals</h2>
+<ul>
+  <li>Users describe the app in reviews using aesthetic/mood language ("the vibes are right", "feels like film") rather than feature-list language.</li>
+  <li>App Store ratings maintain ≥ 4.5 stars within 90 days of launch.</li>
+  <li>Photo-booth strip (L4C) content appears organically on social media with identifiable niftyMomnt frame overlays — indicating the format is generating earned reach.</li>
+  <li>At least one L4C Featured Frame is identified as a cultural signal within the 18–25 cohort within 6 months of launch.</li>
+</ul>
+
+<hr/>
+
+<p style="font-size:12px;color:var(--text-s);margin-top:48px;padding-top:20px;border-top:1px solid var(--border);text-align:center;">
+  niftyMomnt Market Requirements Document v1.5 · April 2026 · Confidential — includes L4C v0.3.5<br/>
+  Author: Han Wook Cho · hwcho99@gmail.com<br/>
+  Companion documents: PRD v1.7 · UI/UX Specification v1.8
+</p>
+
+</body>
+</html>

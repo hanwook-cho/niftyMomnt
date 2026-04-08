@@ -62,7 +62,7 @@ struct JournalContainerView: View {
         }
         .preferredColorScheme(.dark)
         // Swipe down → return to Capture Hub
-        .gesture(
+        .simultaneousGesture(
             DragGesture(minimumDistance: 40)
                 .onEnded { value in
                     if value.translation.height > 60

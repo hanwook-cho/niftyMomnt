@@ -2,16 +2,21 @@
 // Spec §5.1 v1.7 — Dark editorial roll card on Film Archive (#0F0D0B).
 //
 // Card anatomy (top → bottom):
-//   1. Hero gradient (130pt, full width, preset left 3pt accent strip)
+//   1. Hero image (130pt, full width, preset left 3pt accent strip)
+//      Falls back to vibe-derived gradient if image not yet loaded.
 //   2. Shot count badge (top-right of hero)
 //   3. Title row: "PRESET · Location" 15pt/900 white
 //   4. Date subtitle: small caption
-//   5. Thumbnail strip: 4 thumbs + "+N" overflow slot
+//   5. Thumbnail strip: up to 4 real thumbnails + "+N" overflow slot
 //   6. Vibe tags row: emoji + text muted white
 //   7. Play circle (right-aligned, preset-coloured)
 
+import AVFoundation
 import NiftyCore
+import os
 import SwiftUI
+
+private let log = Logger(subsystem: "com.hwcho99.niftymomnt", category: "MomentCard")
 
 struct MomentCardView: View {
     let moment: Moment
@@ -20,6 +25,7 @@ struct MomentCardView: View {
     let onTap: () -> Void
     let onPlay: () -> Void
 
+    @State private var heroImage: UIImage? = nil
     var body: some View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 0) {
@@ -28,6 +34,7 @@ struct MomentCardView: View {
             }
         }
         .buttonStyle(.plain)
+        .contentShape(RoundedRectangle(cornerRadius: 18))
         .background(
             RoundedRectangle(cornerRadius: 18)
                 .fill(Color.white.opacity(0.04))
@@ -37,41 +44,64 @@ struct MomentCardView: View {
                 )
         )
         .clipShape(RoundedRectangle(cornerRadius: 18))
+        .task(id: moment.id) { await loadImages() }
     }
 
     // MARK: - Hero
 
     private var heroSection: some View {
         ZStack(alignment: .bottomLeading) {
-            // Hero gradient placeholder — replaced by actual asset thumbnail
-            heroGradient
-                .frame(height: 130)
+            // Hero: real photo or vibe-derived gradient fallback
+            Group {
+                if let img = heroImage {
+                    Image(uiImage: img)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    heroGradient
+                }
+            }
+            .frame(height: 130)
+            .clipped()
 
-            // Left 3pt accent strip (spec: "3pt" not 8pt from v1.6)
+            // Left 3pt accent strip
             HStack(spacing: 0) {
-                presetAccent
-                    .frame(width: 3)
+                presetAccent.frame(width: 3)
                 Spacer()
             }
 
-            // Shot count badge — top right
+            // Top-right: shot count + asset type badge
             VStack {
                 HStack {
                     Spacer()
-                    if !moment.assets.isEmpty {
-                        Text("\(moment.assets.count) shots")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, NiftySpacing.md)
-                            .padding(.vertical, 3)
-                            .background(.black.opacity(0.62))
-                            .clipShape(Capsule())
-                            .padding([.top, .trailing], NiftySpacing.sm)
+                    HStack(spacing: 4) {
+                        // Asset type badge (non-still only)
+                        if let badge = moment.assets.first?.type.badge {
+                            Text(badge)
+                                .font(.system(size: 9, weight: .heavy))
+                                .kerning(0.5)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 3)
+                                .background(Color.niftyBrand.opacity(0.72))
+                                .clipShape(Capsule())
+                        }
+                        if !moment.assets.isEmpty {
+                            Text("\(moment.assets.count) shots")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, NiftySpacing.md)
+                                .padding(.vertical, 3)
+                                .background(.black.opacity(0.62))
+                                .clipShape(Capsule())
+                        }
                     }
+                    .padding([.top, .trailing], NiftySpacing.sm)
                 }
                 Spacer()
             }
         }
+        .frame(height: 130)
         .clipShape(
             UnevenRoundedRectangle(
                 topLeadingRadius: 18,
@@ -83,16 +113,10 @@ struct MomentCardView: View {
     }
 
     private var heroGradient: some View {
-        // Warm editorial tone — replaced by real thumbnail in production
-        LinearGradient(
-            colors: heroColors,
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+        LinearGradient(colors: heroColors, startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 
     private var heroColors: [Color] {
-        // Derive from dominant vibe, fall back to warm-dark default
         switch moment.dominantVibes.first {
         case .golden:
             return [Color(hex: "#1E0A00"), Color(hex: "#7A3A00"), Color(hex: "#E8A020")]
@@ -111,7 +135,6 @@ struct MomentCardView: View {
 
     private var infoSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Title + date
             VStack(alignment: .leading, spacing: 2) {
                 Text(cardTitle)
                     .font(.system(size: 15, weight: .black))
@@ -124,12 +147,6 @@ struct MomentCardView: View {
             .padding(.horizontal, NiftySpacing.md)
             .padding(.top, NiftySpacing.sm + 2)
 
-            // Thumbnail strip
-            thumbnailStrip
-                .padding(.horizontal, NiftySpacing.sm)
-                .padding(.top, NiftySpacing.sm)
-
-            // Vibe tags row + play circle
             HStack(alignment: .center) {
                 Text(vibeTagsLine)
                     .font(.system(size: 11))
@@ -138,7 +155,6 @@ struct MomentCardView: View {
 
                 Spacer()
 
-                // Preset-coloured play circle
                 Button(action: onPlay) {
                     Circle()
                         .fill(presetAccent)
@@ -153,78 +169,129 @@ struct MomentCardView: View {
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, NiftySpacing.md)
-            .padding(.vertical, NiftySpacing.sm)
+            .padding(.top, NiftySpacing.sm)
+            .padding(.bottom, NiftySpacing.sm)
         }
     }
 
-    private var thumbnailStrip: some View {
-        HStack(spacing: 4) {
-            let visible = min(moment.assets.count, 4)
-            let overflow = max(0, moment.assets.count - 4)
+    // MARK: - Image loading
 
-            ForEach(0..<visible, id: \.self) { i in
-                thumbCell(asset: moment.assets[i], isFirst: i == 0)
+    private func loadImages() async {
+        log.debug("loadImages — moment=\(moment.id.uuidString) assets=\(moment.assets.count)")
+
+        // Hero: first asset
+        if let first = moment.assets.first {
+            if let img = await loadThumbnail(for: first) {
+                log.debug("loadImages — hero loaded for \(first.id.uuidString)")
+                heroImage = img
+            } else {
+                log.error("loadImages — hero FAILED for \(first.id.uuidString) (file missing?)")
             }
+        }
 
-            if overflow > 0 {
-                overflowCell(count: overflow)
-            }
+        log.debug("loadImages done — hero=\(heroImage != nil)")
+    }
 
-            Spacer()
+    /// Loads a UIImage thumbnail for an asset regardless of type (still/live → JPEG, video → first frame).
+    private func loadThumbnail(for asset: Asset) async -> UIImage? {
+        switch asset.type {
+        case .still, .live, .l4c:
+            return loadJPEGFromVault(assetID: asset.id)
+        case .clip, .echo, .atmosphere:
+            return await extractVideoThumbnail(assetID: asset.id)
         }
     }
 
-    private func thumbCell(asset: Asset, isFirst: Bool) -> some View {
-        // Placeholder — real integration: use a thumbnail image view
-        RoundedRectangle(cornerRadius: 6)
-            .fill(
-                isFirst
-                    ? LinearGradient(colors: heroColors, startPoint: .topLeading, endPoint: .bottomTrailing)
-                    : LinearGradient(colors: [Color.white.opacity(0.06), Color.white.opacity(0.06)],
-                                     startPoint: .top, endPoint: .bottom)
-            )
-            .frame(width: 38, height: 28)
+    /// Reads the JPEG file written by VaultRepository at Documents/assets/{id}.jpg.
+    private func loadJPEGFromVault(assetID: UUID) -> UIImage? {
+        guard let dir = FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
+        let url = dir
+            .appendingPathComponent("assets")
+            .appendingPathComponent("\(assetID.uuidString).jpg")
+        log.debug("loadJPEGFromVault — path: \(url.path)")
+        guard let data = try? Data(contentsOf: url) else {
+            log.error("loadJPEGFromVault — no file at \(url.lastPathComponent)")
+            return nil
+        }
+        guard let image = UIImage(data: data) else {
+            log.error("loadJPEGFromVault — UIImage(data:) failed for \(url.lastPathComponent)")
+            return nil
+        }
+        log.debug("loadJPEGFromVault — OK \(data.count)B → \(Int(image.size.width))×\(Int(image.size.height))px")
+        return image
     }
 
-    private func overflowCell(count: Int) -> some View {
-        RoundedRectangle(cornerRadius: 6)
-            .fill(Color.white.opacity(0.06))
-            .frame(width: 38, height: 28)
-            .overlay(
-                Text("+\(count)")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.28))
-            )
+    /// Extracts the first frame of a .mov video via AVAssetImageGenerator.
+    private func extractVideoThumbnail(assetID: UUID) async -> UIImage? {
+        guard let dir = FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
+        let url = dir
+            .appendingPathComponent("assets")
+            .appendingPathComponent("\(assetID.uuidString).mov")
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            log.error("extractVideoThumbnail — no .mov at \(url.lastPathComponent)")
+            return nil
+        }
+        let avAsset = AVURLAsset(url: url)
+        let generator = AVAssetImageGenerator(asset: avAsset)
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: 400, height: 400)
+        do {
+            let (cgImage, _) = try await generator.image(at: .zero)
+            log.debug("extractVideoThumbnail — OK for \(assetID.uuidString)")
+            return UIImage(cgImage: cgImage)
+        } catch {
+            log.error("extractVideoThumbnail — failed for \(assetID.uuidString): \(error)")
+            return nil
+        }
     }
 
     // MARK: - Helpers
 
     private var cardTitle: String {
-        "\(presetName) · \(placeLabel)"
-    }
-
-    private var placeLabel: String {
-        // Extract place from moment label, fall back to label itself
-        let parts = moment.label.split(separator: "·").map { $0.trimmingCharacters(in: .whitespaces) }
-        return parts.first ?? moment.label
+        "\(presetName) · \(moment.label)"
     }
 
     private var dateSubtitle: String {
         let fmt = DateFormatter()
         fmt.dateFormat = "EEE, MMM d"
-        let time = DateFormatter()
-        time.dateFormat = "h:mm a"
+        let timeFmt = DateFormatter()
+        timeFmt.dateFormat = "h:mm a"
         let sunPos = moment.assets.first?.ambient.sunPosition?.rawValue ?? ""
-        let parts = [fmt.string(from: moment.startTime), time.string(from: moment.startTime), sunPos]
+        let weatherStr: String = {
+            guard let asset = moment.assets.first else { return "" }
+            var parts: [String] = []
+            if let cond = asset.ambient.weather { parts.append(cond.emoji) }
+            if let temp = asset.ambient.temperatureC { parts.append(String(format: "%.0f°", temp)) }
+            return parts.joined(separator: " ")
+        }()
+        let parts = [fmt.string(from: moment.startTime),
+                     timeFmt.string(from: moment.startTime),
+                     sunPos, weatherStr]
             .filter { !$0.isEmpty }
         return parts.joined(separator: " · ")
     }
 
     private var vibeTagsLine: String {
-        moment.dominantVibes.prefix(3).map { tag in
-            "\(tag.emoji) \(tag.rawValue)"
-        }.joined(separator: "  ·  ")
+        moment.dominantVibes.prefix(3).map { "\($0.emoji) \($0.rawValue)" }.joined(separator: "  ·  ")
     }
 }
 
 // Note: VibeTag.emoji is declared in JournalFeedView.swift (module-internal extension).
+
+// MARK: - AssetType display helpers
+
+private extension AssetType {
+    /// Short badge label shown on the hero image. nil for still (no badge needed).
+    var badge: String? {
+        switch self {
+        case .still:      return nil
+        case .live:       return "LIVE"
+        case .clip:       return "CLIP"
+        case .echo:       return "ECHO"
+        case .atmosphere: return "ATMOS"
+        case .l4c:        return nil   // L4C composites shown via L4CMomentCardView, not here
+        }
+    }
+}

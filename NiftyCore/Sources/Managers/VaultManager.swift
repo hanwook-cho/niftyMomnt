@@ -14,6 +14,14 @@ public actor VaultManager {
         try await vault.save(asset, data: data)
     }
 
+    public func saveVideoFile(_ asset: Asset, sourceURL: URL) async throws {
+        try await vault.saveVideoFile(asset, sourceURL: sourceURL)
+    }
+
+    public func saveLiveMovieFile(_ asset: Asset, sourceURL: URL) async throws {
+        try await vault.saveLiveMovieFile(asset, sourceURL: sourceURL)
+    }
+
     public func saveDerivative(_ derivative: DerivativeAsset, data: Data, sourceAssetID: UUID) async throws {
         try await vault.saveDerivative(derivative, data: data, sourceAssetID: sourceAssetID)
     }

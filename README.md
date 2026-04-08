@@ -78,7 +78,8 @@ Design documents live in [`Docs/`](Docs/). The current production spec is **v1.8
 |---|---|
 | `niftyMomnt_UIUX_Spec_v1.8.html` | Full UI/UX specification (current) |
 | `niftyMomnt_SRS_v1_0_Definitive.docx.pdf` | Software Requirements Specification |
-| `niftyMomnt_PRD_v1_5.html` | Product Requirements Document |
+| `niftyMomnt_PRD_v1_5.html` | Product Requirements v1.5 that needs to be updated to v1.6 |
+| `niftyMomnt_PRD_v1.6_Delta.html` | Product Requirements changes from v1.5 (`niftyMomnt_PRD_v1_5.html`) to v1.6  Document |
 
 ---
 

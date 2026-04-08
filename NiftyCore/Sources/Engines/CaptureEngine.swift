@@ -46,6 +46,17 @@ public final class CaptureEngine: CaptureEngineProtocol {
         captureStateSubject.send(.idle)
     }
 
+    public func startRecording(mode: CaptureMode) async throws {
+        try await captureAdapter.startRecording(mode: mode)
+        captureStateSubject.send(.capturing(mode: mode))
+    }
+
+    public func stopRecording() async throws -> Asset {
+        let asset = try await captureAdapter.stopRecording()
+        captureStateSubject.send(.processing)
+        return asset
+    }
+
     public func captureAsset() async throws -> Asset {
         captureStateSubject.send(.capturing(mode: currentMode()))
         let asset = try await captureAdapter.captureAsset()
@@ -58,17 +69,29 @@ public final class CaptureEngine: CaptureEngineProtocol {
         return asset
     }
 
-    public func switchMode(to mode: CaptureMode) async throws {
+    public func switchMode(to mode: CaptureMode, gestureTime: Double) async throws {
         let wasStill = currentMode() == .still
         let isStill = mode == .still
         if wasStill && !isStill {
             await soundStampPipeline.deactivatePreRoll()
         }
-        try await captureAdapter.switchMode(to: mode)
+        try await captureAdapter.switchMode(to: mode, gestureTime: gestureTime)
         if isStill && config.features.contains(.soundStamp) {
             try await soundStampPipeline.activatePreRoll()
         }
         captureStateSubject.send(.ready(mode: mode))
+    }
+
+    public func switchCamera() async throws {
+        try await captureAdapter.switchCamera()
+    }
+
+    public func focusAndLock(at point: CGPoint, frameSize: CGSize) async throws {
+        try await captureAdapter.focusAndLock(at: point, frameSize: frameSize)
+    }
+
+    public func unlockFocusAndExposure() async {
+        await captureAdapter.unlockFocusAndExposure()
     }
 
     public func applyPreset(_ preset: VibePreset) async {
@@ -83,6 +106,7 @@ public final class CaptureEngine: CaptureEngineProtocol {
             case .clip:       return config.assetTypes.contains(.clip)
             case .echo:       return config.assetTypes.contains(.echo)
             case .atmosphere: return config.assetTypes.contains(.atmosphere)
+            case .photoBooth: return config.features.contains(.l4c)
             }
         }
     }

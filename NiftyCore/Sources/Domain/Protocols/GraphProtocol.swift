@@ -11,8 +11,13 @@ public protocol GraphProtocol: AnyObject, Sendable {
     func updatePlaceRecord(_ record: PlaceRecord) async throws
     func saveDerivativeRecord(_ derivative: DerivativeAsset) async throws
     func deleteDerivativeRecord(for assetID: UUID) async throws
+    func deleteMoment(_ momentID: UUID) async throws
     func fetchMoments(query: GraphQuery) async throws -> [Moment]
     func fetchPlaceHistory(limit: Int) async throws -> [PlaceRecord]
     func fetchMoodMap(range: DateInterval) async throws -> [MoodPoint]
     func exportForCompanion() async throws -> GraphExport
+    // MARK: L4C
+    func saveL4CRecord(_ record: L4CRecord) async throws
+    func fetchL4CRecords() async throws -> [L4CRecord]
+    func deleteL4CRecord(_ id: UUID) async throws -> [UUID]  // returns source asset IDs for vault cleanup
 }

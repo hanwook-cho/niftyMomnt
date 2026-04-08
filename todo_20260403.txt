@@ -1,0 +1,28 @@
+- niftyMomentLite Feature Set
+. Fouced on capture, preview, save and share
+. No clustering
+. Film view: Grid?
+. Roll size = 24
+. UI/UX after a Roll is fully consumed?
+   . Roll will be removed in some days?
+   . Inform User of Roll should be save to permanent Storage?
+   . Ask User to Save or export before timeout?
+
+- Clustering
+  . simplest one.
+  . better algorithms --> TBD: using other sensor data and how to map to POI
+    . CLLocationManager?
+  . later provide how to fix the wrong clustering.
+
+- FilmView layout idea
+
+- Sharing / Export 
+. Conversion to other apps understand
+. other than system sharing sheet
+   . Notion has idea 
+
+- saving/backup/restore 
+. Export?  
+
+- Filters
+. 

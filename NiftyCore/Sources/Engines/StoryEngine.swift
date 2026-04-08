@@ -46,6 +46,7 @@ public final class StoryEngine: Sendable {
         case .clip: return 0.8  // placeholder — motion analysis TBD
         case .still, .live: return 0.4
         case .echo, .atmosphere: return 0.5
+        case .l4c: return 0.4
         }
     }
 

@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>niftyMomnt — Product Requirements Document v1.7</title>
+<style>
+:root {
+  --purple:  #6B4EFF; --purple-l: #EAE8FC; --purple-d: #3C3489;
+  --teal:    #0F6E56; --teal-l:   #E1F5EE; --teal-d:   #085041;
+  --amber:   #BA7517; --amber-l:  #FAEEDA; --amber-d:  #633806;
+  --coral:   #D85A30; --coral-l:  #FAECE7; --coral-d:  #712B13;
+  --blue:    #185FA5; --blue-l:   #E6F1FB; --blue-d:   #0C447C;
+  --gray:    #444441; --gray-l:   #F1EFE8; --gray-d:   #2C2C2A;
+  --border:  #D3D1C7;
+  --text:    #1A1A1A; --text-m:   #5F5E5A; --text-s: #888780;
+  --bg:      #FFFFFF; --bg-soft:  #F8F7F4;
+  --new-bg:  #F0F7FF; --new-border: #185FA5;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.7;color:var(--text);background:var(--bg);max-width:980px;margin:0 auto;padding:48px 40px 80px;}
+.cover{border-bottom:3px solid var(--purple);padding-bottom:40px;margin-bottom:56px;}
+.cover .app-name{font-size:52px;font-weight:700;color:var(--purple);letter-spacing:-1px;line-height:1;margin-bottom:8px;}
+.cover .doc-title{font-size:22px;color:var(--gray);font-weight:400;margin-bottom:24px;}
+.cover .meta{font-size:13px;color:var(--text-m);display:flex;flex-wrap:wrap;gap:24px;}
+.cover .meta span{display:flex;align-items:center;gap:6px;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--purple);flex-shrink:0;}
+.change-log{background:var(--blue-l);border:1px solid var(--blue);border-radius:10px;padding:20px 24px;margin-bottom:40px;}
+.change-log h3{font-size:14px;font-weight:700;color:var(--blue-d);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em;}
+.change-log table{font-size:13px;margin:0;}
+.change-log th{background:var(--blue-d);font-size:11px;}
+.change-log td{border-color:#C5D9EE;}
+h1{font-size:26px;font-weight:700;color:#fff;background:#1A1A2E;padding:14px 20px;border-radius:8px;margin:56px 0 24px;letter-spacing:-.3px;}
+h2{font-size:19px;font-weight:600;color:var(--purple);border-bottom:2px solid var(--purple-l);padding-bottom:6px;margin:40px 0 16px;}
+h3{font-size:16px;font-weight:600;color:var(--text);margin:28px 0 10px;}
+h4{font-size:14px;font-weight:600;color:var(--text-m);margin:18px 0 8px;text-transform:uppercase;letter-spacing:.05em;}
+p{margin-bottom:14px;}
+ul,ol{padding-left:24px;margin-bottom:14px;}
+li{margin-bottom:5px;}
+strong{font-weight:600;}
+code{font-family:'SF Mono',Menlo,'Courier New',monospace;font-size:12.5px;background:var(--gray-l);padding:2px 6px;border-radius:4px;color:var(--coral);}
+.callout{border-left:4px solid var(--purple);background:var(--purple-l);padding:12px 16px;border-radius:0 8px 8px 0;margin:18px 0;font-weight:600;color:var(--purple-d);font-size:13.5px;line-height:1.6;}
+.callout.teal{border-color:var(--teal);background:var(--teal-l);color:var(--teal-d);}
+.callout.amber{border-color:var(--amber);background:var(--amber-l);color:var(--amber-d);}
+.callout.coral{border-color:var(--coral);background:var(--coral-l);color:var(--coral-d);}
+.callout.blue{border-color:var(--blue);background:var(--blue-l);color:var(--blue-d);}
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:13px;}
+th{background:#1A1A2E;color:#fff;padding:8px 12px;text-align:left;font-weight:600;font-size:12px;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5;}
+tr:nth-child(even) td{background:var(--bg-soft);}
+tr:last-child td{border-bottom:none;}
+.new-row td{background:var(--new-bg) !important;border-left:3px solid var(--new-border);}
+.new-row td:first-child{padding-left:10px;}
+.badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.new-badge{background:var(--blue-l);color:var(--blue-d);border:1px solid var(--blue);font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle;}
+.updated-badge{background:var(--amber-l);color:var(--amber-d);border:1px solid var(--amber);font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:middle;}
+.new-section{border:2px solid var(--blue);border-radius:10px;padding:2px 20px 16px;margin:24px 0;background:var(--new-bg);}
+.new-section-label{font-size:11px;font-weight:700;color:var(--blue-d);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 2px;}
+hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
+.resolved{background:#E1F5EE;border:1px solid var(--teal);border-radius:8px;padding:10px 14px;margin:10px 0;font-size:13px;color:var(--teal-d);}
+.resolved strong{color:var(--teal);}
+@media print{body{max-width:100%;padding:20px;font-size:13px;}h1{break-before:page;}table{break-inside:avoid;}}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="app-name">niftyMomnt</div>
+  <div class="doc-title">Product Requirements Document (PRD)</div>
+  <div class="meta">
+    <span><span class="dot"></span>Version 1.7</span>
+    <span><span class="dot"></span>April 2026 — Updated: includes L4C v0.3.5</span>
+    <span><span class="dot"></span>Confidential</span>
+    <span><span class="dot"></span>Companion to UI/UX Specification v1.8</span>
+    <span><span class="dot"></span>Platform: iOS · Market: US · Builds on MRD v1.5</span>
+    <span><span class="dot"></span>Author: Han Wook Cho · hwcho99@gmail.com</span>
+  </div>
+</div>
+
+<!-- CHANGE LOG -->
+<div class="change-log">
+  <h3>v1.6 → v1.7 Change Log — Updates from v1.6</h3>
+  <table>
+    <thead><tr><th>Section</th><th>Change</th><th>Driven by</th></tr></thead>
+    <tbody>
+      <tr><td>§2.1 Asset Taxonomy heading</td><td>"The Five Moment Types" → "The Five Moment Types + Life Four Cuts"</td><td>L4C feature v0.3.5</td></tr>
+      <tr><td>§2.2 Asset Type table</td><td>L4C row added — composite JPEG strip from 4-shot booth sequence</td><td>L4C feature v0.3.5</td></tr>
+      <tr><td>§2.3 Settings table</td><td>Two new L4C rows: Featured Frame and Border colour settings</td><td>L4C feature v0.3.5</td></tr>
+      <tr><td>§3.2 Mode Navigation</td><td>photoBooth added to mode rail cycle; new row for BOOTH swipe behavior</td><td>L4C feature v0.3.5</td></tr>
+      <tr><td>§3.10 Life Four Cuts (new)</td><td>Full specification: capture flow, StripPreviewSheet, L4C record &amp; persistence</td><td>L4C feature v0.3.5</td></tr>
+      <tr><td>§11 User Stories</td><td>US-10 Life Four Cuts added (Must Have, v0.3.5)</td><td>L4C feature v0.3.5</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="change-log">
+  <h3>v1.6 Change Log — Updates from v1.5</h3>
+  <table>
+    <thead><tr><th>Section</th><th>Change</th><th>Driven by</th></tr></thead>
+    <tbody>
+      <tr><td>§1.3 Scope</td><td>Added Post-Capture Vibe Tag Prompt, Quick Share Pill (UIActivityViewController), Film Strip Counter, Live Vibe Preview toggle as MVP rows. "Journal" → "Film" throughout scope table. Trusted-circle share flow moved to Post-MVP.</td><td>MZ design critique v1.9/v2.0; product decisions session</td></tr>
+      <tr><td>§2.3 Settings</td><td>Added Live Vibe Preview toggle row (Settings → Capture → Live Vibe Preview, default On)</td><td>Q11 resolution: Metal shader latency risk mitigation</td></tr>
+      <tr><td>§3.9 (new)</td><td>Post-Capture Overlay UX specification — sequential flow, Vibe Tag Prompt, location chip, Quick Share Pill, Nudge Engine sequencing</td><td>MZ design critique; product decision session</td></tr>
+      <tr><td>§3.5 Capture Hub UX</td><td>Updated Zone A icon spec — SVG SF Symbol-style icons, 40×40pt glass pills, iOS 26 Liquid Glass backdrop-filter spec</td><td>v2.0 design critique Q03</td></tr>
+      <tr><td>§5 Film Archive (new)</td><td>"Journal" → "Film" throughout; layout updated to dark editorial (#0F0D0B); iOS 26 floating pill tab bar; §5.2 Moment Detail full spec</td><td>MZ design critique; v2.0 Review</td></tr>
+      <tr><td>§8 AI Nudge Engine</td><td>Sequencing updated: Vibe Tag Prompt fires first → tags written to metadata → Nudge Engine reads stored tags after window closes</td><td>Product decision: Q11 / vibe tag ↔ nudge sequencing</td></tr>
+      <tr><td>§10 Vibe Preset System</td><td>Tokyo Neon accent updated #00E5CC → #C4B5FD (soft lavender); brand colour updated #5B4FCF → #6B4EFF</td><td>v2.0 colour system (Q02)</td></tr>
+      <tr><td>§14 Open Questions</td><td>Q10 (location chip derivation) and Q11 (Metal shader toggle) marked Resolved</td><td>Product decision session</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="change-log">
+  <h3>v1.5 Change Log — Updates from v1.4</h3>
+  <table>
+    <thead><tr><th>Section</th><th>Change</th><th>Driven by</th></tr></thead>
+    <tbody>
+      <tr><td>§2 Asset Taxonomy</td><td>Added non-destructive derivative asset state for Fix feature</td><td>UI/UX Spec v1.7 §5.3</td></tr>
+      <tr><td>§2.6 (new)</td><td>Sound Stamp — full specification as new Still capture behavior</td><td>Product decision; UI/UX Spec v1.7 §4c</td></tr>
+      <tr><td>§3.2 Mode Navigation</td><td>Added preset bar swipe and double-tap flip gesture</td><td>UI/UX Spec v1.7 §4.1–4.2</td></tr>
+      <tr><td>§3.5 Additional Capture Hub UX</td><td>Preset strip updated to preset bar model; auto-hide updated</td><td>UI/UX Spec v1.7 §4.1</td></tr>
+      <tr><td>§3.8 (new)</td><td>Still Photo Fix — non-destructive crop, rotate, flip</td><td>UI/UX Spec v1.7 §5.3</td></tr>
+      <tr><td>§4.3 Acoustic Signature Analysis</td><td>Sound Stamp added as acoustic source for Still assets</td><td>§2.6 (new)</td></tr>
+      <tr><td>§9 Vibe Preset System</td><td>Preset architecture updated from strip to bar model</td><td>UI/UX Spec v1.7 §4.1</td></tr>
+      <tr><td>§10 User Stories</td><td>US-01 updated; US-08 Fix added; US-09 Sound Stamp added</td><td>UI/UX Spec v1.7</td></tr>
+      <tr><td>§11.4 Supported Devices</td><td>Minimum updated to iOS 26.0 / iPhone 15</td><td>UI/UX Spec v1.7 §11</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>1. Overview &amp; Scope</h1>
+
+<h2>1.1 Purpose of This Document</h2>
+<p>This Product Requirements Document (PRD) defines the functional behavior, UX logic, technical architecture, and feature acceptance criteria for niftyMomnt v1.0. It is the primary reference for design, engineering, and QA. Screen-level layout and interaction design are specified in the companion <strong>UI/UX Specification v1.7</strong>. Market and user research are documented in <strong>MRD v1.5</strong> (same revision family as the cover line “Builds on MRD v1.5”).</p>
+
+<h2>1.2 Product Summary</h2>
+<p>niftyMomnt is a moments studio for iOS. It captures five distinct asset types through a unified Capture Hub, applies on-device intelligence to tag and cluster moments automatically, and enables users to shape those moments into stories — for public sharing, trusted-circle sharing, or private keeping.</p>
+<div class="callout"><strong>Design principle: Every interaction should feel like the app understood what you wanted before you did.</strong></div>
+
+<h2>1.3 Scope — v1.0 MVP</h2>
+<table>
+  <thead><tr><th>In scope (v1.0)</th><th>Post-MVP (v1.5)</th><th>Future (v2.0+)</th></tr></thead>
+  <tbody>
+    <tr><td>All 5 asset types (Still, Live, Clip, Echo, Atmosphere)</td><td>Close-circle live-updating shared albums; <strong>Trusted-circle sharing</strong> (up to 10 recipients, named recipients / persistent album flow)</td><td>Preset marketplace</td></tr>
+    <tr><td>Capture Hub with horizontal mode nav + preset bar</td><td>Mood Map &amp; Emotional Palette visualization</td><td>"Just Live" passive capture</td></tr>
+    <tr><td>Live Activities + Lock Screen quick actions</td><td>Semantic "search by feeling"</td><td>Post scheduler &amp; cross-platform publish</td></tr>
+    <tr><td>Ambient metadata harvesting (weather, elevation, Now Playing)</td><td>niftyMomnt community Feed</td><td>Android port</td></tr>
+    <tr><td>On-device cold indexing + moment clustering</td><td>Pre-trip shot planner AI</td><td></td></tr>
+    <tr><td>Hybrid Lab (opt-in cloud VLM synthesis)</td><td></td><td></td></tr>
+    <tr><td>AI Nudge Engine — post-capture reflection card prompts</td><td></td><td></td></tr>
+    <tr><td>Apple Journaling Suggestions API</td><td></td><td></td></tr>
+    <tr><td>Voice-to-Prose Transformation (Poet / Foodie / Minimalist)</td><td></td><td></td></tr>
+    <tr><td>AI Reel assembler with voice note overlay</td><td></td><td></td></tr>
+    <tr><td>Private vault (encrypted personal archive)</td><td></td><td></td></tr>
+    <tr><td>Home Screen &amp; Lock Screen widgets (3 types)</td><td></td><td></td></tr>
+    <tr><td>Film/lo-fi presets &amp; vibe system (5 packs)</td><td></td><td></td></tr>
+    <tr><td>Film archive (geo-tagged, named timeline)</td><td></td><td></td></tr>
+    <tr><td>Roll Mode (daily shot cap)</td><td></td><td></td></tr>
+    <tr><td>AI caption generator (ambient-enriched)</td><td></td><td></td></tr>
+    <tr><td>Dual-camera contextual capture (Still + Live)</td><td></td><td></td></tr>
+    <tr><td>Self-timer (3s / 10s) in Capture Hub</td><td></td><td></td></tr>
+    <tr><td>Gesture tutorial in onboarding (interactive)</td><td></td><td></td></tr>
+    <tr><td>Personalized daily capture prompt (opt-in)</td><td></td><td></td></tr>
+    <tr><td>Duplicate cleanup</td><td></td><td></td></tr>
+    <tr class="new-row"><td><strong>Still Photo Fix</strong> <span class="new-badge">NEW v1.5</span> — non-destructive crop, rotate, flip on Still and Live assets</td><td></td><td></td></tr>
+    <tr class="new-row"><td><strong>Sound Stamp</strong> <span class="new-badge">NEW v1.5</span> — opt-in 1.5s ambient audio at Still capture for acoustic vibe tagging</td><td></td><td></td></tr>
+    <tr class="new-row"><td><strong>Post-Capture Vibe Tag Prompt</strong> <span class="new-badge">NEW v1.6</span> — 4-second emoji chip overlay after every Still/Live capture; direct user vibe tag input; feeds AI Nudge Engine metadata</td><td></td><td></td></tr>
+    <tr class="new-row"><td><strong>Quick Share Pill</strong> <span class="new-badge">NEW v1.6</span> — <code>UIActivityViewController</code> iOS share sheet triggered after post-capture vibe tag window; appears as purple-tinted glass pill</td><td>Trusted-circle share flow (named recipients, persistent album)</td><td></td></tr>
+    <tr class="new-row"><td><strong>Film Strip Counter</strong> <span class="new-badge">NEW v1.6</span> — Zone A visual indicator showing used/remaining shots in current roll as amber film-frame strip + numeric counter</td><td></td><td></td></tr>
+    <tr class="new-row"><td><strong>Live Vibe Preview</strong> <span class="new-badge">NEW v1.6</span> — Real-time Metal shader rendering (grain, vibe tint, light leak) on live viewfinder. Toggleable via Settings → Capture → Live Vibe Preview (default: On); disableable if capture latency exceeds 300ms target on iPhone 15</td><td></td><td></td></tr>
+    <tr class="new-row"><td><strong>Location Vibe Chip</strong> <span class="new-badge">NEW v1.6</span> — On-device location + weather vibe derivation (CoreLocation + WeatherKit + optional SoundAnalysis/Vision); displayed in post-capture overlay (not live viewfinder); resolves in &lt;100ms</td><td></td><td></td></tr>
+  </tbody>
+</table>
+
+<h2>1.4 Design Constraints</h2>
+<ul>
+  <li><strong>Platform:</strong> iOS 26.0 minimum. iPhone 15 and above. Required for updated AI Intelligence frameworks, newly updated SDK APIs, AVFoundation AVCaptureMultiCamSession, Neural Engine performance, Journaling Suggestions API, and computational photography APIs. No iPadOS in v1.0. <span class="updated-badge">UPDATED v1.5</span></li>
+  <li><strong>Offline-first — hard requirement:</strong> The app must be fully functional with zero network connectivity. This includes capture of all 5 asset types, on-device indexing, Film Archive browsing, Reel assembly, preset rendering, Sound Stamp acoustic analysis, and AI Nudge Engine. The only features requiring connectivity are Lab cloud processing (opt-in) and trusted-circle link delivery.</li>
+  <li><strong>Privacy non-negotiable:</strong> Private vault content must be end-to-end encrypted. Never used for AI training. Never surfaced in community feed. Never watermarked. Dual-camera secondary capture and Sound Stamp audio are processed on-device only and never stored as viewable or playable files.</li>
+  <li><strong>Private by design — brand claim:</strong> niftyMomnt contains no third-party trackers, no third-party analytics SDKs, and no advertising networks.</li>
+  <li><strong>On-device first:</strong> All high-frequency operations run on-device. Cloud ("Lab") is opt-in only, ephemeral, and explicitly user-triggered.</li>
+  <li><strong>Performance target:</strong> Capture-to-preview latency under 300ms. Cold launch under 1.5s. Film Archive load under 2s for up to 5,000 assets. Sound Stamp acoustic analysis completes within 300ms of buffer end — does not block UI.</li>
+</ul>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>2. Asset Taxonomy — The Five Moment Types + Life Four Cuts</h1>
+
+<h2>2.1 Overview</h2>
+<p>niftyMomnt defines five discrete asset types — each designed to capture a different dimension of a moment. Together they form a complete sensory vocabulary: image, motion, time, sound, and atmosphere. Every asset type feeds the same downstream pipeline: on-device indexing, vibe tagging, Film archive organization, and story assembly.</p>
+
+<div class="callout"><strong>Design principle: The asset type should feel like a natural extension of what the moment calls for — not a mode the user has to consciously choose.</strong></div>
+
+<h3>Non-Destructive Derivative Assets <span class="new-badge">NEW v1.5</span></h3>
+<p>The Fix feature (§3.8) introduces a <strong>derivative asset state</strong> for Still and Live assets. When a user applies a Fix (crop, rotate, or flip), the system writes a derived version alongside the original in the vault. The original is never modified or deleted. Key rules governing derivatives:</p>
+<ul>
+  <li>The derivative is the primary displayed version in the Film Archive, Moment detail, widgets, and share flows.</li>
+  <li>The original is retained silently — always recoverable via "Revert to original."</li>
+  <li>Derivatives are stored with a <code>fix_applied: true</code> flag and a reference to the source asset ID in the intelligence graph.</li>
+  <li>Lab processing and Enhanced AI always operate on the derivative if one exists — never on the original unless the derivative has been reverted.</li>
+  <li>Derivatives inherit all vibe tags, acoustic tags, and ambient metadata from the original asset. Fix does not re-trigger indexing.</li>
+  <li>A derivative does not count as a new asset for Roll Mode or streak calculations.</li>
+</ul>
+
+<h2>2.2 Asset Type Specifications</h2>
+<table>
+  <thead><tr><th>Type</th><th>Format</th><th>Duration / Size</th><th>Capture trigger</th><th>Key behavior &amp; notes</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Still</strong></td><td>HEIF / JPEG</td><td>Single frame, max res</td><td>Shutter tap (or self-timer)</td><td>Standard high-res image. Applies active vibe preset at capture. Silent secondary camera capture fires simultaneously for contextual metadata (§2.5). Sound Stamp fires simultaneously if enabled (§2.6). Fix available post-capture (§3.8).</td></tr>
+    <tr><td><strong>Live</strong></td><td>HEIF + MOV (Apple Live Photo)</td><td>3s motion loop</td><td>Shutter tap (Live mode active)</td><td>3-second motion loop. Compatible with Apple Live Photo format. Silent secondary camera capture fires simultaneously (§2.5). Fix available post-capture on the Still frame only — MOV component unaffected (§3.8).</td></tr>
+    <tr><td><strong>Clip</strong></td><td>MOV / MP4 (H.264)</td><td>Fixed: default 10s</td><td>Shutter hold → auto-stop at ceiling <em>(v0.3 stabilization: tap start / tap stop)</em></td><td>Fixed-duration video. Auto-stops at ceiling. "Slide to Lock" disables hold-release requirement mid-clip. Clockwise fill ring + countdown UI. Fix not available. <em>Current v0.3 implementation temporarily uses tap-to-start / tap-to-stop while the hold interaction is stabilized on device.</em></td></tr>
+    <tr><td><strong>Echo</strong></td><td>AAC / M4A</td><td>Variable, default ceiling 60s</td><td>Tap start / Tap stop</td><td>Audio-only ambient sound capture. Radial pulsing waveform UI. Amber warning at 5s before ceiling. Background acoustic analysis feeds vibe tagging. Fix not available.</td></tr>
+    <tr><td><strong>Atmosphere</strong></td><td>HEIF + AAC composite</td><td>Still + audio loop: default 5s</td><td>Shutter tap (Atmosphere mode)</td><td>Still image layered with ambient audio loop. Plays as looping experience in viewer. Fix available post-capture on Still frame only (§3.8).</td></tr>
+    <tr class="new-row"><td><strong>Life Four Cuts (L4C)</strong> <span class="new-badge">NEW v1.7</span></td><td>JPEG (composite strip)</td><td>4 frames · 1080×1920px strip</td><td>Photo Booth mode → START button → automatic 4-shot sequence</td><td>4-shot countdown sequence (3-2-1 per shot). Assembled into a vertical 9:16 strip with optional Featured Frame PNG overlay and border colour selection. Shareable as a single JPEG. Source stills stored separately but hidden from Film feed — only the composite strip card appears.</td></tr>
+  </tbody>
+</table>
+
+<h2>2.3 Asset Settings — User-Configurable Defaults</h2>
+<table>
+  <thead><tr><th>Asset type</th><th>Setting</th><th>Default</th><th>Options</th></tr></thead>
+  <tbody>
+    <tr><td>Still / Live</td><td>Self-timer delay</td><td>Off</td><td>Off / 3s / 10s</td></tr>
+    <tr class="new-row"><td>Still <span class="new-badge">NEW v1.6</span></td><td>Aspect ratio framing</td><td>9:16</td><td>9:16 / 4:5 / 1:1. Default is portrait-first; landscape automatically mirrors to the equivalent horizontal framing guide. In Capture Hub, the selected ratio is shown with a subtle centered ratio chip and soft letterbox masks rather than a heavy boxed frame.</td></tr>
+    <tr class="new-row"><td>Live <span class="new-badge">NEW v1.6</span></td><td>Aspect ratio framing</td><td>9:16</td><td>Read-only at 9:16 for MVP. Apple Live Photo compatibility is prioritized over alternate framing ratios.</td></tr>
+    <tr><td>Still / Live</td><td>Secondary camera (contextual capture)</td><td>On</td><td>On / Off (Settings → Capture)</td></tr>
+    <tr class="new-row"><td>Still <span class="new-badge">NEW v1.5</span></td><td>Sound Stamp</td><td>Off</td><td>On / Off (Settings → Capture)</td></tr>
+    <tr class="new-row"><td>All types (Still/Live) <span class="new-badge">NEW v1.6</span></td><td>Live Vibe Preview</td><td>On</td><td>On / Off (Settings → Capture → Live Vibe Preview). When Off, preset vibe tint, grain, and light-leak shaders are applied post-capture only — not to the live viewfinder. Engineering may default Off on iPhone 15 if performance testing shows &gt;300ms capture latency.</td></tr>
+    <tr><td>Clip</td><td>Video format</td><td>HD 16:9</td><td>VGA 4:3 / HD 16:9 / 4K 16:9</td></tr>
+    <tr><td>Clip</td><td>Fixed duration ceiling</td><td>10 seconds</td><td>5s / 10s / 15s / 30s</td></tr>
+    <tr><td>Echo</td><td>Maximum duration ceiling</td><td>60 seconds</td><td>30s / 60s / 90s / 120s</td></tr>
+    <tr><td>Atmosphere</td><td>Audio loop duration</td><td>5 seconds</td><td>3s / 5s / 10s / 15s</td></tr>
+    <tr><td>Live</td><td>Apple Photos export</td><td>On</td><td>On / Off</td></tr>
+    <tr><td>All types</td><td>Active vibe preset at capture</td><td>Last used</td><td>Any installed preset pack</td></tr>
+    <tr class="new-row"><td>Life Four Cuts (L4C) <span class="new-badge">NEW v1.7</span></td><td>Featured Frame</td><td>None</td><td>None / Minimalist Black / Spring Blossom / Retro Neon (v1.0 bundle)</td></tr>
+    <tr class="new-row"><td>Life Four Cuts (L4C) <span class="new-badge">NEW v1.7</span></td><td>Border colour</td><td>White</td><td>White / Black / Pastel Pink / Sky Blue</td></tr>
+  </tbody>
+</table>
+
+<h2>2.4 Asset Interoperability &amp; Export</h2>
+<ul>
+  <li><strong>Still:</strong> Exports as HEIF (default) or JPEG. When a derivative exists (Fix applied), the derivative is exported by default. Watermark applied on free tier.</li>
+  <li><strong>Live:</strong> Exports as Apple Live Photo (HEIF + MOV pair). Fix applies to the HEIF component only — MOV exports at original dimensions. Falls back to Still in non-Apple contexts.</li>
+  <li><strong>Clip:</strong> Exports as MP4 (H.264). Compatible with Instagram Reels, TikTok, and all major platforms.</li>
+  <li><strong>Echo:</strong> Exports as M4A audio file. Voice-to-Prose engine generates three rewrite variants from transcript.</li>
+  <li><strong>Atmosphere:</strong> Exports as MP4 (still + audio looped) for social sharing. Alternatively as HEIF + M4A pair for archive.</li>
+</ul>
+<p><strong>Aspect ratio note:</strong> Capture remains non-destructive at the sensor/original asset level. The selected ratio acts as a framing and export target for Still and Live assets, with <code>9:16</code> as the default social-first composition.</p>
+
+<h2>2.5 Dual-Camera Contextual Capture</h2>
+
+<div class="callout teal"><strong>Privacy principle:</strong> The secondary camera image is processed entirely on-device, never stored as a viewable file in the vault, and never transmitted under Mode 0 (on-device) or Mode 1 (Enhanced AI text-only). It is metadata, not an asset. The user is always the owner of what the secondary camera captures, and can disable this feature in Settings → Capture.</div>
+
+<p>When the user captures a Still or Live asset, the secondary camera (whichever camera is not currently primary) fires simultaneously. The secondary image is never shown to the user, never stored as a viewable photo, and never exported. It is processed immediately on-device to extract contextual metadata, then discarded. This makes every Still and Live capture automatically richer — without adding any UI complexity or user decision.</p>
+
+<p>The system is bidirectional — it adapts based on which camera the user has selected as primary:</p>
+
+<table>
+  <thead><tr><th>Primary camera</th><th>Secondary capture</th><th>Metadata extracted on-device</th><th>Downstream use in niftyMomnt</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Rear</strong> (scene capture)</td>
+      <td>Front camera fires simultaneously, capturing who is present in the scene</td>
+      <td>Person count (1 = solo, 2–5 = small group, 6+ = crowd) · expression signal (positive, neutral, candid) · whether user themselves is in frame</td>
+      <td>Social context tag (Solo / Intimate / Group / Crowd) enriched without user input. Nudge questions reference social context. Annual Review: e.g. "You were alone in 38% of your moments this year." Mood Map weights social context. Intelligence graph: <code>social_context</code> field on Asset.</td>
+    </tr>
+    <tr>
+      <td><strong>Front</strong> (selfie / portrait)</td>
+      <td>Rear camera fires simultaneously, capturing the scene behind the user</td>
+      <td>Scene type (indoor / outdoor / urban / nature / restaurant / landmark) · lighting condition (golden hour, overcast, artificial) · dominant palette of scene · crowd density in background</td>
+      <td>Place and vibe tags enriched for selfie assets that would otherwise have zero scene data. Moment label becomes: "Selfie · Golden hour · coastal cliff" instead of just "Selfie." Chromatic palette from the scene contributes to Mood Map coloring. Film card ambient metadata line gains location context.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Secondary capture — technical behavior</h3>
+<ul>
+  <li><strong>Capture timing:</strong> Secondary camera fires within 50ms of primary shutter. Both captures share the same timestamp. AVFoundation multi-camera session (<code>AVCaptureMultiCamSession</code>) requires supported hardware; v1.6 minimum device is iPhone 15 (see §13.4).</li>
+  <li><strong>Processing pipeline:</strong> Secondary image is handed directly to the IndexingEngine as a transient buffer — never written to disk, never passed to the VaultRepository. Classification results are written to the Asset metadata record and the buffer is released. Total on-device processing time: under 300ms.</li>
+  <li><strong>Privacy controls:</strong> User can disable secondary camera capture entirely in Settings → Capture → "Contextual context capture." When disabled, Still and Live captures behave as before — no secondary metadata enrichment. Default: on.</li>
+  <li><strong>Lab (Mode 2) behavior:</strong> When the user initiates a Lab session for a Still or Live asset, the consent modal explicitly states whether the secondary context metadata (person count, scene type) will be included. User can exclude secondary metadata from Lab sessions via a toggle in the consent screen. Default: excluded.</li>
+  <li><strong>Self-timer interaction:</strong> When self-timer is active (3s or 10s), both cameras fire simultaneously at the end of the countdown. The rear camera becomes the secondary capture for selfie-oriented self-timer shots — providing the scene context for what was behind the user during the timer.</li>
+</ul>
+
+<div class="new-section">
+<div class="new-section-label">New in v1.5</div>
+<h2>2.6 Sound Stamp — Ambient Audio for Still Captures</h2>
+
+<div class="callout teal"><strong>Privacy principle: Sound Stamp audio is never written to disk under any mode. The 1.5s buffer exists only in memory, passes through the on-device acoustic classifier (same pipeline as §4.3), and is released. The audio is metadata infrastructure, not an asset. It is never stored, never exported, and never transmitted — including under Mode 1 (Enhanced AI) and Mode 2 (Lab).</strong></div>
+
+<h3>2.6.1 Overview</h3>
+<p>Sound Stamp is an opt-in feature that captures a 1.5-second ambient audio buffer during every Still capture — 0.5s pre-roll from an always-on microphone buffer (same buffering model as Live Photo) plus 1.0s post-shutter. The buffer is analysed on-device for acoustic vibe tags identical to those defined in §4.3, then immediately discarded. No audio file is ever created.</p>
+
+<p>Sound Stamp closes the acoustic tagging gap for Still-only users. Prior to v1.5, §4.3 Acoustic Signature Analysis applied only to Echo, Clip, and Atmosphere assets. A user who primarily captures Stills received zero acoustic vibe enrichment. Sound Stamp extends acoustic tagging to every Still capture without requiring mode switching or user decision.</p>
+
+<h3>2.6.2 Technical Specification</h3>
+<table>
+  <thead><tr><th>Parameter</th><th>Specification</th></tr></thead>
+  <tbody>
+    <tr><td>Buffer duration</td><td>1.5 seconds total: 0.5s pre-roll (always-on buffer, same model as Live Photo) + 1.0s post-shutter capture</td></tr>
+    <tr><td>Audio format</td><td>PCM 44.1kHz in-memory buffer only. Never encoded, never written to disk.</td></tr>
+    <tr><td>Processing</td><td>On-device Core ML acoustic classifier — same model used for §4.3 Echo/Clip/Atmosphere analysis</td></tr>
+    <tr><td>Analysis latency</td><td>Under 300ms from buffer end. Does not block UI or capture pipeline.</td></tr>
+    <tr><td>Output</td><td>Acoustic vibe tags written to the asset's metadata record in the intelligence graph. Identical tag taxonomy as §4.3.</td></tr>
+    <tr><td>Buffer lifecycle</td><td>Allocated at shutter fire, passed to classifier, released immediately after tag write. Max in-memory lifetime: ~500ms.</td></tr>
+    <tr><td>Microphone state</td><td>Always-on pre-roll buffer active during Still mode when Sound Stamp is enabled. iOS orange mic indicator will appear. This is intentional — it is a system-level privacy signal and must not be suppressed.</td></tr>
+    <tr><td>Interaction with self-timer</td><td>Pre-roll buffer is active during countdown. Analysis fires at shutter completion (end of countdown).</td></tr>
+    <tr><td>Interaction with dual-camera capture</td><td>Both Sound Stamp and secondary camera capture fire at the same shutter event. Processing is parallel — neither blocks the other.</td></tr>
+  </tbody>
+</table>
+
+<h3>2.6.3 Acoustic Tags Produced</h3>
+<p>Sound Stamp produces the same acoustic tag taxonomy as §4.3. Tags are additive with any visual/contextual tags already on the asset. For Still assets, these are the first acoustic tags the asset receives — they are not redundant with any existing pipeline.</p>
+<table>
+  <thead><tr><th>Acoustic tag</th><th>Detectable in 1.5s?</th><th>Confidence notes</th></tr></thead>
+  <tbody>
+    <tr><td>Windy</td><td>Yes</td><td>Broadband noise signature detectable immediately</td></tr>
+    <tr><td>Crowded</td><td>Yes</td><td>Overlapping voice density detectable in &lt;1s</td></tr>
+    <tr><td>Music</td><td>Yes</td><td>Tonal structure detectable in &lt;1s. Confidence lower for distant/ambient music — tag applied only above 0.7 threshold</td></tr>
+    <tr><td>Quiet / Serene</td><td>Yes</td><td>Low amplitude + minimal transients — near-instant classification</td></tr>
+    <tr><td>Rain</td><td>Yes</td><td>Rhythmic broadband with rain frequency signature — detectable in &lt;1s</td></tr>
+    <tr><td>Ocean / Water</td><td>Partial</td><td>Low-frequency wave pattern needs 1.5s minimum. Tag applied at lower confidence for borderline cases; may be enriched by subsequent Echo/Atmosphere in the same Moment cluster.</td></tr>
+  </tbody>
+</table>
+
+<h3>2.6.4 Permission &amp; Opt-In Model</h3>
+<ul>
+  <li><strong>Default: Off.</strong> Sound Stamp is never active on first install without explicit user action.</li>
+  <li><strong>Onboarding:</strong> Offered in Step 5 (Optional enrichments) as "Sound Stamp" with plain-language explanation: "Capture 1.5 seconds of ambient sound with every photo — niftyMomnt uses it to tag the vibe and immediately discards the audio. Nothing is stored or shared."</li>
+  <li><strong>Settings → Capture → Sound Stamp:</strong> Toggle (default: Off). Sub-label: "1.5s ambient audio at capture. Analysed on-device, never stored." Expandable "Learn more" explains what is and isn't retained.</li>
+  <li><strong>Microphone permission:</strong> NSMicrophoneUsageDescription is already requested in Onboarding Step 3 for Echo and Atmosphere capture. Sound Stamp does not require a new permission — it uses the existing grant. If microphone permission is denied, Sound Stamp is silently unavailable (toggle is greyed out in Settings with a note: "Requires microphone access — enable in iOS Settings.").</li>
+</ul>
+
+<h3>2.6.5 Naming Discipline</h3>
+<p>"Sound Stamp" is the only permitted name for this feature in all user-facing surfaces. Never use "ambient recording," "microphone capture," "audio sample," or similar phrasing that implies stored content. The name signals brevity and output type — a stamp is a quick impression, not a file.</p>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>3. Capture Hub — UX &amp; Interaction Design</h1>
+
+<h2>3.1 Capture Hub Overview</h2>
+<p>The Capture Hub is the primary screen and heart of niftyMomnt. It is a full-bleed viewfinder with minimal chrome, a gesture-driven mode navigation system, and a smart shutter that adapts its behavior to the active asset type. The UI disappears into the moment — controls surface only when needed. All overlay surfaces use iOS 26 Liquid Glass materials (<code>UIVisualEffectView</code> with <code>.systemUltraThinMaterialDark</code>).</p>
+
+<h2>3.2 Mode Navigation <span class="updated-badge">UPDATED v1.5</span></h2>
+
+<h3>Horizontal Swipe — Mode Switching</h3>
+<p>Mode selection uses a horizontal swipe gesture on the lower third of the viewfinder. The persistent mode anchor (ultra-subtle mode name at 28% opacity with three dot indicators at the base of the viewfinder) provides a visible gesture target and orientation aid.</p>
+
+<table>
+  <thead><tr><th>Gesture</th><th>Target zone</th><th>Behavior</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Swipe left (lower third)</td><td>Lower third of viewfinder / mode anchor zone</td><td>Advance to next mode: Still → Live → Clip → Echo → Atmosphere → <strong>Booth</strong> → (wraps to Still)</td><td>Mode anchor label updates. Ghost label flashes center-frame (10% opacity, 500ms). Dot indicators shift. Subtle haptic.</td></tr>
+    <tr class="new-row"><td>Swipe to BOOTH mode <span class="new-badge">NEW v1.7</span></td><td>Lower third (mode rail)</td><td>CaptureHub shell stays the same. A booth strip overlay appears over the live preview, and BOOTH-specific controls are provided through the standard shutter row and More deck. No hardware session reconfiguration occurs at swipe time — session switches to photo class only when the user starts the sequence.</td><td>Ghost label "B O O T H" flashes on mode entry (10% opacity, 500ms). Subtle haptic.</td></tr>
+    <tr><td>Swipe right (lower third)</td><td>Lower third</td><td>Return to previous mode. Wraps from Still back to Atmosphere.</td><td>Same feedback as swipe left.</td></tr>
+    <tr><td>Fast swipe (&gt;800pt/s)</td><td>Lower third</td><td>Advance exactly one mode — no skip.</td><td>Prevents accidental multi-step.</td></tr>
+    <tr class="new-row"><td>Swipe left / right on preset bar <span class="new-badge">NEW v1.5</span></td><td>Preset bar (bottom of viewfinder)</td><td>Cycle to next / previous preset. Preset name, accent dot, top strip color, shutter ring color all transition simultaneously (120ms crossfade).</td><td>Does not change capture mode. No momentum — one swipe = one preset step.</td></tr>
+    <tr class="new-row"><td>Long-press preset bar <span class="new-badge">NEW v1.5</span></td><td>Preset bar</td><td>Expand full preset picker overlay from bottom. Shows all presets as large swatches with names and vibe descriptors. Tap to select, swipe down to dismiss.</td><td>Replaces the always-visible five-circle strip from previous versions.</td></tr>
+    <tr class="new-row"><td>Double-tap viewfinder <span class="new-badge">NEW v1.5</span></td><td>Anywhere on viewfinder (not shutter row)</td><td>Flip camera — rear ↔ front. Mirror transition animation (200ms). Mode anchor and top bar indicators update to reflect new primary camera.</td><td>Replaces the flip button previously in the shutter row. Matches iOS Camera gesture (introduced iOS 17). One-time ghost hint shown on first use only.</td></tr>
+    <tr><td>Swipe up (full screen)</td><td>Anywhere outside shutter row</td><td>Navigate to Film Archive.</td><td>Sheet transition. Capture pauses.</td></tr>
+  </tbody>
+</table>
+
+<h3>Mode Label — "Ghost" Animation</h3>
+<p>When the mode changes, the mode name renders center-frame in spaced capital letters at 10% opacity and fades to 0% over exactly 500ms. A <strong>persistent mode anchor</strong> — the current mode name at 28% opacity with three dot indicators (previous · active · next) — remains visible at the base of the viewfinder at all times, providing orientation without adding chrome. The ghost label fires on top of the persistent anchor as a confirmation flash.</p>
+
+<h2>3.3 Shutter Interactions by Mode</h2>
+<table>
+  <thead><tr><th>Mode</th><th>Shutter gesture</th><th>Trigger type</th><th>Behavior</th></tr></thead>
+  <tbody>
+    <tr><td>Still</td><td>Tap</td><td>Instantaneous</td><td>Captures single HEIF/JPEG frame. Applies active preset. Secondary camera fires simultaneously (§2.5). Sound Stamp buffer analysed simultaneously if enabled (§2.6). Standard shutter haptic.</td></tr>
+    <tr><td>Live</td><td>Tap</td><td>Instantaneous</td><td>Captures HEIF + 3s MOV pair. Buffers 1.5s before and after shutter tap for natural loop. Secondary camera fires simultaneously (§2.5). Compatible with Apple Live Photo.</td></tr>
+    <tr><td>Clip</td><td>Hold to record / Slide to Lock <em>(v0.3 stabilization: Tap start / Tap stop)</em></td><td>Duration-fixed</td><td>Target UX: Hold initiates recording. Release ends early. Slide to Lock: swipe shutter button upward to lock recording — user can remove finger. Recording auto-stops at ceiling. <em>Current v0.3 build temporarily uses tap-to-start / tap-to-stop while the hold interaction is stabilized on device.</em></td></tr>
+    <tr><td>Echo</td><td>Tap start / Tap stop</td><td>Manual start/stop</td><td>First tap begins audio recording. Second tap ends it. Auto-stop at ceiling. Amber warning at ceiling minus 5s.</td></tr>
+    <tr><td>Atmosphere</td><td>Tap (two-phase)</td><td>Sequential</td><td>Phase 1: captures Still frame instantly. Phase 2 (auto-initiated): begins ambient audio recording for configured loop duration. App silently composites Still + Audio.</td></tr>
+    <tr><td>Booth</td><td>Tap `START`</td><td>4-shot automated sequence</td><td>Uses the same CaptureHub shell as other modes. Tapping START begins 4 rounds of 3-2-1 countdown + still capture. The active slot in the booth strip overlay highlights, captured slots fill in place, and a review sheet rises over CaptureHub after shot 4.</td></tr>
+  </tbody>
+</table>
+
+<h2>3.4 Live Telemetry &amp; Feedback UI</h2>
+<p>Clip progress: clockwise fill ring around shutter, fills proportional to ceiling duration. Transitions from white to amber (#BA7517) at ≤5s remaining. Numeric countdown inside ring.</p>
+<p>Echo progress: radial pulsing waveform around shutter, amplitude proportional to audio input level. Count-up MM:SS timer inside waveform. Transitions to amber at ≤5s to ceiling.</p>
+<p>Sound Stamp feedback (Still mode only, when Sound Stamp enabled): three concentric arcs pulse outward from shutter ring in the active preset accent color for 1.5s post-capture. Fixed amplitude — not reactive to actual audio level. See §2.6 and UI/UX Spec v1.7 §4c.</p>
+
+<h2>3.5 Additional Capture Hub UX Rules <span class="updated-badge">UPDATED v1.5</span></h2>
+<ul>
+  <li><strong>Viewfinder chrome:</strong> Minimal. Only shutter, mode anchor zone, preset bar, and top bar controls. No persistent full mode label, no grid overlay by default.</li>
+  <li><strong>Preset bar (replaces preset strip):</strong> A single full-width Liquid Glass bar at the bottom of the viewfinder shows the active preset name in spaced caps with a 5pt accent dot and a 2pt accent color strip running the full top edge. Swipe left/right to cycle presets. Long-press to expand full picker overlay. The five-circle always-visible strip is replaced by this model in v1.5.</li>
+  <li><strong>Preset bar auto-hide during recording:</strong> During Clip and Echo recording, the preset bar collapses to its 2pt accent color line only after 5s of active recording. The color line remains visible as a passive preset indicator. Single tap restores the bar. Bar always returns to full height when recording ends.</li>
+  <li><strong>Self-timer:</strong> Accessible via top bar. Options: Off (default), 3s, 10s. When active, a countdown ring overlays the shutter and a large center countdown number appears in the viewfinder. Both primary and secondary cameras — and Sound Stamp if enabled — fire simultaneously at countdown completion.</li>
+  <li><strong>Roll Mode indicator:</strong> When Roll Mode is active, remaining shot count displayed top-center (e.g., "24 remaining").</li>
+  <li><strong>Secondary camera indicator:</strong> When dual-camera contextual capture is active, a subtle dual-lens icon appears top-left of viewfinder. Tapping shows tooltip: "Also capturing context for richer moment tagging."</li>
+  <li><strong>Sound Stamp indicator:</strong> When Sound Stamp is enabled, a subtle ≋ icon appears inside the shutter button in Still mode only, in the active preset accent color at 70% opacity. Post-capture, the three-arc pulse animation fires (§2.6). No indicator in other modes.</li>
+  <li><strong>Camera flip:</strong> Double-tap anywhere on the viewfinder (not the shutter row) to flip between rear and front camera. No flip button in the shutter row.</li>
+  <li><strong>Accessibility:</strong> All gesture interactions have equivalent button controls accessible via AssistiveTouch. Haptic feedback is mandatory for all capture events.</li>
+  <li><strong>Orientation:</strong> Portrait primary. Landscape supported for Clip and Atmosphere.</li>
+</ul>
+
+<h3>3.5.1 Zone A Icon Specification <span class="new-badge">NEW v1.6</span></h3>
+<p>Zone A contains four icon pill buttons arranged as two groups: left group (Timer, AF Lock) and right group (Flip Camera, More). All buttons use SVG SF Symbol-style glyphs — never emoji or Unicode placeholder characters. All pills are 40×40pt circular hit targets, exceeding Apple's 44pt minimum when accounting for touch tolerance expansion.</p>
+
+<table>
+  <thead><tr><th>Position</th><th>Icon</th><th>Glyph type</th><th>Active state</th><th>Default state</th></tr></thead>
+  <tbody>
+    <tr><td>Zone A left ①</td><td>Timer</td><td>SVG clock face with hour hand, top crossbar for crown</td><td>Amber pill background <code>rgba(232,160,32,.18)</code> + amber border <code>rgba(232,160,32,.40)</code></td><td>Glass pill <code>rgba(255,255,255,.09)</code></td></tr>
+    <tr><td>Zone A left ②</td><td>AF Lock / Focus frame</td><td>SVG corner-bracket frame with centre dot</td><td>Amber pill background when AF locked</td><td>Glass pill</td></tr>
+    <tr><td>Zone A right ①</td><td>Flip Camera</td><td>SVG camera with circular swap arrows</td><td>Glass pill</td><td>Glass pill</td></tr>
+    <tr><td>Zone A right ②</td><td>More / Overflow</td><td>SVG three horizontal dots</td><td>Glass pill (opens overlay)</td><td>Glass pill</td></tr>
+  </tbody>
+</table>
+
+<p><strong>iOS 26 Liquid Glass backdrop specification for all Zone A glass pills:</strong><br/>
+<code>backdrop-filter: blur(10px) saturate(160%)</code> with inner top-edge glow: <code>inset 0 1px 0 rgba(255,255,255,.08)</code>. Pill border: <code>.5px solid rgba(255,255,255,.12)</code>.</p>
+
+<p><strong>Zone A bar background (iOS 26 Liquid Glass):</strong><br/>
+<code>background: rgba(8,8,8,.22); backdrop-filter: blur(28px) saturate(200%) brightness(1.12)</code> with dual inner-edge glows: <code>inset 0 1px 0 rgba(255,255,255,.07)</code> and <code>inset 0 -1px 0 rgba(255,255,255,.04)</code>. This replaces the flat <code>rgba(0,0,0,.36) blur(20px)</code> from the v1.5 spec — flat frosted glass is iOS 17/18 only; iOS 26 requires the saturate+brightness Liquid Glass formula.</p>
+
+<h2>3.6 Live Activities &amp; Lock Screen Integration</h2>
+<p>niftyMomnt extends its capture surface to the iOS Lock Screen and Dynamic Island via ActivityKit Live Activities — enabling capture actions without unlocking the phone, consistent with the JOMO philosophy.</p>
+
+<table>
+  <thead><tr><th>Element</th><th>Content</th><th>Behavior</th></tr></thead>
+  <tbody>
+    <tr><td>Dynamic Island (compact)</td><td>niftyMomnt icon + active mode indicator</td><td>Visible when Capture Status is active (motion detected or asset captured in last 15 min)</td></tr>
+    <tr><td>Dynamic Island (expanded)</td><td>Current location name, last asset thumbnail, Moment asset count</td><td>Long press to expand from compact view</td></tr>
+    <tr><td>Lock Screen — Star location</td><td>Pins current GPS coordinate as a starred point in the Film Archive</td><td>Single tap. No unlock required. Confirmation haptic fires.</td></tr>
+    <tr><td>Lock Screen — Voice note</td><td>Initiates Echo recording from Lock Screen</td><td>Tap → mic activates → tap again to stop. Saves to current Moment cluster.</td></tr>
+    <tr><td>Lock Screen — Star moment</td><td>Marks current Moment as high-priority for story assembly and nudge engine</td><td>Single tap. Visual confirmation on Dynamic Island.</td></tr>
+  </tbody>
+</table>
+
+<h2>3.7 Apple Journaling Suggestions API</h2>
+<p>niftyMomnt integrates with the JournalingSuggestions framework (iOS 17.2+; v1.6 minimum OS is iOS 26.0, see §13.4) to receive system-authorized clusters of photos, locations, and significant moments iOS has detected — without niftyMomnt performing independent continuous location tracking. This is the primary trigger for the AI Nudge Engine (§8).</p>
+
+<table>
+  <thead><tr><th>API capability</th><th>How niftyMomnt uses it</th><th>Privacy note</th></tr></thead>
+  <tbody>
+    <tr><td>Location clusters</td><td>Detects when user has visited a new place or returned from an outing — triggers post-capture nudge at the right moment</td><td>System-authorized. User explicitly grants permission. niftyMomnt never tracks location independently for this purpose.</td></tr>
+    <tr><td>Photo suggestions</td><td>Cross-references system clusters with niftyMomnt captures to identify Moments that may benefit from a nudge</td><td>Read-only. Photos never uploaded. Only metadata (count, time, location) used for nudge timing.</td></tr>
+    <tr><td>Workout / motion data</td><td>End of a walk or activity = strong signal for reflection. Triggers nudge prompt appropriately.</td><td>HealthKit read permission. Opt-in only. No health data stored by niftyMomnt.</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Permission model:</strong> Single iOS system prompt — niftyMomnt receives authorized suggestion clusters only, never raw data. User can revoke at any time: iOS Settings → Privacy → Journaling Suggestions.</p>
+
+<div class="new-section">
+<div class="new-section-label">New in v1.5</div>
+<h2>3.8 Still Photo Fix — Non-Destructive Geometry Corrections</h2>
+
+<div class="callout"><strong>Scope principle: Fix is a correction tool, not a creative editor. It is intentionally limited to geometry (crop, rotate, flip). It does not expose brightness, contrast, saturation, healing, or any other adjustment. The word "Edit" must never appear in this flow — all UI uses "Fix" (verb) and "Fixed" (past state).</strong></div>
+
+<h3>3.8.1 Overview</h3>
+<p>Fix allows users to apply non-destructive geometry corrections to Still and Live assets post-capture, without leaving the app. It is available on Still and Live assets only — not Clip, Echo, or Atmosphere. All corrections are non-destructive: the original asset is always preserved in the vault, and a derivative is written alongside it (§2.1 Non-Destructive Derivative Assets).</p>
+
+<h3>3.8.2 Available Corrections</h3>
+<table>
+  <thead><tr><th>Correction</th><th>Gesture / trigger</th><th>Behavior</th><th>Constraints</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Crop</strong></td><td>Drag any edge or corner handle. Pinch to zoom and reposition within frame.</td><td>Crop frame updates in real time. Dimmed overlay shows excluded area. Rule-of-thirds grid always visible. Double-tap photo resets crop to full frame.</td><td>Minimum crop size: 200×200pt. Free aspect ratio — no locked ratios in v1.0. Active preset applied to preview throughout.</td></tr>
+    <tr><td><strong>Rotate 90°</strong></td><td>Single tap on Rotate tool. Repeatable — 4 taps = full rotation.</td><td>Photo rotates 90° clockwise per tap. Spring animation (200ms). Crop frame auto-adjusts. Rule-of-thirds grid reorients.</td><td>90° increments only — no free-angle dial. Intentionally blunt: correction, not creative tool. 3 clockwise taps = 270° = equivalent of 90° counter-clockwise.</td></tr>
+    <tr><td><strong>Flip</strong></td><td>Single tap on Flip tool reveals inline sub-row: Horizontal · Vertical. Tap either to apply.</td><td>Flip applies instantly with mirror animation (150ms). Both H and V can be active simultaneously. Second tap on active flip option reverses it.</td><td>Flip state compounds correctly with Rotate. "Revert to original" clears all corrections including flip state.</td></tr>
+  </tbody>
+</table>
+
+<h3>3.8.3 Entry Points</h3>
+<ul>
+  <li><strong>Long-press asset in Moment detail grid:</strong> Context menu includes "Fix" option for Still and Live assets only.</li>
+  <li><strong>Full-screen asset viewer:</strong> A "Fix" pill button appears bottom-right for Still and Live assets.</li>
+</ul>
+
+<h3>3.8.4 Live Photo Behavior</h3>
+<p>Fix applies to the HEIF still frame only. The MOV motion component is not cropped or rotated — it exports at original dimensions. A one-line disclosure appears in the Fix tool bar when a Live asset is being fixed: "Motion clip not affected." On export, the Live Photo pair reflects the fixed still frame with the original motion clip.</p>
+
+<h3>3.8.5 "Fixed" State in Film Archive</h3>
+<p>A small "Fixed" badge appears on the asset thumbnail in the Moment grid after a correction is applied. Single tap on the badge shows: "Original preserved · Revert." The derivative becomes the primary displayed version in all Film Archive surfaces, widgets, and share flows. The share flow shows a small "Fixed" label on the asset preview — the derivative is always what gets shared.</p>
+</div>
+
+<h2>3.9 Post-Capture Overlay UX <span class="new-badge">NEW v1.6</span></h2>
+
+<div class="callout amber"><strong>Timing principle:</strong> The post-capture overlay must not interrupt the user's next capture. The full overlay sequence (Vibe Tag Prompt → Quick Share Pill) completes in 7 seconds total, then the overlay dismisses automatically. Users can dismiss at any point by tapping the shutter again.</div>
+
+<h3>3.9.1 Sequential Flow</h3>
+<p>The post-capture overlay fires immediately after every Still or Live capture. The sequence is strictly ordered — no element fires early or late:</p>
+<ol>
+  <li><strong>T+0ms:</strong> Capture completes. Viewfinder freezes on the captured image for 300ms (flash effect).</li>
+  <li><strong>T+300ms:</strong> Post-capture overlay renders over the frozen frame. Location Vibe Chip appears at the top (resolved from on-device sources — see §3.9.3). Vibe Tag Prompt sticker chips animate in with spring-bounce (staggered 0/58/116/174ms delays).</li>
+  <li><strong>T+4s or user tap:</strong> Vibe Tag Prompt window closes. Selected tags are written to the asset's metadata record in the intelligence graph. The Nudge Engine queues these tags for reading when it fires (see §8).</li>
+  <li><strong>T+4.3s:</strong> Quick Share Pill slides up from Zone D (spring animation). Auto-dismisses after 3 seconds if not tapped.</li>
+  <li><strong>T+7.5s:</strong> Overlay clears. Viewfinder returns to live camera. Film strip counter decrements.</li>
+</ol>
+
+<h3>3.9.2 Vibe Tag Prompt</h3>
+<p>The Vibe Tag Prompt presents four sticker chip options. Each chip is a tilted glass pill with a unique rotation angle (−2.5°, +1.8°, −1.2°, +2.2°), varied border-radius (18–28px), and a spring-bounce entrance animation (<code>cubic-bezier(.34,1.56,.64,1)</code>, 420ms). The first chip uses the amber accent colour; remaining chips use neutral glass.</p>
+
+<p>Chip content is AI-suggested based on the active preset, on-device location, time of day, and weather. The user can tap one chip to confirm the vibe tag, or swipe to dismiss without tagging. Tapping a chip plays a subtle haptic (UIImpactFeedbackGenerator .light).</p>
+
+<p>Prompt label copy: "add a vibe" in uppercase, letter-spacing .10em, opacity .38 — does not compete with the chips.</p>
+
+<h3>3.9.3 Location Vibe Chip</h3>
+<p>The Location Vibe Chip appears at the top of the post-capture overlay (not in the live viewfinder — zero chrome impact on capture). It displays the resolved location name + contextual vibe descriptor (e.g., "Hongdae · Seoul · golden hour").</p>
+
+<p>Derivation pipeline (entirely on-device, &lt;100ms):</p>
+<ul>
+  <li>CoreLocation reverse geocoding → neighbourhood + city name</li>
+  <li>WeatherKit → current conditions → mapped to vibe descriptor (golden hour, rainy evening, etc.)</li>
+  <li>Optional: SoundAnalysis ambient classifier or Vision scene classifier (if enabled by Live Vibe Preview setting)</li>
+  <li>Never uses cloud geocoding or third-party location services</li>
+</ul>
+
+<h3>3.9.4 Quick Share Pill</h3>
+<p>The Quick Share Pill uses <code>UIActivityViewController</code> — the standard iOS share sheet. It is the MVP share mechanism. The pill is styled as a purple-tinted glass button (<code>background: rgba(107,78,255,.24); border: 1px solid rgba(107,78,255,.48)</code>) showing up to three close-friends avatars and the label "send to close friends."</p>
+
+<p>Tapping the pill opens the system <code>UIActivityViewController</code> pre-populated with the captured asset. The Trusted-Circle share flow (named recipients, persistent albums) is a Post-MVP feature and is not present in v1.0.</p>
+
+<h3>3.9.5 Nudge Engine Sequencing</h3>
+<p>The AI Nudge Engine reads vibe tags from the intelligence graph — it does not fire during the post-capture window. The exact sequencing is:</p>
+<ol>
+  <li>Vibe Tag Prompt fires and the user selects a tag (or the window auto-closes)</li>
+  <li>Selected tags (if any) are written to the asset's metadata record</li>
+  <li>The Nudge Engine fires after the post-capture window closes, reads the stored tags, and generates a reflection card prompt that incorporates the user's vibe selection</li>
+</ol>
+<p>This ensures the Nudge Engine always has access to the most recent user-provided vibe signal, making its reflection prompts more contextually accurate.</p>
+
+<div class="new-section">
+<div class="new-section-label">New in v1.7</div>
+<h2>3.10 Life Four Cuts — Photo Booth Mode <span class="new-badge">NEW v1.7</span></h2>
+
+<p>Life Four Cuts (L4C) is a photo-booth capture mode that produces a single shareable composite strip of 4 shots. The user swipes to BOOTH mode and remains inside the same CaptureHub shell used by other asset types. A 4-slot booth strip overlay appears on the live preview, Featured Frame / border colour are configured through the standard controls, and tapping START begins an automated 4-shot sequence. The result is a vertical 9:16 JPEG strip ready for immediate sharing.</p>
+
+<div class="callout amber"><strong>Session principle:</strong> Swiping to BOOTH mode is instant — no hardware reconfiguration occurs. The capture session transitions to photo class only when the user taps START, before the first countdown fires. This eliminates perceptible lag on mode entry.</div>
+
+<h3>3.10.1 Capture Flow</h3>
+<p>Once the user taps START, the following automated sequence fires four times (one iteration per shot):</p>
+<ol>
+  <li>Countdown overlay appears in the active booth slot: 3 → 2 → 1, each numeral visible for 1 second.</li>
+  <li>White flash: full-screen <code>Color.white</code> opacity 0→1 in 0.08s, then 1→0 in 0.25s.</li>
+  <li>Still captured via <code>CaptureEngineProtocol.captureAsset()</code> (photo class session).</li>
+  <li>Freeze: the captured frame settles into its booth slot for 0.4 seconds before the next countdown begins.</li>
+  <li>The next slot becomes active; previously captured slots remain filled in the overlay for constant progress feedback.</li>
+</ol>
+<p>After all 4 shots are captured, <code>StripPreviewSheet</code> is presented automatically.</p>
+
+<h3>3.10.2 StripPreviewSheet</h3>
+<p>The StripPreviewSheet is a bottom review sheet presented over the same CaptureHub shell after all 4 shots are captured. It shows the composited strip image (async-rendered; spinner while compositing) and offers the following controls:</p>
+<table>
+  <thead><tr><th>Control</th><th>Behavior</th></tr></thead>
+  <tbody>
+    <tr><td>Border colour picker</td><td>4 circle swatches (white, black, pastelPink, skyBlue). Tapping a swatch re-composites the strip asynchronously and updates the preview. Selected swatch shows a 2pt amber ring.</td></tr>
+    <tr><td>Featured Frame picker</td><td>Matches the BOOTH More deck choices. Re-selection triggers re-composite. "None" option always present.</td></tr>
+    <tr><td>Save &amp; Share</td><td>Full amber capsule button. Triggers final composite with stamp (wordmark + date/location) → saves composite as <code>.l4c</code> asset to vault → saves L4CRecord to graph → presents <code>UIActivityViewController</code>.</td></tr>
+    <tr><td>Save to Photos</td><td>Smaller text link below Save &amp; Share. Exports composite JPEG to Apple Photos Library.</td></tr>
+    <tr><td>Retake</td><td>Ghost-style button in sheet header (top-left). Dismisses sheet, returns to the live booth overlay with the 4-slot progress reset.</td></tr>
+  </tbody>
+</table>
+
+<h3>3.10.3 L4C Record &amp; Persistence</h3>
+<p>When Save &amp; Share is confirmed, the following persistence operations occur atomically:</p>
+<ul>
+  <li><strong>Composite asset:</strong> Saved to vault as <code>{id}.jpg</code> with <code>AssetType.l4c</code>. Canvas 1080×1920px; border thickness 28px; 20px gap between 4 photo slots; each slot 1024×444px; 64px stamp zone at bottom (wordmark + date/location text via CoreText). Featured Frame PNG composited on top at full opacity (alpha=0 in photo slot regions).</li>
+  <li><strong>Source stills:</strong> 4 stills saved as normal <code>.still</code> assets with a hidden flag — they do not appear in the Film feed. Accessible only via L4CRecord relationship.</li>
+  <li><strong>L4CRecord:</strong> Saved to <code>l4c_records</code> GRDB table with: id (= composite asset ID), sourceAssetIDs [4], frameID, borderColor, capturedAt, location, label.</li>
+</ul>
+
+<div class="callout teal"><strong>Feed card:</strong> Only the composite strip appears in the Film feed, represented by <code>L4CMomentCardView</code> with a "✦ BOOTH" amber badge, the composite as hero image, and subtitle "4 cuts · {location} · {date}". Individual source stills are never shown in the feed.</div>
+
+<p><strong>Delete cascade:</strong> Deleting a BOOTH strip card removes: the composite asset from vault, all 4 source stills from vault, and the L4CRecord row. Confirmation prompt: "Delete Booth Strip?" — no undo.</p>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>4. On-Device Intelligence — Cold Indexing</h1>
+
+<h2>4.1 Overview</h2>
+<p>All high-frequency intelligence runs entirely on-device using Apple's Core ML, Vision, and AVFoundation frameworks. This is the "Cold" indexing layer — it runs in the background after capture, silently building a rich metadata graph for every asset without any network call. The results feed the Film Archive, vibe tagging system, moment clustering, and story assembly engine.</p>
+<div class="callout teal"><strong>Privacy principle: Cold indexing never leaves the device. No asset or metadata is transmitted in this layer. Cloud processing is opt-in only and handled by the separate Hybrid Lab system (§6).</strong></div>
+
+<h2>4.2 Image Classification &amp; Categorization</h2>
+<p>Applied to: Still, Live, Clip (per frame), Atmosphere (still component).</p>
+
+<h3>Place Tags</h3>
+<p>On-device Vision classifier identifies the scene context of every visual asset and assigns one or more place tags from a defined taxonomy. Tags are additive — a photo can be both "Cafe" and "Interior."</p>
+
+<table>
+  <thead><tr><th>Category</th><th>Example tags</th><th>Data source</th></tr></thead>
+  <tbody>
+    <tr><td>Dining &amp; drink</td><td>Cafe, Restaurant, Bar, Rooftop bar, Street food</td><td>Vision scene classifier + GPS POI cross-reference</td></tr>
+    <tr><td>Nature &amp; outdoor</td><td>Beach, Mountain, Forest, Sunset, Sunrise, Golden hour, Ocean</td><td>Vision + time-of-day + GPS elevation</td></tr>
+    <tr><td>Urban &amp; architecture</td><td>Landmark, Street, Market, Museum, Bridge, Alleyway</td><td>Vision scene + GPS landmark database</td></tr>
+    <tr><td>Accommodation</td><td>Hotel room, Hostel, Airbnb, Pool</td><td>Vision scene classifier</td></tr>
+    <tr><td>Transport</td><td>Train, Plane interior, Car window, Ferry</td><td>Vision + motion sensors</td></tr>
+    <tr><td>Social context</td><td>Crowd, Solo, Group, Intimate (2–3 people)</td><td>Face detection (on-device, no face ID)</td></tr>
+  </tbody>
+</table>
+
+<h3>Vibe Tags</h3>
+<p>Beyond place, each asset is tagged with one or more vibe descriptors that characterize the mood, light quality, and atmosphere of the moment. These power the aesthetic clustering in the Film Archive and story assembly.</p>
+
+<table>
+  <thead><tr><th>Vibe category</th><th>Example tags</th><th>Derivation method</th></tr></thead>
+  <tbody>
+    <tr><td>Light quality</td><td>Golden hour, Blue hour, Overcast, Harsh midday, Low light, Neon</td><td>Chromatic profiling + time-of-day + GPS latitude</td></tr>
+    <tr><td>Weather</td><td>Sunny, Rainy, Foggy, Snowy, Windy</td><td>Vision + on-device weather API cross-reference (no network — uses cached weather)</td></tr>
+    <tr><td>Mood / energy</td><td>Calm, Energetic, Melancholic, Celebratory, Solitary</td><td>Combined signal from scene, social context, light, and acoustic tags</td></tr>
+    <tr><td>Aesthetic style</td><td>Minimalist, Maximalist, Lo-fi, Editorial, Candid</td><td>Chromatic palette + composition analysis</td></tr>
+  </tbody>
+</table>
+
+<h2>4.3 Acoustic Signature Analysis <span class="updated-badge">UPDATED v1.5</span></h2>
+<p>Applied to: <strong>Still (via Sound Stamp, opt-in)</strong>, Echo, Clip (audio track), Atmosphere (audio component). Background audio analysis runs after capture using Core ML audio classification. Results populate acoustic vibe tags that enrich the moment's metadata graph.</p>
+
+<div class="callout blue">Sound Stamp integration: when Sound Stamp is enabled (§2.6), Still assets now enter the acoustic analysis pipeline using their 1.5s ambient buffer. The same Core ML model and tag taxonomy is used for all asset types — Still/Sound Stamp results are not differentiated from Echo/Clip results in the intelligence graph. A Still asset with Sound Stamp tags is acoustically equivalent to an Echo asset with the same tags for all downstream features (Film Archive, Reel assembly, Mood Map, Annual Review).</div>
+
+<table>
+  <thead><tr><th>Acoustic tag</th><th>Asset types (source)</th><th>Trigger condition</th><th>Use in downstream features</th></tr></thead>
+  <tbody>
+    <tr><td>Windy</td><td>Still (Sound Stamp), Echo, Clip, Atmosphere</td><td>Sustained broadband noise with wind frequency signature</td><td>Labels outdoor/nature moments; informs story assembly sequence</td></tr>
+    <tr><td>Crowded</td><td>Still (Sound Stamp), Echo, Clip, Atmosphere</td><td>High ambient voice density, overlapping speech</td><td>Social energy tag; used in vibe clustering</td></tr>
+    <tr><td>Music</td><td>Still (Sound Stamp, threshold 0.7+), Echo, Clip, Atmosphere</td><td>Detected musical tonal structure</td><td>Flags for potential rights caution on public export; enriches atmosphere tag</td></tr>
+    <tr><td>Quiet / Serene</td><td>Still (Sound Stamp), Echo, Clip, Atmosphere</td><td>Low amplitude, minimal transients</td><td>Mood tag — pairs with Calm / Solitary visual vibes</td></tr>
+    <tr><td>Rain</td><td>Still (Sound Stamp), Echo, Clip, Atmosphere</td><td>Sustained rhythmic broadband noise with rain frequency signature</td><td>Weather tag; cross-references with visual weather tag</td></tr>
+    <tr><td>Ocean / Water</td><td>Still (Sound Stamp, lower confidence), Echo, Clip, Atmosphere</td><td>Rhythmic low-frequency wave pattern</td><td>Place tag enrichment — confirms Beach / Coastal</td></tr>
+  </tbody>
+</table>
+
+<h2>4.4 Chromatic Profiling</h2>
+<p>Applied to: Still, Live, Clip (sampled frames), Atmosphere (still component).</p>
+<p>For every visual asset, the on-device engine extracts a dominant color palette of up to 5 colors (stored as HSL values). This palette serves three downstream functions: vibe tag enrichment (warm palette → golden hour candidate; desaturated palette → fog/overcast candidate), preset recommendation (palette affinity to preset color ramp), and visual clustering in the Film Archive (moments with similar palettes grouped together for aesthetic coherence in story assembly).</p>
+
+<table>
+  <thead><tr><th>Palette signal</th><th>Vibe tag inference</th><th>Preset affinity</th></tr></thead>
+  <tbody>
+    <tr><td>High warm saturation (amber, orange, red)</td><td>Golden hour, Sunset, Warm</td><td>Amalfi Golden, Bali Warm preset families</td></tr>
+    <tr><td>Low saturation, high cool tone (blue-gray)</td><td>Overcast, Foggy, Melancholic</td><td>Tokyo Rain, Nordic Cold preset families</td></tr>
+    <tr><td>High contrast, near-black + neon</td><td>Night, Neon, Urban</td><td>Tokyo Neon, Y2K Night preset families</td></tr>
+    <tr><td>Desaturated, grain-forward</td><td>Lo-fi, Film, Candid</td><td>Film Roll, Disposable preset families</td></tr>
+  </tbody>
+</table>
+
+<h2>4.5 Ambient Metadata Harvesting</h2>
+<p>Applied to: All asset types, at moment of capture.</p>
+<p>Beyond visual and acoustic analysis, niftyMomnt silently pulls ambient contextual signals at the moment of capture. These signals enrich the metadata graph without any user input — solving the blank-page problem for MZ users who hate manual data entry.</p>
+
+<table>
+  <thead><tr><th>Signal</th><th>Data source</th><th>How captured</th><th>Downstream use</th></tr></thead>
+  <tbody>
+    <tr><td>Weather conditions</td><td>WeatherKit (on-device, cached)</td><td>GPS + cached local weather at capture time</td><td>Weather vibe tags (Sunny, Rainy, Foggy, Snowy). Caption enrichment. Moment label.</td></tr>
+    <tr><td>Elevation</td><td>Core Location (barometric altimeter)</td><td>Continuous background reading, snapped at capture</td><td>Place enrichment (mountain, rooftop, underground). Vibe tag: "High altitude," "Subterranean."</td></tr>
+    <tr><td>Local time &amp; sun position</td><td>System clock + GPS-derived solar angle</td><td>Computed at capture timestamp</td><td>Golden hour / blue hour / midday tags. Informs chromatic profiling cross-reference.</td></tr>
+    <tr><td>Now Playing (Apple Music)</td><td>MusicKit framework</td><td>Reads currently playing track at capture time if user has authorized</td><td>Stored as metadata on the asset. Surfaces in Film Archive ("you were listening to..."). Informs Reel music suggestions.</td></tr>
+    <tr><td>Now Playing (Spotify)</td><td>Spotify iOS SDK (if installed)</td><td>Reads currently playing track via Spotify iOS SDK authorization</td><td>Same as Apple Music. Falls back gracefully if Spotify not installed or not authorized.</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Permission model:</strong> WeatherKit and Core Location require existing location permission (already granted for GPS clustering). MusicKit and Spotify require separate opt-in during onboarding — clearly framed as "remember what you were listening to." All ambient metadata is stored on-device only; none is transmitted during Cold indexing.</p>
+
+<h2>4.6 Moment Clustering</h2>
+<p>After individual asset indexing, the on-device clustering engine groups assets into Moments — coherent collections of captures that belong together in the Film Archive and story assembly. Clustering runs silently in the background, triggered when the device is charging and idle.</p>
+
+<table>
+  <thead><tr><th>Clustering signal</th><th>Logic</th><th>Cluster boundary condition</th></tr></thead>
+  <tbody>
+    <tr><td>GPS proximity</td><td>Assets within ~200m radius are candidates for the same Moment</td><td>GPS shift &gt; 500m from cluster centroid breaks the cluster</td></tr>
+    <tr><td>Time proximity</td><td>Assets captured within a rolling 90-minute window are candidates</td><td>Gap &gt; 90 minutes between consecutive assets breaks the cluster</td></tr>
+    <tr><td>Vibe similarity</td><td>Assets sharing ≥ 2 vibe tags are weighted together within GPS/time bounds</td><td>Vibe dissimilarity (e.g., "Cafe" next to "Beach") can split a cluster even within time window</td></tr>
+    <tr><td>Asset type mix</td><td>Echoes and Atmospheres are attached to the nearest GPS/time Still or Clip cluster</td><td>Orphaned Echoes (no visual assets within 30 min) form standalone audio Moments</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Output:</strong> Each Moment cluster receives a system-generated label derived from GPS reverse geocoding + time + dominant vibe tag. Label format: "[Vibe descriptor] · [Neighborhood/City] · [Day/Date]" — e.g., "Rainy Walk · Siena · Tuesday" or "Golden Hour · Williamsburg · Sunday." When no dominant vibe is clear, label defaults to "[Day] · [Neighborhood]." User can rename, merge, or split clusters manually in the Film Archive view.</p>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>5. Film Archive &amp; Moment Detail</h1>
+
+<p>The Film Archive is the primary browse surface for captured rolls and moments (formerly described as "Journal" in earlier PRD drafts). The tab label reads "Film" with icon 🎞 (or equivalent SF Symbol <code>film</code>). The screen title reads "Film" in 900-weight typography. <strong>Exception:</strong> "Apple Journaling Suggestions API" retains Apple’s branded name.</p>
+
+<h3>5.1 Film Archive — Visual Layout Specification <span class="new-badge">NEW v1.6</span></h3>
+
+<p><strong>Background:</strong> Dark editorial — <code>#0F0D0B</code> (warm near-black). Not adaptive — Film archive is always dark, consistent with the capture surface. This eliminates the jarring light→dark transition of the v1.5 spec.</p>
+
+<p><strong>Header:</strong> "Film" in 26px/900 weight + amber roll-count badge (e.g., "12 rolls"). Right side: search icon + grid-toggle icon (each 34×34pt glass pills). iOS 26 Liquid Glass backdrop.</p>
+
+<p><strong>Roll cards:</strong></p>
+<ul>
+  <li>Background: <code>rgba(255,255,255,.04)</code> glass; border: <code>.5px solid rgba(255,255,255,.08)</code>; border-radius: 18px</li>
+  <li>Hero zone (130pt height): gradient simulation of the roll's dominant preset colours + film grain overlay (opacity .06) + 3pt accent strip at left edge in the preset's accent colour</li>
+  <li>Shot count pill (top right of hero): <code>rgba(0,0,0,.62)</code> glass backdrop</li>
+  <li>Roll name + date (bottom left of hero): 15px/900 + 10px/500</li>
+  <li>Thumbnail strip (below hero): horizontal row of 38×28pt thumbnail chips showing the first 4–5 shots; "+N" chip at end for overflow</li>
+  <li>Vibe tags + Play circle CTA (below thumbnails): tags in rgba(255,255,255,.40); play circle in the preset's accent colour</li>
+</ul>
+
+<p><strong>Tab bar:</strong> iOS 26 floating glass pill. Positioned 16pt above screen edge, 12pt inset left/right. Height 58pt. border-radius 29pt. Background: <code>rgba(20,16,12,.76)</code> with <code>backdrop-filter: blur(28px) saturate(200%) brightness(1.14)</code>. Three tabs: Capture (camera icon), Film (film-strip icon, lavender active dot), Vault (grid-lock icon). Active tab uses lavender <code>#C4B5FD</code> for icon and label; inactive tabs at <code>rgba(255,255,255,.26)</code>.</p>
+
+<h2>5.2 Moment Detail Screen <span class="updated-badge">UPDATED v1.6</span></h2>
+
+<p>The Moment Detail screen opens when the user taps any roll card in the Film Archive. It presents a single captured asset (Still or Live) full-screen with metadata, tags, and quick actions accessible via a glass bottom sheet.</p>
+
+<h3>5.2.1 Zone A — Navigation Bar</h3>
+<table>
+  <thead><tr><th>Element</th><th>Position</th><th>Spec</th></tr></thead>
+  <tbody>
+    <tr><td>Back button</td><td>Left</td><td>40×40pt glass circle pill. SVG chevron-left glyph. Tap: slide-right transition back to Film Archive.</td></tr>
+    <tr><td>Roll name + moment title</td><td>Center</td><td>13px/900 weight, letter-spacing .07em. Format: "[PRESET] · [Location]" e.g. "AMALFI · Hongdae Walk". Truncates with ellipsis.</td></tr>
+    <tr><td>Share button</td><td>Right</td><td>40×40pt glass circle pill, purple tint (<code>rgba(107,78,255,.18)</code>, border <code>rgba(107,78,255,.36)</code>). SVG upload/share glyph in lavender <code>#C4B5FD</code>. Tap: opens <code>UIActivityViewController</code> for this asset.</td></tr>
+  </tbody>
+</table>
+<p>Zone A uses iOS 26 Liquid Glass: <code>background: rgba(8,6,4,.22); backdrop-filter: blur(28px) saturate(200%) brightness(1.12)</code>. Height: 68pt.</p>
+
+<h3>5.2.2 Full-Bleed Photo Zone</h3>
+<p>The captured asset fills the screen edge-to-edge below Zone A and above the glass bottom sheet. The active vibe preset's grain, tint, and light-leak overlays are rendered on top (same Metal shaders as the live viewfinder, if Live Vibe Preview is enabled). Film grain overlay: opacity .05, mix-blend-mode overlay.</p>
+
+<p><strong>Navigation:</strong> Swipe left/right to navigate to the previous/next shot within the same roll. A pagination indicator (pill-dot row) at the bottom of the photo zone shows current position within the roll.</p>
+
+<p><strong>Location Vibe Chip:</strong> Displayed at the top of the photo zone, centered. Same glass pill treatment as the post-capture overlay. Auto-hidden after 2 seconds of viewing; reappears on photo tap.</p>
+
+<p><strong>Floating Sticker Vibes:</strong> Vibe tags from the post-capture Vibe Tag Prompt are rendered as tilted sticker chips over the photo (same tilt angles and glass treatment as the post-capture prompt). Each chip is positioned at a fixed location per shot (not randomised per view). Tapping a sticker chip opens a tag-edit overlay allowing the user to change or remove the vibe tag. If no vibe tags were assigned, no stickers are shown — the location chip remains.</p>
+
+<h3>5.2.3 Glass Bottom Sheet</h3>
+<p>The bottom sheet uses iOS 26 Liquid Glass: <code>background: rgba(12,9,6,.82); backdrop-filter: blur(28px) saturate(200%) brightness(1.12)</code>. It overlaps the bottom of the photo zone and extends to the home indicator. The sheet is drag-dismissible (downward) to reveal the full photo.</p>
+
+<table>
+  <thead><tr><th>Element</th><th>Spec</th></tr></thead>
+  <tbody>
+    <tr><td>Handle</td><td>36×4pt rounded bar, <code>rgba(255,255,255,.18)</code>, centered, top of sheet</td></tr>
+    <tr><td>Shot info row</td><td>Left: "Shot N of 24" in 14px/900 weight. Right: date + time in 11px/400 <code>rgba(255,255,255,.38)</code></td></tr>
+    <tr><td>Vibe tags row</td><td>Horizontal row of glass chip pills. User-selected tags use amber accent; AI-derived tags (location, acoustic) use neutral glass. Tappable to edit.</td></tr>
+    <tr><td>Action row</td><td>Three buttons: (1) "Fix this shot" — opens §3.8 Fix Modal. (2) "Share" — opens <code>UIActivityViewController</code>. (3) "•••" overflow menu (Delete, Add to Vault, Copy). Fix and Share are equal-width flex buttons; overflow is 40×40pt.</td></tr>
+    <tr><td>Safe area</td><td>Bottom padding: <code>env(safe-area-inset-bottom)</code> — covers home indicator on all iPhone 15–16 sizes</td></tr>
+  </tbody>
+</table>
+
+<h3>5.2.4 Entry Points</h3>
+<ul>
+  <li>Tap on a thumbnail in a Film Archive roll card → opens Moment Detail at that specific shot</li>
+  <li>Tap on the roll card hero → opens Moment Detail at shot 1 of the roll</li>
+  <li>Tap on the "last" thumbnail in Zone D of the Capture Hub → opens Moment Detail for the most recently captured asset</li>
+</ul>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>6. AI Processing Architecture — Three Modes</h1>
+
+<h2>6.1 Overview</h2>
+<p>niftyMomnt uses three distinct AI processing modes with different data contracts, consent requirements, and capability profiles. They are not interchangeable — each has a precise scope. All features have a working on-device default. Server AI is always opt-in and never runs silently. Sound Stamp audio is never included in any mode — it is processed and discarded before any mode decision is made. Fix operations are entirely on-device and do not involve any AI mode.</p>
+
+<table>
+  <thead><tr><th>Mode</th><th>Data sent</th><th>Consent</th><th>Capabilities</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Mode 0 — On-device (default)</strong></td><td>Nothing. Zero network calls.</td><td>None beyond app permissions. Always active.</td><td>All capture, Cold indexing, clustering, heuristic Reel, nudge templates, vault, presets, widgets, Fix, Sound Stamp analysis. Fully offline.</td></tr>
+    <tr><td><strong>Mode 1 — Enhanced AI, text-only (opt-in)</strong></td><td>Anonymized text: vibe tags, place name, transcript text, ambient metadata. Never photos. Never audio files. Never Sound Stamp buffers.</td><td>Settings toggle ("Enhanced AI"). 10 uses/month free → Pro upsell. Pro/Creator Pro: unlimited.</td><td>Voice-to-Prose (Poet / Foodie / Minimalist), rich captions, dynamic nudge questions, Annual Review (v1.5).</td></tr>
+    <tr><td><strong>Mode 2 — Lab, encrypted visual (opt-in, per-session)</strong></td><td>Encrypted photos, clips, or audio to ephemeral sandbox. Purged immediately after metadata returned. Never Sound Stamp buffers.</td><td>Settings toggle surfaces the option only. Explicit per-session consent always required. Free: 3/month. Pro/Creator Pro: unlimited.</td><td>Rich VLM image classification, Lab Reel narrative assembly, Atmosphere recommendations.</td></tr>
+  </tbody>
+</table>
+
+<h2>6.2 Mode 1 — Enhanced AI (Text-Only)</h2>
+<p><strong>Privacy guarantee:</strong> Only anonymized text descriptions leave the device — vibe tags, place names, transcribed text, and ambient metadata. Photos and audio files are never transmitted under Enhanced AI. The encryption key for the vault never leaves the device.</p>
+<p><strong>Trigger:</strong> User enables "Enhanced AI" toggle in Settings → AI &amp; Privacy. Once on, eligible features (caption generator, Voice-to-Prose, nudge questions) use the server LLM automatically when a network connection is available, falling back to on-device Apple AI when offline.</p>
+<p><strong>What is sent — captions:</strong> Vibe tags, place name, weather tag, elevation tag, Now Playing track name (if present). No image data of any kind.</p>
+<p><strong>What is sent — Voice-to-Prose:</strong> On-device transcript text from the Echo asset. No audio file is sent — transcription happens on-device first via Apple Speech, then only the resulting text is transmitted.</p>
+<p><strong>What is sent — nudge questions:</strong> Vibe tags, acoustic tags, place name, vibe shift delta, ambient metadata. No image or audio data.</p>
+<p><strong>Offline fallback:</strong> When Enhanced AI is enabled but the device is offline, features fall back silently to on-device Apple AI. A subtle indicator ("Using on-device AI") confirms the fallback — no error, no blocked feature.</p>
+<p><strong>Free tier:</strong> 10 Enhanced AI uses per month. A use counter is shown in Settings. At 10, an upsell card appears: "Unlock unlimited Enhanced AI with niftyMomnt Pro." Feature continues working with on-device AI after the cap is reached.</p>
+
+<h2>6.3 Mode 2 — The Hybrid Lab (Encrypted Visual)</h2>
+<p><strong>Privacy guarantee:</strong> Assets sent to the Lab are AES-256 encrypted on-device before transmission. Processing occurs in an ephemeral, isolated sandbox. All assets and intermediate data are cryptographically purged immediately after the metadata graph is returned — verified by a timestamped audit log shown to the user. No asset is retained, logged, or used for model training. Per-session explicit consent is required every time — the Lab Settings toggle only controls whether the option is surfaced, never whether it runs silently.</p>
+
+<h2>6.4 Lab Processing Pipeline</h2>
+<table>
+  <thead><tr><th>Step</th><th>Action</th><th>Detail</th><th>Privacy control</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>User triggers Lab</td><td>User selects Moments / assets and taps "Enhance with Lab" in Film Archive or story editor</td><td>No data leaves device yet</td></tr>
+    <tr><td>2</td><td>Consent prompt</td><td>Modal shows: asset count, what is being sent (photos / clips / audio), processing time estimate, purge guarantee. User taps "Process securely."</td><td>Explicit per-session opt-in. Cannot be bypassed.</td></tr>
+    <tr><td>3</td><td>On-device encryption</td><td>Selected assets and on-device metadata encrypted with AES-256. Encryption key derived from session token — never stored on server.</td><td>Key never transmitted</td></tr>
+    <tr><td>4</td><td>Secure transmission</td><td>Encrypted payload sent to niftyMomnt secure cloud sandbox via TLS 1.3</td><td>End-to-end encrypted in transit</td></tr>
+    <tr><td>5</td><td>VLM synthesis</td><td>Vision-Language Model processes assets in ephemeral sandbox: rich semantic tagging, narrative graph, caption candidates, thematic grouping, Atmosphere recommendations</td><td>Sandbox is isolated, no persistence</td></tr>
+    <tr><td>6</td><td>Metadata return</td><td>Only derived metadata (tags, captions, narrative nodes) returned to device. Raw assets never leave the sandbox.</td><td>Assets never returned — metadata only</td></tr>
+    <tr><td>7</td><td>Immediate purge</td><td>All assets and intermediate data cryptographically purged. Purge confirmation (timestamp + session ID only, no content) shown to user.</td><td>Verifiable purge. Audit log available in Settings.</td></tr>
+  </tbody>
+</table>
+
+<h2>6.5 Lab Output — What the VLM Returns</h2>
+<ul>
+  <li><strong>Rich semantic tags:</strong> More granular place and vibe tags than on-device Cold indexing. E.g., "hidden bar beneath a flower market" vs "Bar + Market."</li>
+  <li><strong>Caption candidates:</strong> Three tone variants (witty, poetic, minimal) written with full Moment context awareness.</li>
+  <li><strong>Narrative graph:</strong> Opening moment, arc beats, closing moment — feeds the Reel assembler's cinematic sequencing logic.</li>
+  <li><strong>Thematic clusters:</strong> Cross-Moment groupings by shared theme (e.g., "all the food moments from this trip").</li>
+  <li><strong>Atmosphere recommendations:</strong> Flags Stills as Atmosphere candidates with suggested audio character.</li>
+</ul>
+
+<h2>6.6 Settings — AI &amp; Privacy</h2>
+<p>Two distinct toggles in Settings → AI &amp; Privacy. Both are off by default on first install.</p>
+<table>
+  <thead><tr><th>Toggle</th><th>What it enables</th><th>What it does NOT do</th></tr></thead>
+  <tbody>
+    <tr><td>"Enhanced AI"</td><td>Enables server LLM for text-only features: captions, Voice-to-Prose, nudge questions. Falls back to on-device AI when offline.</td><td>Never sends photos, audio, or video. Never activates Lab processing.</td></tr>
+    <tr><td>"Lab Processing"</td><td>Surfaces the "Enhance with Lab" action in the Film Archive and story editor. Per-session consent modal still fires every time.</td><td>Never processes assets silently. Never activates without explicit per-session consent. Toggling on does not send anything.</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>7. Story Engine &amp; AI Reel Assembler</h1>
+
+<h2>7.1 Overview</h2>
+<p>The Story Engine transforms raw Moment clusters into publishable content. Its primary output is the AI Reel — an automatically assembled short-form video (15–60s) ready to post to Instagram Reels or TikTok. Secondary outputs include photo carousels, trip journals, and private memory compilations. The Story Engine draws on both Cold indexing metadata and (optionally) Lab-enriched narrative graphs. Fix-corrected assets (derivatives) are used in Reel assembly and Film Archive hero selection — the system always works from the primary displayed version of each asset. Sound Stamp acoustic tags from Still assets contribute to Reel sequencing logic and music matching in the same way Echo acoustic tags do.</p>
+
+<h2>7.2 AI Reel Assembler — Logic</h2>
+<h3>Input Selection</h3>
+<ul>
+  <li><strong>Source:</strong> All Clips, Stills, Lives, and Atmospheres within a selected Moment cluster or date range.</li>
+  <li><strong>Asset scoring:</strong> Each asset receives a score based on: motion interest (Clips with subject movement score higher), vibe coherence (assets matching the dominant Moment vibe score higher), chromatic harmony (assets whose palette complements the cluster palette score higher), and uniqueness (avoids selecting near-identical Stills from burst sequences).</li>
+  <li><strong>Target count:</strong> Assembler selects 8–15 assets for a 15–45s Reel. User can adjust count before render.</li>
+</ul>
+<h3>Sequencing Logic</h3>
+<ul>
+  <li><strong>Opening:</strong> The highest-scoring wide/context shot or an Atmosphere asset (most immersive opening).</li>
+  <li><strong>Arc:</strong> Mid-section assets sequenced by time (default) or vibe similarity (alternative, user-selectable). Clips are distributed throughout — no back-to-back Clip stacking unless the user enables it.</li>
+  <li><strong>Close:</strong> The highest-scoring "emotionally resonant" asset — determined by vibe tag: a Sunset, a Quiet moment, or a Crowd asset with high energy.</li>
+  <li><strong>Lab enhancement:</strong> If Lab narrative graph is available, sequencing follows the narrative arc (opening beat → arc beat → closing beat) rather than time or vibe heuristics.</li>
+</ul>
+<h3>Music &amp; Transitions</h3>
+<ul>
+  <li><strong>Music:</strong> Curated royalty-free tracks organized by vibe tag. System selects a track matching the dominant Moment vibe. User can swap from a preset-matched library. No copyrighted music suggested by default (flags Echo assets tagged "Music" as potentially rights-sensitive on public export).</li>
+  <li><strong>Transitions:</strong> Cut (default), cross-dissolve, and motion blur available. Transition style is tied to the active vibe preset family — lo-fi presets use hard cuts; editorial presets use cross-dissolves.</li>
+  <li><strong>Voice note overlay:</strong> If one or more Echo assets exist within the Moment cluster, their transcribed text (or Voice-to-Prose "Minimalist" variant) can be overlaid as animated text on the Reel. The overlay is optional — user toggles it before render. Typography style matches the active vibe preset.</li>
+</ul>
+<p><strong>Duration match:</strong> Clip durations are trimmed to fit the music's phrase boundaries where possible (beat-matched at 1-bar intervals).</p>
+
+<h2>7.3 Film Archive — Moment Organization <span class="updated-badge">UPDATED v1.6</span></h2>
+<p>The Film Archive is the primary organizational view — a reverse-chronological timeline of Moment clusters, each represented as a card with a hero image (highest-scoring Still or Live), asset count, place label, date, and dominant vibe tags. Tapping a card expands to the full Moment view with all assets in a masonry grid. Earlier drafts used the working name “Auto Moment Journal”; the shipping name is <strong>Film Archive</strong> (see §5 and UI/UX Spec v1.7 §5).</p>
+<table>
+  <thead><tr><th>Film Archive feature</th><th>Behavior</th><th>Data source</th></tr></thead>
+  <tbody>
+    <tr><td>Moment card label</td><td>"Sunday · Brooklyn" or "Tokyo Day 3 · Shinjuku" — auto-generated from GPS + time</td><td>GPS reverse geocoding + Cold clustering</td></tr>
+    <tr><td>Hero image selection</td><td>Highest-scoring Still or Live from the Moment cluster</td><td>Asset scoring engine</td></tr>
+    <tr><td>Vibe tag pills</td><td>Up to 3 dominant vibe tags displayed as colored pills on each card</td><td>Cold indexing + optional Lab enrichment</td></tr>
+    <tr><td>Search &amp; filter</td><td>Keyword search by place name, vibe tag, date, or asset type. Filter to show only moments containing Echoes, Atmospheres, etc.</td><td>On-device metadata index</td></tr>
+    <tr><td>Semantic "search by feeling"</td><td>Natural language queries against the vibe tag vector index: "show me the places where I felt really quiet and calm" or "find my rainy moments." Parsed on-device into tag vectors, matched against the metadata graph.</td><td>On-device vector embedding index (Core ML). v1.5 feature — keyword search ships in v1.0.</td></tr>
+    <tr><td>Manual edit</td><td>User can rename a Moment, merge two Moments, split a Moment at a time boundary, or remove individual assets</td><td>User action, persists to metadata graph</td></tr>
+    <tr><td>Map view</td><td>Toggle to a map showing all Moments as pins, connected by travel path. Tap pin to open Moment.</td><td>GPS coordinates from clustering</td></tr>
+  </tbody>
+</table>
+
+<h2>7.4 AI Caption Generator</h2>
+<ul>
+  <li><strong>Trigger:</strong> Available in the Share flow for any Moment or individual asset.</li>
+  <li><strong>Input:</strong> Active Moment's place tags, vibe tags, chromatic palette, GPS location name, and date/time.</li>
+  <li><strong>Output:</strong> Three caption candidates in selectable tones — Witty (playful, with cultural reference), Poetic (lyrical, evocative), Minimal (single line or fragment, no hashtags).</li>
+  <li><strong>Hashtag mode:</strong> Optional. Off by default. When on, appends up to 8 location- and vibe-relevant hashtags.</li>
+  <li><strong>Lab enhancement:</strong> When Lab metadata is available, captions incorporate richer semantic context (e.g., the specific market stall, not just "market").</li>
+</ul>
+
+<h2>7.5 Mood Map &amp; Emotional Palette</h2>
+<p>The Mood Map is a private visualization of how the user felt across a trip or time period. It is generated from the accumulated vibe tags, acoustic tags, and nudge engine reflection responses across a Moment cluster or date range. It is never shared publicly — it is a self-understanding feature.</p>
+<table>
+  <thead><tr><th>Mood Map element</th><th>Specification</th><th>Data source</th></tr></thead>
+  <tbody>
+    <tr><td>Base layer</td><td>GPS path of the trip or period, rendered as a line on an Apple Maps tile</td><td>GPS coordinates from Moment clusters</td></tr>
+    <tr><td>Emotional color overlay</td><td>Path segments colored by dominant mood tag at each GPS point. Warm tones = energetic/celebratory. Cool tones = calm/melancholic. Neutral = transition.</td><td>Aggregated vibe + acoustic tags + nudge reflection responses</td></tr>
+    <tr><td>Emotional Palette card</td><td>A summary palette of 4–5 colors representing the emotional character of the trip — displayed as a horizontal color bar beneath the map with labels (e.g., "Curious · Calm · Energized · Peaceful")</td><td>Dominant mood tags, weighted by time spent</td></tr>
+    <tr><td>Moment pins</td><td>High-starred or high-scoring Moments shown as pins on the map. Tap to open the Moment.</td><td>Asset scoring + user-starred locations from Live Activity</td></tr>
+    <tr><td>Shareable</td><td>User can share the Mood Map as an image to trusted circle only — not to public feed by default</td><td>Export renders map + palette + trip name as a styled image</td></tr>
+  </tbody>
+</table>
+<p>Mood Map is a v1.5 feature — it requires sufficient nudge engine data (minimum 3 reflection responses per trip) to produce meaningful emotional signal. The Film Archive shows a "Mood Map available" indicator when the threshold is met.</p>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>8. AI Nudge Engine — Post-Capture Reflection</h1>
+<p>Nudge question tone and chip copy are updated for the MZ audience per UI/UX Spec v1.7 §6.3 — questions are phrased in aesthetic/felt register, not analytical register. Sound Stamp acoustic tags from Still assets feed the Nudge Engine trigger logic (Acoustic signal trigger pattern) in the same way Echo acoustic tags do.</p>
+
+<h2>8.1 Overview</h2>
+<p>The AI Nudge Engine is niftyMomnt's primary retention driver between active capture sessions. It proactively surfaces a contextual in-app card a few minutes after the user stops moving or capturing — asking a single, intelligent question about what they just experienced before the emotional memory fades. The interaction is designed to take under 15 seconds and feel like a thoughtful friend asking the right question, not a journal prompt.</p>
+<p><strong>Design principle:</strong> One question. Two or three taps. Done. The nudge captures emotional context in the moment of highest emotional availability — not hours later when the feeling is gone.</p>
+
+<h2>8.2 Post-Capture Trigger Sequencing <span class="updated-badge">UPDATED v1.6</span></h2>
+<p>The AI Nudge Engine does not fire during the post-capture overlay window. The confirmed sequencing is:</p>
+<ol>
+  <li>Capture event fires → Post-Capture Overlay opens (§3.9)</li>
+  <li>Vibe Tag Prompt is presented (T+300ms, 4-second window)</li>
+  <li>User-selected vibe tags are written to the asset's metadata record in the intelligence graph</li>
+  <li>Post-Capture Overlay closes (T+7.5s or on user dismissal)</li>
+  <li>AI Nudge Engine fires, reads the intelligence graph including any user-provided vibe tags from step 3, and generates a reflection card prompt calibrated to those tags</li>
+</ol>
+<div class="callout teal"><strong>Why this order matters:</strong> Firing the Nudge Engine after the user's vibe selection — not during the prompt — ensures the AI has access to the user's actual emotional signal before generating the reflection question. A Nudge card for a "golden hour" tag should feel different from one for "city night."</div>
+
+<h2>8.3 Trigger Logic</h2>
+<p>The nudge fires when two or more trigger signals converge. No single signal alone is sufficient — this prevents over-nudging, which is the primary design failure mode for reflection features.</p>
+<table>
+  <thead><tr><th>Trigger signal</th><th>Condition</th><th>Source</th></tr></thead>
+  <tbody>
+    <tr><td>Activity cessation</td><td>Significant motion stops for 5+ minutes after a period of movement (CoreMotion)</td><td>CoreMotion CMMotionActivityManager</td></tr>
+    <tr><td>Capture gap</td><td>User has not captured a new asset for 10+ minutes following a capture session of 3+ assets</td><td>niftyMomnt internal capture log</td></tr>
+    <tr><td>Journaling suggestion</td><td>Apple Journaling Suggestions API has surfaced a new significant location or photo cluster</td><td>JournalingSuggestions framework (iOS 17.2+)</td></tr>
+    <tr><td>Vibe shift detected</td><td>On-device analysis detects a meaningful shift in vibe tag between the first and last third of a Moment cluster (e.g., "energetic" → "calm")</td><td>Cold indexing vibe tags</td></tr>
+    <tr><td>Minimum quiet period</td><td>At least 3 minutes since the last nudge was shown — prevents back-to-back nudge fatigue</td><td>niftyMomnt nudge log</td></tr>
+  </tbody>
+</table>
+<p><strong>Maximum nudge frequency:</strong> 2 per day. If the user dismisses 3 nudges in a row without responding, the engine enters a 48-hour cool-down period and surfaces a single preference card: "Too many check-ins? Adjust how often I ask."</p>
+
+<h2>8.4 Daily Capture Prompt (Optional)</h2>
+<p>Separate from the post-capture nudge, niftyMomnt offers an optional daily capture prompt — a single notification sent at the user's historically highest capture-frequency time. Unlike BeReal's random daily notification, this prompt is personalized: the intelligence graph derives the user's peak capture hour from their capture history and schedules the prompt accordingly.</p>
+<table>
+  <thead><tr><th>Attribute</th><th>Specification</th></tr></thead>
+  <tbody>
+    <tr><td>Opt-in</td><td>Off by default. User enables in Settings → Notifications → "Daily capture prompt." Offered as an optional step during onboarding (Step 5).</td></tr>
+    <tr><td>Timing</td><td>Derived from intelligence graph: the hour of day when the user has historically captured the most moments, computed from the last 30 days of capture timestamps. Default before sufficient history: 6:00 PM local time.</td></tr>
+    <tr><td>Notification copy</td><td>Context-aware based on day + recent travel: "Good evening — anything worth catching today?" / "You're in a new place. Capture something before it feels familiar." Copy is generated from a template set, not personalized AI — keeps it predictable and non-intrusive.</td></tr>
+    <tr><td>Cadence</td><td>Maximum once per day. Suppressed on days when the user has already captured 3+ assets (they clearly don't need the prompt). Suppressed during Roll Mode active days.</td></tr>
+    <tr><td>Tap action</td><td>Opens directly to Capture Hub in last-used mode. No intermediate screens.</td></tr>
+  </tbody>
+</table>
+
+<h2>8.5 Nudge Card Design</h2>
+<p>The nudge surfaces as a bottom-sheet card within the app (not a system push notification). It appears when the user next opens niftyMomnt, or if the app is already foregrounded, slides up after the trigger fires. The card is dismissible with a swipe.</p>
+<table>
+  <thead><tr><th>Card element</th><th>Specification</th></tr></thead>
+  <tbody>
+    <tr><td>Header thumbnail</td><td>Hero image from the triggering Moment cluster — styled with active vibe preset. Small, unobtrusive. Sets emotional context without text.</td></tr>
+    <tr><td>Contextual question</td><td>A single AI-generated question derived from the Moment's vibe tags, place, ambient metadata, and detected vibe shift. Examples: "The vibe shifted from excited to calm after you left the market — what changed?" / "You were in that cafe for 90 minutes. What kept you there?" / "First time in this neighborhood — what surprised you?"</td></tr>
+    <tr><td>Quick-reply chips</td><td>2–3 contextually generated reply chips beneath the question. Chips are short phrases derived from likely responses given the Moment context. E.g., for a "vibe shift" question: ["It got quieter"] ["I found a good spot"] ["Needed a break"]. One tap selects and submits.</td></tr>
+    <tr><td>Secondary actions</td><td>"Add a voice note" — opens Echo recording inline within the card. "Write it out" — opens a minimal free-text field. Both are secondary to the chip response.</td></tr>
+    <tr><td>Dismiss</td><td>Swipe down to dismiss without responding. A "Not now" label is shown on first use. Dismissed nudges are stored (no response) — the engine notes the dismissal but does not penalize the Moment's score.</td></tr>
+  </tbody>
+</table>
+
+<h2>8.6 Question Generation Logic</h2>
+<table>
+  <thead><tr><th>Trigger pattern</th><th>Question template</th><th>Example output</th></tr></thead>
+  <tbody>
+    <tr><td>Vibe shift detected</td><td>"The energy shifted from [vibe A] to [vibe B] after [place/time]. What changed?"</td><td>"Things shifted from lively to peaceful after you left the Duomo. What happened?"</td></tr>
+    <tr><td>Extended dwell at location (&gt;30 min)</td><td>"You spent [duration] at [place]. What was it about that spot?"</td><td>"You were at that rooftop bar for nearly two hours. What kept you there?"</td></tr>
+    <tr><td>First-time location (new GPS territory)</td><td>"First time in [neighborhood/city]. What surprised you most?"</td><td>"First time in Trastevere — what caught you off guard?"</td></tr>
+    <tr><td>High Echo / acoustic signal</td><td>"You captured [sound type] — what was happening around you?"</td><td>"You recorded a lot of crowd noise near the port. What was going on?"</td></tr>
+    <tr><td>Weather-notable (rain, fog, snow)</td><td>"It was [weather] the whole time. Did that change the experience?"</td><td>"It was raining the whole walk. Did that make it better or worse?"</td></tr>
+    <tr><td>Now Playing signal</td><td>"You were listening to [track/artist] during this moment. Does it fit?"</td><td>"You had Tame Impala on the whole walk. On purpose?"</td></tr>
+    <tr><td>Generic fallback</td><td>"One word for [place/moment]?"</td><td>"One word for this afternoon in Siena?"</td></tr>
+  </tbody>
+</table>
+
+<h2>8.7 Reflection Data — Downstream Use</h2>
+<ul>
+  <li><strong>Metadata enrichment:</strong> Chip selection and voice/text responses are stored as metadata on the triggering Moment cluster. They enrich vibe tags (a "It got quieter" response reinforces the "Calm" vibe tag), caption generation (the reflection language informs the caption tone), and Mood Map construction.</li>
+  <li><strong>Reel narrative:</strong> When the Lab is used for story assembly, reflection responses are passed to the VLM as narrative context — enabling captions and voiceover suggestions that sound like the user, not a generic AI.</li>
+  <li><strong>Privacy:</strong> Reflection responses are stored on-device only, encrypted in the vault alongside the Moment. They are never transmitted except as part of an explicit Lab processing session (user-triggered, with the standard purge guarantee).</li>
+</ul>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>9. Private Vault &amp; Trusted Sharing</h1>
+
+<h2>9.1 Private Vault</h2>
+<p>The Private Vault is the user's encrypted personal archive — a beautiful, searchable, auto-organized repository of every moment they choose to keep private. It is never surfaced in the community feed, never watermarked, and never used for AI training or Lab processing unless explicitly user-initiated.</p>
+<div class="callout teal"><strong>Trust principle:</strong> The vault is the user's. niftyMomnt is the caretaker. No content in the vault is ever visible to anyone — including niftyMomnt — without the user's explicit action.</div>
+<p><strong>Fix (v1.6):</strong> Fix derivatives are stored in the vault alongside their originals — both are encrypted with the same AES-256 key. The original is never exposed or deleted by the Fix operation.</p>
+
+<table>
+  <thead><tr><th>Vault feature</th><th>Specification</th></tr></thead>
+  <tbody>
+    <tr><td>Encryption</td><td>End-to-end encrypted using device keychain. Content encrypted with AES-256. Key derived from user's device auth (Face ID / Touch ID). Key never leaves the device.</td></tr>
+    <tr><td>Default behavior</td><td>All captures default to Vault unless the user explicitly selects "Share publicly" or "Share with circle" in the Share flow. Private-first by design.</td></tr>
+    <tr><td>Organization</td><td>Auto-organized by Moment clusters (same as Film Archive). Fully searchable by place, date, vibe tag, and asset type. All Film Archive organization features apply in vault context.</td></tr>
+    <tr><td>iCloud Backup</td><td>Encrypted vault content can be backed up to user's personal iCloud account (encrypted). niftyMomnt never has access to the iCloud backup. Off by default; user opts in.</td></tr>
+    <tr><td>Vault lock</td><td>App-level Face ID / Touch ID lock available (separate from device lock). Vault requires re-auth if app is backgrounded for &gt; 5 minutes. Configurable threshold.</td></tr>
+    <tr><td>Export from vault</td><td>User can export any vault asset to Apple Photos Library, share to trusted circle, or share publicly at any time. These actions are always explicit user choices, never automatic.</td></tr>
+  </tbody>
+</table>
+
+<h2>9.2 Trusted Circle Sharing</h2>
+<p>Trusted circle sharing allows the user to share a Moment, a curated selection of assets, or an auto-assembled story with a specific group of up to 10 people — without making the content public. The experience is designed to feel like a beautiful, curated share between people who were there — not a social media post.</p>
+
+<table>
+  <thead><tr><th>Feature</th><th>Specification</th></tr></thead>
+  <tbody>
+    <tr><td>Recipient limit</td><td>Up to 10 recipients per share. Recipients are selected from Contacts or by phone number / email. No niftyMomnt account required for recipients in v1.0 (link-based access).</td></tr>
+    <tr><td>Share delivery</td><td>Recipients receive a time-limited secure link (valid 30 days by default, configurable by sender: 7 / 30 / 90 days / permanent). Link opens a beautiful, branded gallery view — no app install required.</td></tr>
+    <tr><td>Gallery experience</td><td>Web-based gallery renders all asset types correctly: Stills as images, Lives as loops, Clips as video, Echoes as audio players, Atmospheres as looping composites. Styled with the sender's active preset aesthetic.</td></tr>
+    <tr><td>Download control</td><td>Sender controls whether recipients can download assets. Default: download allowed. Can be set to view-only.</td></tr>
+    <tr><td>Reactions</td><td>Recipients can react with one of 5 preset reactions (no text comments in v1.0 — keeps the experience intimate and low-pressure). Reactions notify the sender via push.</td></tr>
+    <tr><td>Link revocation</td><td>Sender can revoke a share link at any time. Revoked links immediately render the gallery inaccessible for all recipients.</td></tr>
+    <tr><td>Watermark</td><td>No niftyMomnt watermark on trusted-circle shares. Watermark is only applied on free-tier public exports.</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>10. Vibe Preset System <span class="updated-badge">UPDATED v1.6</span></h1>
+
+<h2>10.1 Overview</h2>
+<p>The vibe preset system is niftyMomnt's primary aesthetic differentiation. Presets are applied at capture (real-time viewfinder rendering) and persist through all downstream outputs. A preset is not just a color filter — it defines a full aesthetic character including grain simulation, tone mapping, chromatic shifts, and UI accent color.</p>
+
+<p><strong>Brand colour (v1.6):</strong> Primary brand token <code>--color-brand</code> is <strong>#6B4EFF</strong> (updated from #5B4FCF) — deepened for stronger contrast against the dark capture surface (#0A0A0A) and to read distinctly from Tokyo Neon soft lavender <code>#C4B5FD</code>.</p>
+
+<h2>10.2 Preset Architecture <span class="updated-badge">UPDATED v1.5</span></h2>
+<table>
+  <thead><tr><th>Preset component</th><th>Definition</th></tr></thead>
+  <tbody>
+    <tr><td>Color grade</td><td>LUT applied via Core Image. Defines overall color character.</td></tr>
+    <tr><td>Grain simulation</td><td>Configurable film grain layer (intensity: light / medium / heavy). Applied as a real-time Metal shader. Grain is randomized per frame.</td></tr>
+    <tr><td>Tone mapping</td><td>Custom highlight rolloff and shadow lift curves.</td></tr>
+    <tr><td>Chromatic shift</td><td>Optional per-channel color shift defining the signature "look" of each preset family.</td></tr>
+    <tr><td>Light leak (optional)</td><td>Edge-applied warm or cool gradient. Intensity: off / subtle / strong. Applied at capture.</td></tr>
+    <tr><td>UI accent color</td><td>Each preset defines an accent color used across four surfaces simultaneously: (1) preset bar top-edge 2pt strip, (2) accent dot beside preset name in bar, (3) Capture Hub shutter ring, (4) Dynamic Island mode dot. All four update in a single 120ms crossfade when preset changes. <span class="updated-badge">UPDATED v1.5</span></td></tr>
+  </tbody>
+</table>
+
+<h2>10.3 Preset Selection UX <span class="updated-badge">UPDATED v1.5</span></h2>
+<p>The always-visible five-circle strip from previous versions is replaced by the <strong>preset bar</strong> model in v1.5:</p>
+<ul>
+  <li><strong>Default state:</strong> Active preset name shown in spaced caps with 5pt accent dot in the preset bar. Swipe left/right on the bar to cycle through presets one at a time.</li>
+  <li><strong>Full picker:</strong> Long-press on the preset bar expands a full-screen picker overlay from the bottom, showing all presets as large swatches with names and vibe descriptors. Tap to select, swipe down to dismiss.</li>
+  <li><strong>Discovery model:</strong> The full picker is a discovery interaction — the user finds the preset library through curiosity rather than always seeing all options at once. This makes the preset system feel curated rather than menu-like.</li>
+</ul>
+
+<h2>10.4 MVP Preset Packs (v1.0 — 5 included)</h2>
+<table>
+  <thead><tr><th>Pack name</th><th>Vibe character</th><th>Best matched moment types</th><th>Aesthetic signature</th></tr></thead>
+  <tbody>
+    <tr><td>Film Roll</td><td>Lo-fi, nostalgic, candid</td><td>Street, cafe, everyday moments, friends</td><td>Heavy grain, lifted shadows, warm cast, subtle light leak</td></tr>
+    <tr><td>Amalfi Golden</td><td>Warm, sun-drenched, travel</td><td>Beach, travel, golden hour, outdoor dining</td><td>Warm saturation boost, orange midtones, soft highlights, light grain</td></tr>
+    <tr><td>Tokyo Neon</td><td>Urban, night, electric</td><td>City night, neon, street, nightlife</td><td>Crushed shadows, <strong>soft lavender</strong> accent (#C4B5FD, updated v1.6 from cyan #00E5CC), neon highlight preservation, no grain — retains a "night/neon" editorial feel without dated fintech teal</td></tr>
+    <tr><td>Nordic Still</td><td>Minimal, quiet, desaturated</td><td>Nature, fog, solitary moments, winter</td><td>Desaturated, cool blue-gray cast, high key, subtle grain</td></tr>
+    <tr><td>Disposable</td><td>Y2K digicam, raw, flash</td><td>Social, group, parties, everyday candid</td><td>Flash simulation, red-eye warm cast, date stamp (optional), heavy grain</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>11. User Stories &amp; Acceptance Criteria <span class="updated-badge">UPDATED v1.5</span></h1>
+
+<h2>11.1 Capture Hub</h2>
+
+<h3>US-01: Mode Navigation <span class="updated-badge">UPDATED v1.5</span></h3>
+<p>As a user, I want to switch between capture modes using a natural swipe gesture and cycle presets with a dedicated bar, so that I can move fluidly through modes and aesthetics without breaking my focus on the moment.</p>
+<table>
+  <thead><tr><th>AC</th><th>Acceptance Criteria</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Swiping left on the lower third of the viewfinder advances the mode in sequence: Still → Live → Clip → Echo → Atmosphere → Still.</td></tr>
+    <tr><td>2</td><td>Swiping right reverses the sequence. Wraps handled gracefully in both directions.</td></tr>
+    <tr><td>3</td><td>The persistent mode anchor (mode name at 28% opacity + three dot indicators) is always visible at the base of the viewfinder. The ghost mode label flashes at 10% opacity center-frame for exactly 500ms on mode change then fades to 0%.</td></tr>
+    <tr><td>4</td><td>Mode transition completes within 150ms of gesture recognition.</td></tr>
+    <tr><td>5</td><td>A fast swipe (velocity &gt;800pt/s) advances only one mode.</td></tr>
+    <tr class="new-row"><td>6 <span class="new-badge">NEW</span></td><td>Swiping left/right on the preset bar cycles presets one at a time. Preset name, accent dot, 2pt top strip, shutter ring color, and Dynamic Island dot all update in a single 120ms crossfade.</td></tr>
+    <tr class="new-row"><td>7 <span class="new-badge">NEW</span></td><td>Long-pressing the preset bar expands a full preset picker overlay from the bottom. All installed presets are shown as large swatches with names and vibe descriptors. Tapping a preset selects it and dismisses the overlay. Swiping down dismisses without change.</td></tr>
+    <tr class="new-row"><td>8 <span class="new-badge">NEW</span></td><td>Double-tapping anywhere on the viewfinder (not the shutter row) flips the camera (rear ↔ front) with a 200ms mirror transition. A dedicated Flip Camera pill is also present in Zone A for discoverability. A one-time ghost hint "double-tap to flip" is shown on first use only, never again.</td></tr>
+  </tbody>
+</table>
+
+<h3>US-02: Clip Recording with Slide to Lock</h3>
+<p>As a user, I want to record a fixed-duration Clip by holding the shutter, with an option to lock recording so I don't have to keep holding.</p>
+<p><em>Implementation note for v0.3:</em> the current build temporarily uses tap-to-start / tap-to-stop for Clip capture while the hold interaction is stabilized on real devices. The product target remains hold-to-record with Slide to Lock.</p>
+<table>
+  <thead><tr><th>AC</th><th>Acceptance Criteria</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Holding the shutter initiates Clip recording immediately (no pre-roll delay).</td></tr>
+    <tr><td>2</td><td>The clockwise fill ring appears around the shutter and counts down from the configured ceiling.</td></tr>
+    <tr><td>3</td><td>Ring and countdown turn amber when ≤ 5 seconds remain.</td></tr>
+    <tr><td>4</td><td>Releasing the shutter before the ceiling ends recording early and saves the captured portion.</td></tr>
+    <tr><td>5</td><td>Sliding the shutter button upward locks recording — user can release finger. A lock icon confirms the lock state.</td></tr>
+    <tr><td>6</td><td>Recording auto-terminates at the ceiling with a strong haptic. Ring completes and snaps to empty.</td></tr>
+    <tr><td>7</td><td>Resulting Clip is saved to the vault and appears in the Film Archive within 3 seconds of recording completion.</td></tr>
+  </tbody>
+</table>
+
+<h3>US-03: Echo Recording</h3>
+<p>As a user, I want to capture ambient sound with a simple tap-start / tap-stop interaction and get a clear visual of what I'm recording.</p>
+<table>
+  <thead><tr><th>AC</th><th>Acceptance Criteria</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>First tap on shutter in Echo mode begins recording immediately. Shutter icon transitions to stop indicator.</td></tr>
+    <tr><td>2</td><td>Radial pulsing waveform appears around the shutter. Pulse amplitude reflects real-time audio input level.</td></tr>
+    <tr><td>3</td><td>Count-up timer in MM:SS displays inside the waveform.</td></tr>
+    <tr><td>4</td><td>Waveform and timer transition to amber at ceiling minus 5 seconds.</td></tr>
+    <tr><td>5</td><td>Second tap on shutter stops recording. Waveform fades. Gentle haptic confirmation fires.</td></tr>
+    <tr><td>6</td><td>If ceiling is reached without user stopping, recording auto-terminates with amber flash + haptic.</td></tr>
+    <tr><td>7</td><td>Echo asset appears in Film Archive and acoustic signature analysis begins within 10 seconds of save.</td></tr>
+  </tbody>
+</table>
+
+<h2>11.2 On-Device Intelligence</h2>
+
+<h3>US-04: Moment Clustering</h3>
+<p>As a user, I want my captures automatically grouped into Moments so that my Film Archive is organized without any manual effort on my part.</p>
+<table>
+  <thead><tr><th>AC</th><th>Acceptance Criteria</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Assets captured within 200m and 90 minutes of each other are automatically grouped into a Moment.</td></tr>
+    <tr><td>2</td><td>Each Moment receives a system label: "[Day of week] · [Neighborhood/City]" — derived from GPS reverse geocoding.</td></tr>
+    <tr><td>3</td><td>Clustering runs on-device only, triggered when the device is charging and screen is off.</td></tr>
+    <tr><td>4</td><td>No assets or metadata leave the device during the clustering process.</td></tr>
+    <tr><td>5</td><td>User can rename, merge, or split Moments from the Film Archive view without affecting the underlying assets.</td></tr>
+  </tbody>
+</table>
+
+<h2>11.3 Private Vault &amp; Trusted Sharing</h2>
+
+<h3>US-05: Private Vault Default</h3>
+<p>As a user, I want all my captures to be private by default so that I never accidentally share something I intended to keep.</p>
+<table>
+  <thead><tr><th>AC</th><th>Acceptance Criteria</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Every capture — all 5 asset types — saves to the private vault by default. No capture is public by default.</td></tr>
+    <tr><td>2</td><td>Vault content is encrypted on-device using AES-256. The encryption key is stored in the device keychain and never transmitted.</td></tr>
+    <tr><td>3</td><td>Vault content does not appear in the niftyMomnt community feed under any condition.</td></tr>
+    <tr><td>4</td><td>Public sharing and trusted-circle sharing require an explicit user action in the Share flow — they are never automatic.</td></tr>
+    <tr><td>5</td><td>Vault requires Face ID / Touch ID re-authentication if the app has been backgrounded for more than 5 minutes.</td></tr>
+  </tbody>
+</table>
+
+<h3>US-06: Trusted Circle Share</h3>
+<p>As a user, I want to share a Moment with a specific group of people in a way that feels beautiful and personal, not like a public post.</p>
+<table>
+  <thead><tr><th>AC</th><th>Acceptance Criteria</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>User can select up to 10 recipients from Contacts or by phone/email. Recipient does not need a niftyMomnt account.</td></tr>
+    <tr><td>2</td><td>Recipients receive a time-limited link (default 30 days). Link opens a branded web gallery rendering all asset types correctly.</td></tr>
+    <tr><td>3</td><td>Gallery is styled with the sender's active preset. No niftyMomnt watermark appears on circle-shared content.</td></tr>
+    <tr><td>4</td><td>Sender can revoke the link at any time. Revoked links immediately render inaccessible for all recipients.</td></tr>
+    <tr><td>5</td><td>Recipients can react with preset reactions. Reactions are delivered to sender as push notifications.</td></tr>
+  </tbody>
+</table>
+
+<h2>11.4 Hybrid Lab</h2>
+
+<h3>US-07: Lab Processing Consent — Mode 2</h3>
+<p>As a user, I want to optionally send a Moment to the cloud for richer visual AI processing, knowing exactly what is sent, how it is processed, and having a guarantee it is deleted — separate from the text-only Enhanced AI feature.</p>
+<table>
+  <thead><tr><th>AC</th><th>Acceptance Criteria</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Lab processing (Mode 2) is never invoked automatically. User must tap "Enhance with Lab" explicitly. The Lab Settings toggle only surfaces the option — it never triggers processing.</td></tr>
+    <tr><td>2</td><td>A consent modal appears explaining: what is sent (photos / clips / audio), that they are encrypted on-device, the purge guarantee, and the distinction from Enhanced AI (text-only). User must tap "Process securely" to proceed.</td></tr>
+    <tr><td>3</td><td>Assets are AES-256 encrypted on-device before transmission. Encryption key never leaves the device.</td></tr>
+    <tr><td>4</td><td>After processing, only derived metadata (tags, captions, narrative) is returned. Raw assets are not retained in the cloud. A purge confirmation (timestamp only) is shown to the user.</td></tr>
+    <tr><td>5</td><td>Free tier: Lab processing limited to 3 uses/month. Enhanced AI (text-only) has a separate counter of 10 uses/month. Both counters shown in Settings → AI &amp; Privacy.</td></tr>
+    <tr><td>6</td><td>When offline, tapping "Enhance with Lab" shows a clear message: "Lab requires a connection." Falls back to on-device AI, not to Enhanced AI text-only mode.</td></tr>
+  </tbody>
+</table>
+
+<div class="new-section">
+<div class="new-section-label">New in v1.5</div>
+<h2>11.5 Still Photo Fix</h2>
+
+<h3>US-08: Still Photo Fix — Non-Destructive Geometry Corrections</h3>
+<p>As a user, I want to quickly correct the crop, rotation, or flip of a photo I captured without leaving the app, knowing my original is always preserved.</p>
+<table>
+  <thead><tr><th>AC</th><th>Acceptance Criteria</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Fix is available on Still and Live assets only. It does not appear in context menus or full-screen viewers for Clip, Echo, or Atmosphere assets.</td></tr>
+    <tr><td>2</td><td>Fix is accessible from two entry points: (a) long-press on asset in Moment detail grid → context menu includes "Fix"; (b) full-screen asset viewer → "Fix" pill button bottom-right.</td></tr>
+    <tr><td>3</td><td>The Fix modal opens as a full-screen push from the right. The top bar shows: Cancel (left) · Fix (center title) · Done in purple (right). The word "Edit" never appears anywhere in this flow.</td></tr>
+    <tr><td>4</td><td>Crop: user can drag any edge or corner handle to crop. Dimmed overlay shows excluded area in real time. Rule-of-thirds grid is always visible. Double-tapping the photo resets crop to full frame. Minimum crop size: 200×200pt. Aspect ratio is free.</td></tr>
+    <tr><td>5</td><td>Rotate 90°: single tap on Rotate tool rotates the photo 90° clockwise with a spring animation (200ms). Repeatable. Crop frame auto-adjusts to new orientation.</td></tr>
+    <tr><td>6</td><td>Flip: single tap on Flip tool reveals an inline sub-row with Horizontal and Vertical options. Each option applies instantly with a mirror animation (150ms). Both can be active simultaneously. Flip state compounds correctly with rotation.</td></tr>
+    <tr><td>7</td><td>Tapping Done with changes applied writes a derivative asset to the vault alongside the original. The original is never modified. A "Fixed" badge appears on the asset thumbnail in the Moment grid.</td></tr>
+    <tr><td>8</td><td>Tapping Done with no changes made is identical to Cancel — no derivative is written.</td></tr>
+    <tr><td>9</td><td>"Revert to original" is always visible in the Fix modal and accessible from the "Fixed" badge in the Moment grid. Revert shows confirmation: "Remove fix? Your original photo will be shown." Confirming deletes the derivative and restores the original as primary.</td></tr>
+    <tr><td>10</td><td>For Live assets: Fix applies to the HEIF still frame only. The MOV motion component is not affected. A one-line disclosure "Motion clip not affected" is shown in the Fix tool bar when a Live asset is open.</td></tr>
+    <tr><td>11</td><td>Fix derivatives inherit all vibe tags, acoustic tags, and ambient metadata from the original. Fix does not re-trigger indexing. A derivative does not count as a new asset for Roll Mode or streak calculations.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="new-section">
+<div class="new-section-label">New in v1.5</div>
+<h2>11.6 Sound Stamp</h2>
+
+<h3>US-09: Sound Stamp — Ambient Acoustic Tagging for Still Captures</h3>
+<p>As a user with Sound Stamp enabled, I want my Still photos to be automatically tagged with the ambient sound of the moment — so my Film Archive reflects the full sensory character of where I was, without any extra effort.</p>
+<table>
+  <thead><tr><th>AC</th><th>Acceptance Criteria</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Sound Stamp is Off by default. It is offered during onboarding Step 5 (Optional enrichments) and in Settings → Capture → Sound Stamp. It cannot be activated by any other means.</td></tr>
+    <tr><td>2</td><td>When Sound Stamp is enabled, a subtle ≋ icon appears inside the shutter button in Still mode only (active preset accent color, 70% opacity). No icon appears in other capture modes.</td></tr>
+    <tr><td>3</td><td>When a Still is captured with Sound Stamp enabled, a 1.5s ambient audio buffer is captured (0.5s pre-roll + 1.0s post-shutter). The buffer is analysed on-device by the same Core ML acoustic classifier used for Echo/Clip/Atmosphere assets.</td></tr>
+    <tr><td>4</td><td>The audio buffer is never written to disk, never stored as a file, never exported, and never transmitted under any AI mode (Mode 0, 1, or 2). Maximum in-memory lifetime: ~500ms.</td></tr>
+    <tr><td>5</td><td>Post-capture, three concentric arcs pulse outward from the shutter ring in the active preset accent color for 1.5s. Amplitude is fixed (not reactive to audio level). Under Reduce Motion: a static arc at 30% opacity appears for 1s then fades.</td></tr>
+    <tr><td>6</td><td>Acoustic tags produced by Sound Stamp are written to the asset's metadata within 300ms of buffer completion, without blocking the UI. Tags appear in the Moment detail vibe panel — identical appearance to acoustically-tagged Echo assets.</td></tr>
+    <tr><td>7</td><td>If microphone permission is denied, Sound Stamp is unavailable. The Settings toggle is greyed out with a note: "Requires microphone access — enable in iOS Settings." Sound Stamp is never silently inactive — its state is always clearly communicated.</td></tr>
+    <tr><td>8</td><td>Sound Stamp acoustic tags from Still assets feed the Nudge Engine, Reel assembler, Mood Map, and Annual Review in the same way Echo acoustic tags do. No differentiation in downstream features between Still/Sound Stamp tags and Echo tags.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="new-section">
+<div class="new-section-label">New in v1.7</div>
+<h2>11.7 Life Four Cuts (Photo Booth)</h2>
+
+<h3>US-10: Life Four Cuts — Photo Booth Capture &amp; Strip Share <span class="new-badge">NEW v1.7</span></h3>
+<p>As a user, I want to capture 4 spontaneous shots in a photo-booth format and get a shareable strip image with a fun frame overlay, so that I have a novel, memorable output distinct from a standard photo.</p>
+<table>
+  <thead><tr><th>AC</th><th>Acceptance Criteria</th><th>Priority</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Swiping to BOOTH mode is instant — no hardware session reconfiguration occurs. The normal CaptureHub shell remains visible and the 4-slot booth strip overlay appears immediately. Ghost label "B O O T H" flashes center-frame (500ms, 10% opacity).</td><td>Must Have (v0.3.5)</td></tr>
+    <tr><td>2</td><td>Tapping START switches the capture session to photo class. Countdown fires immediately: 3 → 2 → 1 (1s per numeral), then white flash, then capture. Sequence repeats 4 times total.</td><td>Must Have (v0.3.5)</td></tr>
+    <tr><td>3</td><td>Each captured frame is shown in its booth slot for 0.4s and remains visible there. The next slot becomes active so progress is obvious without leaving the standard camera surface.</td><td>Must Have (v0.3.5)</td></tr>
+    <tr><td>4</td><td>After 4 shots, StripPreviewSheet is automatically presented as a review sheet over CaptureHub showing the composited strip (spinner while compositing). Strip canvas: 1080×1920px, 4 photo slots each 1024×444px, 28px border, 20px slot gaps, 64px stamp zone.</td><td>Must Have (v0.3.5)</td></tr>
+    <tr><td>5</td><td>User can select a border colour (white/black/pastelPink/skyBlue) and a Featured Frame (None/Minimalist Black/Spring Blossom/Retro Neon). Each change re-composites the strip preview asynchronously (spinner shown).</td><td>Must Have (v0.3.5)</td></tr>
+    <tr><td>6</td><td>Tapping "Save &amp; Share" composites the final strip with stamp, saves composite as .l4c asset + 4 hidden source stills to vault, saves L4CRecord to graph, and presents UIActivityViewController.</td><td>Must Have (v0.3.5)</td></tr>
+    <tr><td>7</td><td>The Film feed shows only the composite strip card (L4CMomentCardView — "✦ BOOTH" badge, composite hero, "4 cuts · location · date" subtitle). Individual source stills never appear in the feed.</td><td>Must Have (v0.3.5)</td></tr>
+    <tr><td>8</td><td>Deleting a BOOTH strip card removes: composite asset, 4 source stills, L4CRecord row. Confirmation prompt required. No undo.</td><td>Must Have (v0.3.5)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>12. Widgets — Home Screen &amp; Lock Screen</h1>
+
+<h2>12.1 Overview</h2>
+<p>niftyMomnt ships three WidgetKit widgets at launch — two Home Screen sizes and one Lock Screen widget. Widgets are a critical surface for between-session retention: a user who sees their last Moment on their Home Screen is far more likely to open the app and capture something new. All widget content is served from the on-device vault; no network call is required to render any widget.</p>
+
+<h2>12.2 Widget Specifications</h2>
+<p><strong>Fix (v1.6):</strong> Fix-corrected assets (derivatives) are used as the hero image in the "Last Memory" widget — the system always uses the primary displayed version of each asset.</p>
+<table>
+  <thead><tr><th>Widget</th><th>Surface / size</th><th>Content</th><th>Tap action</th></tr></thead>
+  <tbody>
+    <tr><td>Last Memory</td><td>Home Screen — medium (2×2)</td><td>Hero image from the most recent Moment, styled with the active preset. Moment label (e.g., "Rainy Walk · Siena") and timestamp.</td><td>Opens the Moment directly in the Film Archive / Moment detail view.</td></tr>
+    <tr><td>Daily Streak</td><td>Home Screen — small (1×1)</td><td>Consecutive days the user has captured at least one asset. Numeric streak counter + a minimal flame or motion icon. Resets at midnight if no capture.</td><td>Opens niftyMomnt to the Capture Hub.</td></tr>
+    <tr><td>Quick Record</td><td>Lock Screen — accessory circular</td><td>niftyMomnt icon + active capture mode indicator (dot color changes per mode: Still = white, Clip = amber, Echo = coral).</td><td>Single tap opens niftyMomnt directly to Capture Hub in the last-used mode. No unlock intermediate on Face ID devices.</td></tr>
+  </tbody>
+</table>
+
+<h2>12.3 Widget Technical Constraints</h2>
+<ul>
+  <li><strong>Refresh policy:</strong> "Last Memory" widget updates via WidgetKit timeline — refreshes when a new Moment is created or when the app is foregrounded. Maximum system-imposed refresh: approximately every 15–30 minutes in background. No network required.</li>
+  <li><strong>Vault privacy:</strong> Widget image content is served from the encrypted vault via an App Group shared container. The widget extension reads only the hero image and label for the most recent Moment — no full asset data is exposed outside the main app sandbox.</li>
+  <li><strong>Daily Streak data:</strong> Streak counter is stored in UserDefaults (App Group shared container) — lightweight, no vault access required. Streak logic: if the user captures any asset before midnight local time, the streak increments. Missing a day resets to 0.</li>
+  <li><strong>Quick Record intent:</strong> Lock Screen widget uses AppIntents framework to open the Capture Hub without full app launch sequence — target time from tap to capture-ready: under 1 second.</li>
+</ul>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>13. Non-Functional Requirements <span class="updated-badge">UPDATED v1.5</span></h1>
+
+<h2>13.1 Performance</h2>
+<table>
+  <thead><tr><th>Requirement</th><th>Target</th><th>Measurement method</th></tr></thead>
+  <tbody>
+    <tr><td>Cold app launch to capture-ready</td><td>&lt;1.5 seconds</td><td>XCTest launch time measurement on iPhone 15</td></tr>
+    <tr><td>Capture-to-preview latency (Still)</td><td>&lt;300ms</td><td>Frame timestamp diff, capture → preview display</td></tr>
+    <tr><td>Mode switch animation</td><td>&lt;150ms</td><td>From gesture recognition to mode anchor label update</td></tr>
+    <tr><td>Preset cycle (swipe on bar)</td><td>&lt;120ms crossfade</td><td>From swipe gesture recognition to full accent color update across all 4 surfaces</td></tr>
+    <tr><td>Film Archive load (up to 5,000 assets)</td><td>&lt;2 seconds</td><td>Time to first Moment card rendered</td></tr>
+    <tr><td>On-device indexing (per asset)</td><td>&lt;3 seconds (background, charging)</td><td>Time from capture to tags appearing in metadata</td></tr>
+    <tr><td>Sound Stamp analysis</td><td>&lt;300ms from buffer end</td><td>Time from 1.5s buffer completion to tags written — does not block UI</td></tr>
+    <tr><td>Fix modal open</td><td>&lt;200ms</td><td>From tap to modal fully presented with photo loaded</td></tr>
+    <tr><td>Fix derivative write</td><td>&lt;1 second</td><td>From "Done" tap to "Fixed" badge appearing on thumbnail</td></tr>
+    <tr><td>AI Reel assembly (15 assets)</td><td>&lt;20 seconds on-device</td><td>From user trigger to preview-ready Reel</td></tr>
+    <tr><td>App memory usage (active capture)</td><td>&lt;200MB</td><td>Instruments memory profiler during active Clip recording</td></tr>
+  </tbody>
+</table>
+
+<h2>13.2 Privacy &amp; Security</h2>
+<ul>
+  <li><strong>Private vault encryption:</strong> AES-256. Key stored in iOS Keychain. Key never transmitted. Fix derivatives encrypted with the same key as their source original.</li>
+  <li><strong>Mode 0 — on-device:</strong> No network calls. Sound Stamp audio never leaves device memory. Fix operations entirely on-device. Verifiable via network inspection.</li>
+  <li><strong>Mode 1 — Enhanced AI (text-only):</strong> Only anonymized text transmitted. Photos, audio files, Sound Stamp buffers, and Fix derivatives are never sent. TLS 1.3 in transit.</li>
+  <li><strong>Mode 2 — Lab (encrypted visual):</strong> Assets AES-256 encrypted on-device before transmission. Sound Stamp buffers are never included — they are discarded before any mode decision. TLS 1.3. Certificate pinning. Ephemeral sandbox. Per-session explicit consent every time.</li>
+  <li><strong>Sound Stamp:</strong> Audio buffer never written to disk under any condition. Maximum in-memory lifetime ~500ms. Never transmitted. iOS orange mic indicator appears — this is correct and required behavior, not a bug.</li>
+  <li><strong>Face detection:</strong> On-device only. No biometric data stored or transmitted.</li>
+  <li><strong>GDPR / CCPA:</strong> User can export all personal data and permanently delete all account data from Settings. Fix derivatives included in data export. Sound Stamp produces no exportable data — only the resulting tags, which are included in the standard metadata export.</li>
+</ul>
+
+<h2>13.3 Accessibility</h2>
+<ul>
+  <li><strong>VoiceOver — Capture Hub:</strong> Mode switch announces current mode. Sound Stamp state announced: "Sound Stamp active" when ≋ icon is present. Shutter announces: "Capture [mode name]. Sound Stamp will capture ambient audio." when Sound Stamp is on.</li>
+  <li><strong>VoiceOver — Fix modal:</strong> Crop handles have labels: "Top edge crop handle," "Bottom-right corner crop handle," etc. Rotate announces: "Rotated 90 degrees clockwise. Total rotation: [n] degrees." Flip announces: "Flipped horizontally" / "Flipped vertically."</li>
+  <li><strong>Dynamic Type:</strong> All text supports Dynamic Type up to Accessibility Extra Large. Fix modal tool bar labels scale with Dynamic Type.</li>
+  <li><strong>Reduced Motion:</strong> Sound Stamp arc pulse: static arc at 30% opacity for 1s then fades. Ghost label: static fade. Capture ring: static arc. Fix animations: crossfades replace slide/spring animations.</li>
+  <li><strong>Colour independence:</strong> No UI state communicated by color alone. Sound Stamp active state: ≋ icon (not just accent color). Fix "Fixed" badge: text label (not just color).</li>
+  <li><strong>Gesture alternatives:</strong> All swipe-based gestures have AssistiveTouch button equivalents. Double-tap flip has an equivalent button accessible from the accessibility menu.</li>
+</ul>
+
+<h2>13.4 Supported Devices &amp; OS <span class="updated-badge">UPDATED v1.5</span></h2>
+<table>
+  <thead><tr><th>Requirement</th><th>Specification</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Minimum iOS</td><td>iOS 26.0</td><td>Required for updated AI Intelligence frameworks, newly updated SDK APIs. iPhone 13 / iOS 17.2 minimum from v1.4 is no longer supported.</td></tr>
+    <tr><td>Minimum device</td><td>iPhone 15</td><td>Required for Neural Engine performance for updated on-device ML, updated AVFoundation multi-camera session APIs, and computational photography APIs at iOS 26 level. iPhone 13 minimum from v1.4 is no longer supported.</td></tr>
+    <tr><td>Target device</td><td>iPhone 15–16 series</td><td>Primary development and QA target.</td></tr>
+    <tr><td>iPadOS</td><td>Not supported in v1.0</td><td>Evaluate at v2.0 milestone.</td></tr>
+    <tr><td>macOS Catalyst</td><td>Not supported in v1.0</td><td>Not in scope.</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>14. Open Questions &amp; Dependencies</h1>
+
+<h2>14.1 Open Questions Requiring Decision</h2>
+<table>
+  <thead><tr><th>#</th><th>Question</th><th>Options / Implications</th><th>Owner</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Atmosphere audio loop: seamless crossfade or hard-loop at end of configured duration?</td><td>Crossfade is smoother but adds processing. Hard loop is simpler. Affects Atmosphere export format.</td><td>Design + Eng</td></tr>
+    <tr><td>2</td><td>Live photo export: when exporting to Apple Photos, should the active vibe preset be baked into the MOV component or preserved as raw?</td><td>Baked = non-reversible but looks correct everywhere. Raw = reversible but Apple Photos renders without preset.</td><td>Design</td></tr>
+    <tr><td>3</td><td>Echo assets: standalone Film card or always attached to nearest visual Moment?</td><td>Standalone makes Echoes first-class citizens. Attached reduces clutter. Hybrid: attached by default, user can detach.</td><td>Design</td></tr>
+    <tr><td>4</td><td>Trusted circle sharing: sender-only or collaborative album?</td><td>Recommend sender-only for v1.0, collaborative in v1.5.</td><td>Founder</td></tr>
+    <tr><td>5</td><td>AI Reel music: purchase library outright vs. streaming license?</td><td>Outright purchase is higher upfront but predictable cost. Streaming creates variable cost at high MAU.</td><td>Founder + Legal</td></tr>
+    <tr><td>6</td><td>Roll Mode: daily shot cap per asset type or global count?</td><td>Per-type is more nuanced but complex. Global is simple and matches disposable camera metaphor.</td><td>Design</td></tr>
+    <tr class="new-row"><td>7 <span class="new-badge">NEW v1.5</span></td><td>Sound Stamp: should the 0.5s pre-roll buffer be active whenever the app is foregrounded in Still mode, or only when the user's finger is on the shutter?</td><td>Always-on pre-roll = more natural timing (mirrors Live Photo). Finger-on-shutter only = reduces mic usage but may miss the ambient character before the moment. Recommend always-on (same model as Live Photo) — iOS orange indicator is acceptable given the opt-in nature.</td><td>Design + Eng</td></tr>
+    <tr class="new-row"><td>8 <span class="new-badge">NEW v1.5</span></td><td>Fix: should crop aspect ratio locking be included in v1.0 (e.g., 1:1 for Instagram, 4:5, 16:9)?</td><td>Locked ratios are useful for social export but add UI complexity. Free crop only is simpler and fits the "correction" not "creative" framing. Recommend free crop for v1.0, locked ratios as a v1.5 addition if usage data supports it.</td><td>Design</td></tr>
+    <tr class="new-row"><td>9 <span class="new-badge">NEW v1.5</span></td><td>Fix derivatives: should they be included in the iCloud Photo offload / Smart Archive pipeline, or always retained locally alongside the original?</td><td>Including in offload saves space but complicates retrieval. Always-local ensures Fix is always available offline. Recommend always-local for v1.0 — the derivative is typically very small compared to the original HEIF.</td><td>Eng</td></tr>
+  </tbody>
+</table>
+
+<div class="resolved">
+  <strong>Q10 — Location chip derivation: RESOLVED (v1.6)</strong><br/>
+  Decision: On-device only. CoreLocation reverse geocoding + WeatherKit API + optional on-device SoundAnalysis / Vision classification (Apple SDK). No cloud geocoding. No third-party location services. Must resolve in &lt;100ms to meet the post-capture overlay display timing. See §3.9.3 for full derivation pipeline specification.
+</div>
+
+<div class="resolved">
+  <strong>Q11 — Metal shader performance toggle: RESOLVED (v1.6)</strong><br/>
+  Decision: Add "Live Vibe Preview" toggle in Settings → Capture → Live Vibe Preview. Default: On. Engineering may ship with it On and advise users to disable if they notice capture lag on iPhone 15 minimum target. The toggle gives engineering a product-sanctioned mitigation path without removing the feature entirely. See §2.3 for the full settings row specification.
+</div>
+
+<h2>14.2 External Dependencies</h2>
+<table>
+  <thead><tr><th>Dependency</th><th>Purpose</th><th>Risk</th></tr></thead>
+  <tbody>
+    <tr><td>Apple AVFoundation</td><td>All camera capture, Live Photo, audio recording, Sound Stamp pre-roll buffer</td><td>API changes at WWDC. Monitor annually. Critical path.</td></tr>
+    <tr><td>Apple Core ML / Vision</td><td>On-device image classification, face detection, acoustic analysis (including Sound Stamp)</td><td>Model updates may require re-training. Low risk — Apple maintains backward compat.</td></tr>
+    <tr><td>Apple Core Image / Metal</td><td>Real-time LUT preset rendering, grain shader, Fix crop/rotate preview</td><td>Low risk. Stable API surface.</td></tr>
+    <tr><td>VLM provider (Lab)</td><td>Cloud Vision-Language Model for Lab synthesis</td><td>Vendor selection TBD (OpenAI Vision, Google Gemini Vision, or self-hosted). Cost and latency risk.</td></tr>
+    <tr><td>GPS / Reverse geocoding</td><td>Moment cluster labels, place tag enrichment</td><td>Apple MapKit (on-device) preferred. No third-party dependency for core clustering.</td></tr>
+    <tr><td>Royalty-free music library</td><td>AI Reel background music</td><td>Vendor TBD. Must confirm license allows in-app use and social export.</td></tr>
+    <tr><td>iCloud CloudKit</td><td>Optional encrypted vault backup</td><td>Low risk. Apple-managed. User's own iCloud account.</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════ -->
+<h1>15b. Intelligence Graph &amp; Companion App Data Layer</h1>
+
+<h2>15b.1 Overview</h2>
+<p>The intelligence graph is the structured, on-device metadata layer that niftyMomnt builds continuously from every captured moment. It is the foundation of all four companion apps — Trip Planner, Annual Review, Travel Portfolio, and Shared Journey. This section specifies the data architecture, schema, access model, and phased rollout for the companion app data layer.</p>
+<p><strong>Architecture principle:</strong> Companion apps never store or access raw assets directly. The intelligence graph — vibe tags, place history, mood data, clustering results — is the only data that crosses app boundaries. Raw assets remain in the niftyMomnt encrypted vault exclusively.</p>
+
+<h2>15b.2 Two-Layer Data Model</h2>
+<table>
+  <thead><tr><th>Layer</th><th>Raw asset archive</th><th>Intelligence graph</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Contents</strong></td><td>Photos (HEIF/JPEG), clips (MP4), audio (M4A), Live Photos (HEIF+MOV), Atmosphere composites (HEIF+M4A).</td><td>Vibe tags, place history, GPS coordinates, dwell times, mood map data, nudge responses, acoustic tags, chromatic palettes, clustering results, ambient metadata (weather, elevation, Now Playing), Emotional Palette data, asset scores.</td></tr>
+    <tr><td><strong>Typical size (1 year)</strong></td><td>50–200 GB</td><td>&lt; 50 MB</td></tr>
+    <tr><td><strong>Storage</strong></td><td>niftyMomnt encrypted vault. On-device only. AES-256.</td><td>Versioned encrypted SQLite database. On-device in App Group shared container. Optional iCloud CloudKit sync (user opt-in, Phase 3).</td></tr>
+    <tr><td><strong>Companion app access</strong></td><td>Never directly. Requested via secure XPC API (Phase 2+), per-asset, explicit user consent per request.</td><td>Read-only via App Group shared container (Phase 1) or Swift SDK query API (Phase 2+).</td></tr>
+    <tr><td><strong>Write authority</strong></td><td>niftyMomnt only.</td><td>niftyMomnt only. Companion apps are read-only. No companion app writes to the graph.</td></tr>
+  </tbody>
+</table>
+
+<h2>15b.3 Intelligence Graph Schema</h2>
+<p><strong>Core tables in the SQLite database</strong></p>
+<table>
+  <thead><tr><th>Table</th><th>Key fields</th><th>Updated by</th><th>Consumed by</th></tr></thead>
+  <tbody>
+    <tr><td><code>moments</code></td><td>moment_id, timestamp, gps_lat, gps_lng, place_name, place_label, asset_count, hero_asset_id</td><td>Cold indexing after capture</td><td>All companion apps</td></tr>
+    <tr><td><code>vibe_tags</code></td><td>tag_id, moment_id, tag_type (place/vibe/acoustic/aesthetic), tag_value, confidence_score, source (on-device / Lab)</td><td>Cold indexing, Lab (Mode 2)</td><td>Trip Planner, Annual Review</td></tr>
+    <tr><td><code>ambient_metadata</code></td><td>moment_id, weather_condition, temperature, elevation_m, now_playing_track, now_playing_artist, sun_position</td><td>Ambient metadata harvesting at capture</td><td>Trip Planner, Annual Review</td></tr>
+    <tr><td><code>nudge_responses</code></td><td>response_id, moment_id, question_text, response_type (chip/voice/text), response_value, timestamp</td><td>AI Nudge Engine</td><td>Annual Review, Mood Map, Trip Planner</td></tr>
+    <tr><td><code>mood_map</code></td><td>point_id, moment_id, gps_lat, gps_lng, dominant_mood, emotional_palette (JSON array of 4–5 color+label pairs)</td><td>Mood Map generator (v1.5)</td><td>Annual Review, Trip Planner</td></tr>
+    <tr><td><code>place_history</code></td><td>place_id, place_name, gps_lat, gps_lng, visit_count, total_dwell_minutes, first_visit, last_visit, dominant_vibe_tags (JSON)</td><td>Aggregated from moments table nightly</td><td>Trip Planner (core input)</td></tr>
+    <tr><td><code>asset_scores</code></td><td>asset_id, moment_id, score, scoring_factors (JSON: motion, vibe_coherence, chromatic_harmony, uniqueness)</td><td>Story engine scoring</td><td>Travel Portfolio (selects top assets)</td></tr>
+  </tbody>
+</table>
+<p><strong>v1.6 extensions:</strong> Sound Stamp acoustic tags from Still assets are stored in <code>vibe_tags</code> identically to Echo/Clip/Atmosphere acoustic tags — <code>source</code> field value: <code>sound_stamp</code> where applicable. Fix derivative asset IDs are stored in <code>asset_scores</code> with <code>is_derivative: true</code> and <code>source_asset_id</code> referencing the original. Companion apps reading asset scores see derivatives as the primary asset — the original is accessible only via the Fix revert flow in the main niftyMomnt app.</p>
+
+<h2>15b.4 Phased Access Architecture</h2>
+<p><strong>Phase 1 — App Group Shared Container (v1.5, first-party only)</strong></p>
+<ul>
+  <li><strong>Mechanism:</strong> niftyMomnt and all first-party companion apps share an iOS App Group container (<code>com.niftymomnt.group</code>). The intelligence graph SQLite database is written by niftyMomnt into this container. Companion apps open the database in read-only mode.</li>
+  <li><strong>Encryption:</strong> The SQLite database is encrypted using SQLCipher. The encryption key is derived from the device keychain and shared within the App Group using a secure keychain access group — accessible only to apps signed with the same Apple Developer Team ID.</li>
+  <li><strong>Versioning:</strong> The database includes a <code>schema_version</code> integer. niftyMomnt increments this on schema changes. Companion apps check the version on launch and display a "Please update niftyMomnt" prompt if the schema version is ahead of what they support.</li>
+  <li><strong>Offline:</strong> Works fully offline. No network required. The shared container is always on-device.</li>
+  <li><strong>Scope:</strong> Trip Planner, Annual Review, Travel Portfolio, Shared Journey (all first-party, same Developer Team ID).</li>
+</ul>
+<p><strong>Phase 2 — niftyMomnt Swift SDK / XPC (v2.0, third-party)</strong></p>
+<ul>
+  <li><strong>Mechanism:</strong> A lightweight Swift SDK (niftyMomntKit) is published to Swift Package Manager. It wraps XPC calls to the niftyMomnt app process, handles per-app user authorization, and returns typed query responses from the intelligence graph. Third-party apps never access the SQLite file directly.</li>
+  <li><strong>Authorization:</strong> User grants access per-app in niftyMomnt Settings → Companion Apps. Each app requests a declared set of data types (e.g., "place history and vibe tags only"). Users can revoke at any time.</li>
+  <li><strong>Raw asset access:</strong> Third-party apps may request specific raw assets (e.g., the hero Still for a Moment) via the SDK. Each request triggers a user-facing authorization prompt: "[App name] wants to access photos from your Kyoto trip. Allow?" User approves or denies per-request.</li>
+</ul>
+<p><strong>Phase 3 — iCloud CloudKit Sync (v2.0+, optional)</strong></p>
+<ul>
+  <li><strong>Mechanism:</strong> The intelligence graph (not raw assets) can optionally sync to the user's private iCloud CloudKit database — enabling companion apps on iPad or Mac to access the same data captured on iPhone.</li>
+  <li><strong>Scope:</strong> Intelligence graph only. Raw assets remain on the originating iPhone. If a companion app on iPad requests a raw asset, it is fetched on-demand from the iPhone via CloudKit asset transfer — only when the iPhone is reachable and the user is authenticated.</li>
+  <li><strong>Privacy:</strong> The CloudKit database uses the user's private iCloud account. niftyMomnt never has access to the CloudKit data server-side — it is user-to-user-device sync only.</li>
+  <li><strong>Opt-in:</strong> Off by default. User enables in niftyMomnt Settings → Sync &amp; Backup → "Sync intelligence to iCloud."</li>
+</ul>
+
+<h2>15b.5 Data Size &amp; Storage Management</h2>
+<p>Raw asset storage is a genuine concern for heavy users. niftyMomnt provides tools to manage device storage without sacrificing the intelligence graph.</p>
+<table>
+  <thead><tr><th>Tool</th><th>What it does</th><th>Intelligence graph impact</th></tr></thead>
+  <tbody>
+    <tr><td>Smart archive</td><td>Compresses Stills older than 6 months to JPEG at 80% quality. Clips older than 1 year downsampled to 720p. User-configurable thresholds.</td><td>None. Intelligence graph retains full metadata regardless of asset compression.</td></tr>
+    <tr><td>iCloud Photo offload</td><td>Integrates with iOS Optimize Storage — offloads original assets to iCloud when device storage is low. niftyMomnt vault references the iCloud asset ID.</td><td>None. Tags and metadata remain on-device in the intelligence graph.</td></tr>
+    <tr><td>Moment-level delete</td><td>User can delete raw assets from a Moment while retaining its metadata entry, place label, and vibe tags — preserving the intelligence graph entry without the storage cost.</td><td>Preserved. The Moment record in the graph remains with all tags intact. Hero image replaced with a placeholder.</td></tr>
+    <tr><td>Storage dashboard</td><td>Settings → Storage shows breakdown: raw assets vs intelligence graph vs app overhead. Tap to see largest Moments and archiving recommendations.</td><td>Intelligence graph size shown separately — users can see it is always small regardless of asset volume.</td></tr>
+  </tbody>
+</table>
+
+<hr/>
+<div style="text-align:center;color:#888780;font-size:13px;margin-top:48px;padding-top:24px;border-top:1px solid #D3D1C7;">
+  niftyMomnt Product Requirements Document v1.7 · April 2026 · Confidential — includes L4C v0.3.5<br/>
+  Companion: UI/UX Specification v1.8 · Market: MRD v1.5<br/>
+  Author: Han Wook Cho · hwcho99@gmail.com
+</div>
+
+</body>
+</html>

@@ -312,6 +312,17 @@ public struct ReelAsset: Sendable {
     public init(asset: Asset, score: AssetScore) { self.asset = asset; self.score = score }
 }
 
+// MARK: - Notifications
+
+public extension Notification.Name {
+    /// Posted by CaptureMomentUseCase after a Moment is saved to the graph.
+    /// Object: nil. Observers should re-fetch moments from GraphManager.
+    static let niftyMomentCaptured = Notification.Name("com.hwcho99.niftymomnt.momentCaptured")
+    /// Posted after a Moment is deleted from the graph and its assets removed from the vault.
+    /// Object: nil. Observers should re-fetch moments from GraphManager.
+    static let niftyMomentDeleted = Notification.Name("com.hwcho99.niftymomnt.momentDeleted")
+}
+
 // MARK: - MomentCluster
 
 public struct MomentCluster: Sendable {

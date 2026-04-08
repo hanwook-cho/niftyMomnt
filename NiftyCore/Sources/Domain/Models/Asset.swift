@@ -11,6 +11,7 @@ public enum AssetType: String, CaseIterable, Sendable {
     case clip
     case echo
     case atmosphere
+    case l4c        // Life Four Cuts composite strip
 }
 
 // MARK: - CaptureMode
@@ -21,6 +22,7 @@ public enum CaptureMode: String, CaseIterable, Sendable {
     case clip
     case echo
     case atmosphere
+    case photoBooth  // Life Four Cuts photo-booth mode
 }
 
 // MARK: - GPSCoordinate

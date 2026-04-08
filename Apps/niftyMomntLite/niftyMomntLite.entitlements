@@ -2,10 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Lite shares the same App Group for graph read access. -->
-	<key>com.apple.security.application-groups</key>
-	<array>
-		<string>group.com.hwcho.niftymomnt</string>
-	</array>
+	<!-- App Group deferred to v0.9+ when a widget/extension target is added. -->
 </dict>
 </plist>

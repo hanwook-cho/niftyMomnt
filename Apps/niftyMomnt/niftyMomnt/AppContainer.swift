@@ -10,6 +10,7 @@ import SwiftUI
 public final class AppContainer {
     public let config: AppConfig
     public let captureUseCase: CaptureMomentUseCase
+    public let lifeFourCutsUseCase: LifeFourCutsUseCase
     public let fixUseCase: FixAssetUseCase
     public let storyUseCase: AssembleReelUseCase
     public let shareUseCase: ShareMomentUseCase
@@ -18,10 +19,13 @@ public final class AppContainer {
     public let graphManager: GraphManager
     /// The AVCaptureSession owned by AVCaptureAdapter. Views attach preview layers to this.
     public let captureSession: AVCaptureSession
+    /// Set by CaptureMomentUseCase after geocoding completes. Read by CaptureHubView overlay.
+    public var lastCapturedPlaceName: String = ""
 
     public init(
         config: AppConfig,
         captureUseCase: CaptureMomentUseCase,
+        lifeFourCutsUseCase: LifeFourCutsUseCase,
         fixUseCase: FixAssetUseCase,
         storyUseCase: AssembleReelUseCase,
         shareUseCase: ShareMomentUseCase,
@@ -32,6 +36,7 @@ public final class AppContainer {
     ) {
         self.config = config
         self.captureUseCase = captureUseCase
+        self.lifeFourCutsUseCase = lifeFourCutsUseCase
         self.fixUseCase = fixUseCase
         self.storyUseCase = storyUseCase
         self.shareUseCase = shareUseCase

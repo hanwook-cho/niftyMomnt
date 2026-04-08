@@ -6,7 +6,7 @@
 //     LEFT ①  Flash  (amber-active pill — leftmost = iOS Camera muscle memory)
 //     LEFT ②  Self-Timer  (neutral pill, amber when timer set)
 //     CENTER  Film Strip Counter  (Roll Mode only)
-//     RIGHT ① Live Photo toggle
+//     RIGHT ① Flip Camera
 //     RIGHT ② More / overflow
 //   Zone A §4.1a: AF/AE Lock contextual banner — tap-hold 600ms on viewfinder.
 //   Zone C v1.7: preset peek swatches (5 colour dots beside name, active=12pt, others=9pt).
@@ -14,6 +14,7 @@
 
 import AVFoundation
 import NiftyCore
+import QuartzCore
 import SwiftUI
 import UIKit
 
@@ -22,6 +23,8 @@ import UIKit
 struct CaptureHubView: View {
     let container: AppContainer
     let onNavigateToJournal: () -> Void
+    let isCaptureActive: Bool
+    @Environment(\.scenePhase) private var scenePhase
  
     // Safe area read from UIKit on appear — SwiftUI's GeometryProxy.safeAreaInsets
     // returns 0 in every nested ignoresSafeArea context in this app's view hierarchy.
@@ -33,6 +36,7 @@ struct CaptureHubView: View {
     @State private var activePresetIndex: Int = 1   // AMALFI default
     @State private var isFrontCamera: Bool = false
     @State private var showPresetPicker: Bool = false
+    @State private var showCaptureSettingsDeck: Bool = false
     @State private var ghostText: String = ""
     @State private var ghostOpacity: Double = 0
 
@@ -45,7 +49,6 @@ struct CaptureHubView: View {
 
     // Zone A — icon state
     @State private var flashOn: Bool = true
-    @State private var timerSetting: Int = 0          // 0 / 3 / 10 seconds
     @State private var livePhotoOn: Bool = false
 
     // §4.1a — AF/AE Lock
@@ -56,8 +59,15 @@ struct CaptureHubView: View {
     // §4.5 — Post-capture overlay
     @State private var showPostCapture: Bool = false
     @State private var postCaptureChipsVisible: Bool = false
+    // postCaptureLocationLabel is read from container.lastCapturedPlaceName (set by use case)
     @State private var postCaptureShareVisible: Bool = false
     @State private var selectedVibeChipIndex: Int? = nil
+
+    // Last captured thumbnail (shown left of shutter)
+    @State private var lastCapturedImage: UIImage? = nil
+    @State private var lastCapturedThumbnailUsesFit: Bool = false
+    @State private var isPreviewRunning: Bool = false
+    @State private var clipTimerTask: Task<Void, Never>? = nil
 
     // Roll mode
     @State private var rollShotsRemaining: Int = 17
@@ -65,6 +75,16 @@ struct CaptureHubView: View {
     // One-time flip hint
     @AppStorage("nifty.flipHintShown") private var flipHintShown: Bool = false
     @State private var showFlipHint: Bool = false
+    @AppStorage("capture.selfTimerDelay") private var captureSelfTimerDelay: Int = 0
+    @AppStorage("capture.secondaryCameraEnabled") private var secondaryCameraEnabled: Bool = true
+    @AppStorage("capture.soundStampEnabled") private var soundStampEnabled: Bool = false
+    @AppStorage("capture.liveVibePreviewEnabled") private var liveVibePreviewEnabled: Bool = true
+    @AppStorage("capture.aspectRatio") private var captureAspectRatioRaw: String = "9:16"
+    @AppStorage("capture.clipVideoFormat") private var clipVideoFormatRaw: String = "hd"
+    @AppStorage("capture.clipDurationSeconds") private var clipDurationSeconds: Int = 10
+    @AppStorage("capture.echoMaxDurationSeconds") private var echoMaxDurationSeconds: Int = 60
+    @AppStorage("capture.atmosphereLoopSeconds") private var atmosphereLoopSeconds: Int = 5
+    @AppStorage("capture.liveApplePhotosExportEnabled") private var liveApplePhotosExportEnabled: Bool = true
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -81,9 +101,29 @@ struct CaptureHubView: View {
         GeometryReader { geo in
             ZStack(alignment: .bottom) {
 
-                // ── Full-bleed live preview (Zone B base) ──
+                // ── Full-bleed live preview — hoisted above if/else so the same
+                //    AVCaptureVideoPreviewLayer instance persists through mode changes.
+                //    Re-creating it on each photoBooth toggle causes a ~0.4s stall while
+                //    AVFoundation reconnects the display path on the new layer.
                 CameraPreviewView(session: container.captureSession)
                     .ignoresSafeArea()
+                FocusLockGestureView { point, size in
+                    Task { await handleFocusLockGesture(at: point, frameSize: size) }
+                }
+                .ignoresSafeArea()
+
+                // ── BOOTH mode: overlay BoothCaptureView (no camera preview inside) ──
+                if currentMode == .photoBooth {
+                    BoothCaptureView(
+                        container: container,
+                        onDismiss: {
+                            withAnimation(.niftyPresetSwitch) { currentMode = .still }
+                            Task { try? await container.captureUseCase.switchMode(to: .still, config: container.config) }
+                        }
+                    )
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                } else {
 
                 // ── §4.1a AF/AE Lock — pulsing amber dot at lock point ──
                 if afLockActive {
@@ -133,6 +173,12 @@ struct CaptureHubView: View {
                     afLockBanner(geo: geo)
                 }
 
+                if isRecording && (currentMode == .clip || currentMode == .echo || currentMode == .atmosphere) {
+                    recordingStatusOverlay
+                }
+
+                aspectRatioGuide(geo: geo)
+
                 // ── Zone C + Zone D stacked at bottom ──
                 VStack(spacing: 0) {
                     presetBar
@@ -147,15 +193,33 @@ struct CaptureHubView: View {
                 if showPresetPicker {
                     presetPickerOverlay
                 }
+
+                if showCaptureSettingsDeck {
+                    captureSettingsDeckOverlay
+                }
+                } // end else (non-BOOTH modes)
             }
             .gesture(viewfinderGestures(geo: geo))
             .onTapGesture(count: 2) { flipCamera() }
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: currentMode == .photoBooth)
         }
         .ignoresSafeArea()
         .preferredColorScheme(.dark)
         .onAppear { readWindowSafeArea() }
         .task { await startCameraPreview() }
-        .onDisappear { Task { await container.captureUseCase.stopPreview() } }
+        .onDisappear { Task { await stopCameraPreview() } }
+        .onChange(of: scenePhase) { _, newPhase in
+            Task { await handleScenePhaseChange(newPhase) }
+        }
+        .onChange(of: isCaptureActive) { _, isActive in
+            Task {
+                if isActive {
+                    await startCameraPreview()
+                } else {
+                    await stopCameraPreview()
+                }
+            }
+        }
     }
 
     /// Reads the real device safe area from UIKit's key window.
@@ -170,13 +234,40 @@ struct CaptureHubView: View {
 
     /// Requests camera permission (first launch only) then starts the live preview session.
     private func startCameraPreview() async {
+        guard !isPreviewRunning else { return }
+        guard isCaptureActive else { return }
+        guard scenePhase == .active else { return }
         let status = AVCaptureDevice.authorizationStatus(for: .video)
         if status == .notDetermined {
             guard await AVCaptureDevice.requestAccess(for: .video) else { return }
         } else {
             guard status == .authorized else { return }
         }
-        try? await container.captureUseCase.startPreview(mode: currentMode, config: container.config)
+        do {
+            try await container.captureUseCase.startPreview(mode: currentMode, config: container.config)
+            isPreviewRunning = true
+        } catch {
+            #if DEBUG
+            print("[CaptureHub] startPreview failed: \(error)")
+            #endif
+        }
+    }
+
+    private func stopCameraPreview() async {
+        guard isPreviewRunning else { return }
+        await container.captureUseCase.stopPreview()
+        isPreviewRunning = false
+    }
+
+    private func handleScenePhaseChange(_ newPhase: ScenePhase) async {
+        switch newPhase {
+        case .active:
+            await startCameraPreview()
+        case .inactive, .background:
+            await stopCameraPreview()
+        @unknown default:
+            await stopCameraPreview()
+        }
     }
 
     // MARK: - Zone A: Top Bar (v1.8 — 64pt, overlay on preview)
@@ -213,7 +304,7 @@ struct CaptureHubView: View {
 
                 // RIGHT GROUP: Live Photo ① + More ②
                 HStack(spacing: NiftySpacing.sm) {
-                    livePhotoPill
+                    flipCameraPill
                     morePill
                 }
                 .padding(.trailing, 14)
@@ -256,11 +347,12 @@ struct CaptureHubView: View {
     }
 
     private var timerPill: some View {
-        let isSet = timerSetting > 0
+        let isSet = captureSelfTimerDelay > 0
         return Button {
             let options = [0, 3, 10]
-            let next = options[(options.firstIndex(of: timerSetting)! + 1) % options.count]
-            timerSetting = next
+            let currentIndex = options.firstIndex(of: captureSelfTimerDelay) ?? 0
+            let next = options[(currentIndex + 1) % options.count]
+            captureSelfTimerDelay = next
         } label: {
             ZStack {
                 Circle()
@@ -276,7 +368,7 @@ struct CaptureHubView: View {
                         )
                     )
                 if isSet {
-                    Text("\(timerSetting)s")
+                    Text("\(captureSelfTimerDelay)s")
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(Color(hex: "#E8A020").opacity(0.92))
                 } else {
@@ -288,49 +380,34 @@ struct CaptureHubView: View {
             }
             .frame(width: 40, height: 40)
         }
-        .accessibilityLabel("Self-timer: \(timerSetting == 0 ? "Off" : "\(timerSetting)s")")
+        .accessibilityLabel("Self-timer: \(captureSelfTimerDelay == 0 ? "Off" : "\(captureSelfTimerDelay)s")")
     }
 
-    private var livePhotoPill: some View {
-        let isActive = currentMode == .live
+    private var flipCameraPill: some View {
         return Button {
-            // Toggle Live Photo — in real integration wires to AVCapturePhotoSettings
+            flipCamera()
         } label: {
             ZStack {
                 Circle()
-                    .fill(isActive
-                          ? Color.white.opacity(0.20)
-                          : Color.white.opacity(0.09))
+                    .fill(.white.opacity(0.09))
                     .overlay(
                         Circle().strokeBorder(
-                            Color.white.opacity(isActive ? 0.24 : 0.12),
+                            Color.white.opacity(0.12),
                             lineWidth: 0.5
                         )
                     )
-                // SVG spec: centre dot + concentric ring + 4 cardinal dots
-                ZStack {
-                    Circle()
-                        .stroke(.white.opacity(0.82), lineWidth: 1.2)
-                        .frame(width: 10, height: 10)
-                    Circle()
-                        .fill(.white.opacity(0.82))
-                        .frame(width: 4, height: 4)
-                    ForEach([(0.0, -7.0), (0.0, 7.0), (-7.0, 0.0), (7.0, 0.0)], id: \.0) { (dx, dy) in
-                        Circle()
-                            .fill(.white.opacity(0.45))
-                            .frame(width: 2, height: 2)
-                            .offset(x: dx, y: dy)
-                    }
-                }
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.90))
             }
             .frame(width: 40, height: 40)
         }
-        .accessibilityLabel("Live Photo \(isActive ? "on" : "off")")
+        .accessibilityLabel("Flip camera")
     }
 
     private var morePill: some View {
         Button {
-            // TODO: show overflow tray (aspect ratio, grid overlay, histogram)
+            withAnimation(.niftySpring) { showCaptureSettingsDeck.toggle() }
         } label: {
             ZStack {
                 Circle()
@@ -392,10 +469,15 @@ struct CaptureHubView: View {
 
     private func afLockBanner(geo: GeometryProxy) -> some View {
         let topBarBottom = 64 + topSafeArea
-        return Text("AE/AF LOCK")
-            .font(.system(size: 11, weight: .bold))
-            .kerning(0.08 * 11)
-            .foregroundStyle(Color(hex: "#E8A020"))
+        return VStack(spacing: 2) {
+            Text("Focus Locked")
+                .font(.system(size: 11, weight: .bold))
+                .kerning(0.04 * 11)
+                .foregroundStyle(Color(hex: "#E8A020"))
+            Text("Exposure held")
+                .font(.system(size: 9, weight: .medium))
+                .foregroundStyle(.white.opacity(0.46))
+        }
             .padding(.horizontal, NiftySpacing.lg)
             .padding(.vertical, NiftySpacing.xs + 2)
             .background(Color(hex: "#E8A020").opacity(0.18))
@@ -475,7 +557,7 @@ struct CaptureHubView: View {
     }
 
     private var locationVibeChip: some View {
-        Text("📍 Hongdae · Seoul · golden hour")
+        Text(container.lastCapturedPlaceName.isEmpty ? "📍 —" : "📍 \(container.lastCapturedPlaceName)")
             .font(.system(size: 12, weight: .medium))
             .foregroundStyle(.white.opacity(0.72))
             .padding(.horizontal, NiftySpacing.lg)
@@ -686,17 +768,28 @@ struct CaptureHubView: View {
     private var lastCaptureThumbnail: some View {
         RoundedRectangle(cornerRadius: 11)
             .fill(Color(hex: "#1C1208"))
-            .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(.white.opacity(0.13), lineWidth: 1))
-            .overlay(alignment: .bottom) {
-                Text("▶ LIVE")
-                    .font(.system(size: 7, weight: .heavy))
-                    .foregroundStyle(.black)
-                    .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(Color(hex: "#E8A020"))
-                    .clipShape(RoundedRectangle(cornerRadius: 3))
-                    .padding(4)
+            .overlay {
+                if let image = lastCapturedImage {
+                    Group {
+                        if lastCapturedThumbnailUsesFit {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFit()
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 2)
+                        } else {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFill()
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 11))
+                    .transition(.opacity.animation(.easeIn(duration: 0.2)))
+                }
             }
+            .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(.white.opacity(0.13), lineWidth: 1))
             .frame(width: 58, height: 42)
+            .animation(.easeIn(duration: 0.2), value: lastCapturedImage != nil)
     }
 
     private var shutterButton: some View {
@@ -736,20 +829,13 @@ struct CaptureHubView: View {
             shutterInterior
         }
         .onTapGesture { handleShutterTap() }
-        .onLongPressGesture(
-            minimumDuration: 0.1,
-            pressing: { pressing in
-                if currentMode == .clip { handleClipPress(pressing: pressing) }
-            },
-            perform: {}
-        )
     }
 
     @ViewBuilder
     private var shutterInterior: some View {
         switch currentMode {
         case .still:
-            if container.config.features.contains(.soundStamp) {
+            if container.config.features.contains(.soundStamp) && soundStampEnabled {
                 VStack(spacing: 1) {
                     Text("≋").font(.system(size: 10)).foregroundStyle(activePreset.accentColor.opacity(0.7))
                     Text("STAMP").font(.system(size: 6)).foregroundStyle(.white.opacity(0.5))
@@ -769,6 +855,74 @@ struct CaptureHubView: View {
             }
         default:
             EmptyView()
+        }
+    }
+
+    private var recordingStatusOverlay: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(Color(hex: "#FF5D5D"))
+                    .frame(width: 8, height: 8)
+                Text("REC")
+                    .font(.system(size: 11, weight: .black))
+                    .kerning(0.7)
+                    .foregroundStyle(.white.opacity(0.94))
+                Text(recordingModeLabel)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(activePreset.accentColor.opacity(0.92))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Color.black.opacity(0.42))
+            .background(.ultraThinMaterial)
+            .overlay(
+                Capsule()
+                    .strokeBorder(.white.opacity(0.14), lineWidth: 0.6)
+            )
+            .clipShape(Capsule())
+
+            Text(recordingHintText)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.72))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(Color.black.opacity(0.28))
+                .background(.ultraThinMaterial)
+                .overlay(
+                    Capsule()
+                        .strokeBorder(.white.opacity(0.10), lineWidth: 0.5)
+                )
+                .clipShape(Capsule())
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .padding(.top, topSafeArea + 78)
+        .allowsHitTesting(false)
+    }
+
+    private var recordingModeLabel: String {
+        switch currentMode {
+        case .clip:
+            return selectedClipVideoFormat.shortTitle
+        case .echo:
+            return "ECHO"
+        case .atmosphere:
+            return "ATMOS"
+        case .still, .live, .photoBooth:
+            return currentMode.displayName.uppercased()
+        }
+    }
+
+    private var recordingHintText: String {
+        switch currentMode {
+        case .clip:
+            return "\(clipCountdown)s left · release to stop"
+        case .echo:
+            return "Tap shutter again to stop"
+        case .atmosphere:
+            return "Tap shutter again to stop"
+        case .still, .live, .photoBooth:
+            return ""
         }
     }
 
@@ -863,6 +1017,467 @@ struct CaptureHubView: View {
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
+    private var captureSettingsDeckOverlay: some View {
+        ZStack(alignment: .topTrailing) {
+            Color.black.opacity(0.24)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    withAnimation(.niftySpring) { showCaptureSettingsDeck = false }
+                }
+
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .center, spacing: NiftySpacing.md) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Capture Controls")
+                            .font(.system(size: 16, weight: .black))
+                            .foregroundStyle(.white.opacity(0.92))
+                        Text(deckSubtitle)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.42))
+                    }
+
+                    Spacer()
+
+                    Text(deckModeTitle.uppercased())
+                        .font(.system(size: 10, weight: .black))
+                        .kerning(0.8)
+                        .foregroundStyle(activePreset.accentColor.opacity(0.96))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .background(activePreset.accentColor.opacity(0.16))
+                        .overlay(
+                            Capsule()
+                                .strokeBorder(activePreset.accentColor.opacity(0.30), lineWidth: 0.8)
+                        )
+                        .clipShape(Capsule())
+                }
+                .padding(.horizontal, 18)
+                .padding(.top, 18)
+                .padding(.bottom, 16)
+
+                VStack(spacing: 12) {
+                    ForEach(deckSections) { section in
+                        captureSettingsSection(section)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.bottom, 14)
+            }
+            .frame(width: min(geoDeckWidth, 380))
+            .background(
+                RoundedRectangle(cornerRadius: 26)
+                    .fill(Color(red: 18/255, green: 14/255, blue: 12/255).opacity(0.90))
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 26))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 26)
+                            .strokeBorder(.white.opacity(0.14), lineWidth: 0.6)
+                    )
+                    .overlay(alignment: .top) {
+                        RoundedRectangle(cornerRadius: 26)
+                            .fill(
+                                LinearGradient(
+                                    colors: [activePreset.accentColor.opacity(0.22), .clear],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .padding(1)
+                    }
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 26))
+            .shadow(color: .black.opacity(0.36), radius: 24, y: 10)
+            .padding(.top, topSafeArea + 62)
+            .padding(.trailing, 14)
+        }
+        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
+    private var geoDeckWidth: CGFloat {
+        UIScreen.main.bounds.width - 28
+    }
+
+    private func captureSettingsSection(_ section: CaptureSettingsSection) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: section.icon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(section.tint)
+                    .frame(width: 22, height: 22)
+                    .background(section.tint.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: 7))
+                Text(section.title)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.82))
+                Spacer()
+                if let caption = section.caption {
+                    Text(caption)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.34))
+                }
+                if section.isReadOnly {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.22))
+                }
+            }
+
+            switch section.control {
+            case .toggle(let binding):
+                Toggle(isOn: binding) {
+                    EmptyView()
+                }
+                .labelsHidden()
+                .tint(section.tint)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .disabled(section.isReadOnly)
+
+            case .chips(let options, let binding):
+                HStack(spacing: 8) {
+                    ForEach(options) { option in
+                        Button {
+                            binding.wrappedValue = option.value
+                        } label: {
+                            Text(option.title)
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(binding.wrappedValue == option.value ? .black.opacity(0.86) : .white.opacity(0.72))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(
+                                    binding.wrappedValue == option.value
+                                        ? section.tint
+                                        : Color.white.opacity(0.06)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .strokeBorder(
+                                            binding.wrappedValue == option.value
+                                                ? section.tint.opacity(0.34)
+                                                : .white.opacity(0.10),
+                                            lineWidth: 0.6
+                                        )
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(section.isReadOnly)
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .background(Color.white.opacity(0.045))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .strokeBorder(.white.opacity(0.08), lineWidth: 0.6)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var deckModeTitle: String {
+        switch currentMode {
+        case .still: return "Still"
+        case .live: return "Live"
+        case .clip: return "Clip"
+        case .echo: return "Echo"
+        case .atmosphere: return "Atmosphere"
+        case .photoBooth: return "Booth"
+        }
+    }
+
+    private var deckSubtitle: String {
+        switch currentMode {
+        case .still:
+            return "Shape how your next still lands."
+        case .live:
+            return "Tune motion and export defaults."
+        case .clip:
+            return "Set the clip ceiling before you roll."
+        case .echo:
+            return "Keep voice capture tight and intentional."
+        case .atmosphere:
+            return "Control the loop length of the moment."
+        case .photoBooth:
+            return "Booth controls arrive with the strip workflow."
+        }
+    }
+
+    private var deckSections: [CaptureSettingsSection] {
+        switch currentMode {
+        case .still:
+            var sections: [CaptureSettingsSection] = [
+                .chips(
+                    title: "Aspect Ratio",
+                    icon: "rectangle.expand.vertical",
+                    tint: activePreset.accentColor,
+                    caption: selectedAspectRatio.displayTitle,
+                    options: aspectRatioOptions,
+                    selection: Binding(
+                        get: { selectedAspectRatio.optionValue },
+                        set: { if let ratio = CaptureAspectRatio(optionValue: $0) { captureAspectRatioRaw = ratio.rawValue } }
+                    )
+                ),
+                .chips(
+                    title: "Timer",
+                    icon: "timer",
+                    tint: Color(hex: "#E8A020"),
+                    caption: captureSelfTimerDelay == 0 ? "Off" : "\(captureSelfTimerDelay)s",
+                    options: timerOptions,
+                    selection: Binding(get: { captureSelfTimerDelay }, set: { captureSelfTimerDelay = $0 })
+                ),
+                .toggle(
+                    title: "Context Cam",
+                    icon: "rectangle.on.rectangle",
+                    tint: Color(hex: "#8EB4D4"),
+                    caption: secondaryCameraEnabled ? "On" : "Off",
+                    value: Binding(get: { secondaryCameraEnabled }, set: { secondaryCameraEnabled = $0 })
+                ),
+                .toggle(
+                    title: "Vibe Preview",
+                    icon: "sparkles",
+                    tint: activePreset.accentColor,
+                    caption: liveVibePreviewEnabled ? "Live" : "Post only",
+                    value: Binding(get: { liveVibePreviewEnabled }, set: { liveVibePreviewEnabled = $0 })
+                )
+            ]
+            if container.config.features.contains(.soundStamp) {
+                sections.insert(
+                    .toggle(
+                        title: "Sound Stamp",
+                        icon: "waveform",
+                        tint: Color(hex: "#FF8A5B"),
+                        caption: soundStampEnabled ? "On" : "Off",
+                        value: Binding(get: { soundStampEnabled }, set: { soundStampEnabled = $0 })
+                    ),
+                    at: 2
+                )
+            }
+            return sections
+        case .live:
+            return [
+                .chips(
+                    title: "Aspect Ratio",
+                    icon: "rectangle.expand.vertical",
+                    tint: activePreset.accentColor,
+                    caption: "Apple Live format",
+                    options: aspectRatioOptions,
+                    selection: Binding(
+                        get: { CaptureAspectRatio.nineBySixteen.optionValue },
+                        set: { _ in }
+                    ),
+                    isReadOnly: true
+                ),
+                .chips(
+                    title: "Timer",
+                    icon: "timer",
+                    tint: Color(hex: "#E8A020"),
+                    caption: captureSelfTimerDelay == 0 ? "Off" : "\(captureSelfTimerDelay)s",
+                    options: timerOptions,
+                    selection: Binding(get: { captureSelfTimerDelay }, set: { captureSelfTimerDelay = $0 })
+                ),
+                .toggle(
+                    title: "Context Cam",
+                    icon: "rectangle.on.rectangle",
+                    tint: Color(hex: "#8EB4D4"),
+                    caption: secondaryCameraEnabled ? "On" : "Off",
+                    value: Binding(get: { secondaryCameraEnabled }, set: { secondaryCameraEnabled = $0 })
+                ),
+                .toggle(
+                    title: "Vibe Preview",
+                    icon: "sparkles",
+                    tint: activePreset.accentColor,
+                    caption: liveVibePreviewEnabled ? "Live" : "Post only",
+                    value: Binding(get: { liveVibePreviewEnabled }, set: { liveVibePreviewEnabled = $0 })
+                ),
+                .toggle(
+                    title: "Apple Photos",
+                    icon: "photo.on.rectangle",
+                    tint: Color(hex: "#6FD2B8"),
+                    caption: liveApplePhotosExportEnabled ? "Live export" : "Still fallback",
+                    value: Binding(get: { liveApplePhotosExportEnabled }, set: { liveApplePhotosExportEnabled = $0 })
+                )
+            ]
+        case .clip:
+            return [
+                .chips(
+                    title: "Video Format",
+                    icon: "viewfinder.rectangular",
+                    tint: activePreset.accentColor,
+                    caption: selectedClipVideoFormat.displayTitle,
+                    options: clipVideoFormatOptions,
+                    selection: Binding(
+                        get: { selectedClipVideoFormat.optionValue },
+                        set: { if let format = ClipVideoFormat(optionValue: $0) { clipVideoFormatRaw = format.rawValue } }
+                    )
+                ),
+                .chips(
+                    title: "Clip Length",
+                    icon: "stopwatch",
+                    tint: activePreset.accentColor,
+                    caption: "\(clipDurationSeconds)s ceiling",
+                    options: [
+                        .init(title: "5s", value: 5),
+                        .init(title: "10s", value: 10),
+                        .init(title: "15s", value: 15),
+                        .init(title: "30s", value: 30)
+                    ],
+                    selection: Binding(get: { clipDurationSeconds }, set: { clipDurationSeconds = $0 })
+                )
+            ]
+        case .echo:
+            return [
+                .chips(
+                    title: "Echo Limit",
+                    icon: "mic",
+                    tint: Color(hex: "#FF8A5B"),
+                    caption: "\(echoMaxDurationSeconds)s max",
+                    options: [
+                        .init(title: "30s", value: 30),
+                        .init(title: "60s", value: 60),
+                        .init(title: "90s", value: 90),
+                        .init(title: "120s", value: 120)
+                    ],
+                    selection: Binding(get: { echoMaxDurationSeconds }, set: { echoMaxDurationSeconds = $0 })
+                )
+            ]
+        case .atmosphere:
+            return [
+                .chips(
+                    title: "Loop Length",
+                    icon: "speaker.wave.2",
+                    tint: Color(hex: "#C4B5FD"),
+                    caption: "\(atmosphereLoopSeconds)s loop",
+                    options: [
+                        .init(title: "3s", value: 3),
+                        .init(title: "5s", value: 5),
+                        .init(title: "10s", value: 10),
+                        .init(title: "15s", value: 15)
+                    ],
+                    selection: Binding(get: { atmosphereLoopSeconds }, set: { atmosphereLoopSeconds = $0 })
+                )
+            ]
+        case .photoBooth:
+            return [
+                .toggle(
+                    title: "Booth Soon",
+                    icon: "square.grid.2x2",
+                    tint: activePreset.accentColor,
+                    caption: "L4C controls next",
+                    value: .constant(true)
+                )
+            ]
+        }
+    }
+
+    private var timerOptions: [CaptureSettingsOption] {
+        [
+            .init(title: "Off", value: 0),
+            .init(title: "3s", value: 3),
+            .init(title: "10s", value: 10)
+        ]
+    }
+
+    private var selectedAspectRatio: CaptureAspectRatio {
+        CaptureAspectRatio(rawValue: captureAspectRatioRaw) ?? .nineBySixteen
+    }
+
+    private var effectiveAspectRatio: CaptureAspectRatio {
+        currentMode == .live ? .nineBySixteen : selectedAspectRatio
+    }
+
+    private var aspectRatioOptions: [CaptureSettingsOption] {
+        CaptureAspectRatio.allCases.map { .init(title: $0.displayTitle, value: $0.optionValue) }
+    }
+
+    private var selectedClipVideoFormat: ClipVideoFormat {
+        ClipVideoFormat(rawValue: clipVideoFormatRaw) ?? .hd
+    }
+
+    private var clipVideoFormatOptions: [CaptureSettingsOption] {
+        ClipVideoFormat.allCases.map { .init(title: $0.shortTitle, value: $0.optionValue) }
+    }
+
+    @ViewBuilder
+    private func aspectRatioGuide(geo: GeometryProxy) -> some View {
+        if currentMode == .still || currentMode == .live {
+            let previewFrame = previewGuideFrame(in: geo.size)
+            let guideSize = effectiveAspectRatio.guideSize(in: previewFrame.size)
+            ZStack {
+                Color.black.opacity(0.001)
+                    .overlay {
+                        aspectRatioLetterboxOverlay(
+                            previewFrame: previewFrame,
+                            guideSize: guideSize
+                        )
+                    }
+
+                RoundedRectangle(cornerRadius: 7)
+                    .fill(Color.black.opacity(0.28))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 7)
+                            .stroke(.white.opacity(0.08), lineWidth: 0.5)
+                    )
+                    .frame(width: 58, height: 24)
+                    .overlay(
+                        Text(effectiveAspectRatio.displayTitle)
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.78))
+                    )
+                    .position(x: previewFrame.midX, y: previewFrame.minY + 20)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .allowsHitTesting(false)
+        }
+    }
+
+    private func previewGuideFrame(in containerSize: CGSize) -> CGRect {
+        let topInset = topSafeArea + 64
+        let bottomInset = 88 + bottomSafeArea + (presetBarCollapsed ? 4 : 46)
+        let availableHeight = max(containerSize.height - topInset - bottomInset, 1)
+        return CGRect(x: 0, y: topInset, width: containerSize.width, height: availableHeight)
+    }
+
+    private func aspectRatioLetterboxOverlay(previewFrame: CGRect, guideSize: CGSize) -> some View {
+        let guideRect = CGRect(
+            x: previewFrame.midX - (guideSize.width / 2),
+            y: previewFrame.midY - (guideSize.height / 2),
+            width: guideSize.width,
+            height: guideSize.height
+        )
+        let maskColor = Color(red: 18/255, green: 13/255, blue: 10/255).opacity(0.24)
+
+        return ZStack {
+            if effectiveAspectRatio != .nineBySixteen {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 10/255, green: 8/255, blue: 6/255).opacity(0.30),
+                                maskColor
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: previewFrame.width, height: max(guideRect.minY - previewFrame.minY, 0))
+                    .position(x: previewFrame.midX, y: previewFrame.minY + max(guideRect.minY - previewFrame.minY, 0) / 2)
+
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                maskColor,
+                                Color(red: 10/255, green: 8/255, blue: 6/255).opacity(0.34)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: previewFrame.width, height: max(previewFrame.maxY - guideRect.maxY, 0))
+                    .position(x: previewFrame.midX, y: guideRect.maxY + max(previewFrame.maxY - guideRect.maxY, 0) / 2)
+            }
+        }
+    }
+
     // MARK: - Gesture Handling
 
     private func viewfinderGestures(geo: GeometryProxy) -> some Gesture {
@@ -884,6 +1499,7 @@ struct CaptureHubView: View {
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
             isFrontCamera.toggle()
         }
+        Task { try? await container.captureUseCase.switchCamera() }
         if !flipHintShown {
             flipHintShown = true
             withAnimation { showFlipHint = true }
@@ -899,7 +1515,6 @@ struct CaptureHubView: View {
         let newMode = modes[(idx + delta + modes.count) % modes.count]
         withAnimation(.niftyPresetSwitch) { currentMode = newMode }
         showGhostLabel(newMode.ghostText)
-        // Dismiss AF lock on mode change
         if afLockActive { dismissAfLock() }
         if newMode == .clip || newMode == .echo {
             DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
@@ -907,6 +1522,18 @@ struct CaptureHubView: View {
             }
         } else {
             withAnimation { presetBarCollapsed = false }
+        }
+        // Reconfigure AVCaptureSession outputs for the new mode.
+        // Skip for photoBooth — session prep is deferred to START tap (during countdown).
+        let gestureTime = CACurrentMediaTime()
+        if newMode == .photoBooth {
+            // Measure UI-only transition cost (no hardware work)
+            Task { @MainActor in
+                let lag = CACurrentMediaTime() - gestureTime
+                print("[CaptureHub] cycleMode → photoBooth UI transition lag: \(String(format: "%.3f", lag))s")
+            }
+        } else {
+            Task { try? await container.captureUseCase.switchMode(to: newMode, config: container.config, gestureTime: gestureTime) }
         }
     }
 
@@ -941,6 +1568,19 @@ struct CaptureHubView: View {
     private func dismissAfLock() {
         withAnimation(.easeOut(duration: 0.15)) { afBannerOpacity = 0 }
         afLockActive = false
+        Task { await container.captureUseCase.unlockFocusAndExposure() }
+    }
+
+    private func handleFocusLockGesture(at point: CGPoint, frameSize: CGSize) async {
+        guard currentMode != .photoBooth else { return }
+        do {
+            try await container.captureUseCase.focusAndLock(at: point, frameSize: frameSize)
+            await MainActor.run { activateAfLock(at: point) }
+        } catch {
+            #if DEBUG
+            print("[CaptureHub] focusAndLock failed: \(error)")
+            #endif
+        }
     }
 
     // MARK: - Shutter Actions
@@ -950,16 +1590,33 @@ struct CaptureHubView: View {
         case .still:
             triggerStillCapture()
         case .live:
-            break // tap handled; in real integration calls AVCapturePhotoOutput
+            // Live Photo: same pipeline as still but tagged .live
+            triggerStillCapture()
         case .echo:
-            withAnimation(.niftySpring) {
-                isRecording.toggle()
-                if !isRecording { presetBarCollapsed = false }
+            // Echo: tap toggles recording (audio-focused, no hold needed)
+            if isRecording {
+                stopVideoCapture()
+            } else {
+                startVideoCapture(mode: .echo)
             }
         case .atmosphere:
-            break
+            // Atmosphere: tap toggles continuous recording
+            if isRecording {
+                stopVideoCapture()
+            } else {
+                startVideoCapture(mode: .atmosphere)
+            }
         case .clip:
-            break // hold gesture handles clip
+            if isRecording {
+                stopVideoCapture()
+                clipProgress = 0
+                clipCountdown = clipDurationSeconds
+                withAnimation { presetBarCollapsed = false }
+            } else {
+                startVideoCapture(mode: .clip)
+            }
+        case .photoBooth:
+            break // handled by BoothCaptureView overlay
         }
     }
 
@@ -968,6 +1625,21 @@ struct CaptureHubView: View {
             withAnimation { soundStampPulse = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
                 withAnimation { soundStampPulse = false }
+            }
+        }
+        Task {
+            do {
+                let asset = try await container.captureUseCase.captureAsset()
+                // Load thumbnail from vault to display left of shutter
+                if let (_, data) = try? await container.vaultManager.loadPrimary(asset.id) {
+                    lastCapturedImage = UIImage(data: data)
+                    lastCapturedThumbnailUsesFit = false
+                }
+            } catch {
+                // Capture failed — overlay already showing, just log
+                #if DEBUG
+                print("[CaptureHub] captureAsset failed: \(error)")
+                #endif
             }
         }
         // §4.5: Show post-capture overlay
@@ -993,12 +1665,107 @@ struct CaptureHubView: View {
         }
     }
 
-    private func handleClipPress(pressing: Bool) {
-        withAnimation(.niftySpring) { isRecording = pressing }
-        if !pressing {
+    private func startVideoCapture(mode: CaptureMode) {
+        if mode == .clip {
+            clipTimerTask?.cancel()
             clipProgress = 0
-            clipCountdown = 30
-            withAnimation { presetBarCollapsed = false }
+            clipCountdown = clipDurationSeconds
+            startClipCountdown()
+        }
+        withAnimation(.niftySpring) { isRecording = true }
+        Task {
+            do {
+                try await container.captureUseCase.startVideoRecording(mode: mode, config: container.config)
+            } catch {
+                clipTimerTask?.cancel()
+                withAnimation { isRecording = false }
+                #if DEBUG
+                print("[CaptureHub] startVideoRecording failed: \(error)")
+                #endif
+            }
+        }
+    }
+
+    private func stopVideoCapture() {
+        guard isRecording else { return }
+        clipTimerTask?.cancel()
+        clipTimerTask = nil
+        withAnimation(.niftySpring) { isRecording = false }
+        Task {
+            do {
+                let asset = try await container.captureUseCase.stopVideoRecording(config: container.config)
+                if let thumb = await loadVideoThumbnail(assetID: asset.id) {
+                    await MainActor.run {
+                        lastCapturedImage = thumb
+                        lastCapturedThumbnailUsesFit = true
+                    }
+                }
+            } catch {
+                #if DEBUG
+                print("[CaptureHub] stopVideoRecording failed: \(error)")
+                #endif
+            }
+        }
+    }
+
+    private func startClipCountdown() {
+        let ceiling = max(clipDurationSeconds, 1)
+        clipTimerTask = Task {
+            let start = Date()
+            while !Task.isCancelled {
+                let elapsed = Date().timeIntervalSince(start)
+                let progress = min(max(elapsed / Double(ceiling), 0), 1)
+                let remaining = max(Int(ceil(Double(ceiling) - elapsed)), 0)
+
+                await MainActor.run {
+                    clipProgress = progress
+                    clipCountdown = remaining
+                }
+
+                if elapsed >= Double(ceiling) {
+                    await MainActor.run {
+                        if isRecording {
+                            stopVideoCapture()
+                            withAnimation { presetBarCollapsed = false }
+                        }
+                    }
+                    break
+                }
+
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+        }
+    }
+
+    private func loadVideoThumbnail(assetID: UUID) async -> UIImage? {
+        guard let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+
+        let url = dir
+            .appendingPathComponent("assets")
+            .appendingPathComponent("\(assetID.uuidString).mov")
+
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            #if DEBUG
+            print("[CaptureHub] loadVideoThumbnail missing MOV at \(url.lastPathComponent)")
+            #endif
+            return nil
+        }
+
+        let avAsset = AVURLAsset(url: url)
+        let generator = AVAssetImageGenerator(asset: avAsset)
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: 400, height: 400)
+
+        do {
+            let (cgImage, _) = try await generator.image(at: .zero)
+            return UIImage(cgImage: cgImage)
+        } catch {
+            #if DEBUG
+            print("[CaptureHub] loadVideoThumbnail failed for \(assetID): \(error)")
+            #endif
+            return nil
         }
     }
 
@@ -1010,7 +1777,149 @@ struct CaptureHubView: View {
             case .clip:       return container.config.assetTypes.contains(.clip)
             case .echo:       return container.config.assetTypes.contains(.echo)
             case .atmosphere: return container.config.assetTypes.contains(.atmosphere)
+            case .photoBooth: return container.config.features.contains(.l4c)
             }
+        }
+    }
+}
+
+private struct CaptureSettingsOption: Identifiable {
+    let title: String
+    let value: Int
+    var id: Int { value }
+}
+
+private enum CaptureSettingsControl {
+    case toggle(Binding<Bool>)
+    case chips([CaptureSettingsOption], Binding<Int>)
+}
+
+private struct CaptureSettingsSection: Identifiable {
+    let id = UUID()
+    let title: String
+    let icon: String
+    let tint: Color
+    let caption: String?
+    let control: CaptureSettingsControl
+    let isReadOnly: Bool
+
+    static func toggle(
+        title: String,
+        icon: String,
+        tint: Color,
+        caption: String? = nil,
+        value: Binding<Bool>,
+        isReadOnly: Bool = false
+    ) -> CaptureSettingsSection {
+        .init(
+            title: title,
+            icon: icon,
+            tint: tint,
+            caption: caption,
+            control: .toggle(value),
+            isReadOnly: isReadOnly
+        )
+    }
+
+    static func chips(
+        title: String,
+        icon: String,
+        tint: Color,
+        caption: String? = nil,
+        options: [CaptureSettingsOption],
+        selection: Binding<Int>,
+        isReadOnly: Bool = false
+    ) -> CaptureSettingsSection {
+        .init(
+            title: title,
+            icon: icon,
+            tint: tint,
+            caption: caption,
+            control: .chips(options, selection),
+            isReadOnly: isReadOnly
+        )
+    }
+}
+
+private enum CaptureAspectRatio: String, CaseIterable {
+    case nineBySixteen = "9:16"
+    case fourByFive = "4:5"
+    case oneByOne = "1:1"
+
+    var optionValue: Int {
+        switch self {
+        case .nineBySixteen: return 0
+        case .fourByFive: return 1
+        case .oneByOne: return 2
+        }
+    }
+
+    init?(optionValue: Int) {
+        switch optionValue {
+        case 0: self = .nineBySixteen
+        case 1: self = .fourByFive
+        case 2: self = .oneByOne
+        default: return nil
+        }
+    }
+
+    var displayTitle: String { rawValue }
+
+    func guideSize(in container: CGSize) -> CGSize {
+        let horizontalInset: CGFloat = 22
+        let verticalInset: CGFloat = 164
+        let maxWidth = max(container.width - (horizontalInset * 2), 1)
+        let maxHeight = max(container.height - verticalInset, 1)
+
+        let aspect: CGFloat
+        switch self {
+        case .nineBySixteen: aspect = 9.0 / 16.0
+        case .fourByFive: aspect = 4.0 / 5.0
+        case .oneByOne: aspect = 1.0
+        }
+
+        let widthFromHeight = maxHeight * aspect
+        let finalWidth = min(maxWidth, widthFromHeight)
+        let finalHeight = finalWidth / aspect
+        return CGSize(width: finalWidth, height: finalHeight)
+    }
+}
+
+private enum ClipVideoFormat: String, CaseIterable {
+    case vga
+    case hd
+    case fourK = "4k"
+
+    var optionValue: Int {
+        switch self {
+        case .vga: return 0
+        case .hd: return 1
+        case .fourK: return 2
+        }
+    }
+
+    init?(optionValue: Int) {
+        switch optionValue {
+        case 0: self = .vga
+        case 1: self = .hd
+        case 2: self = .fourK
+        default: return nil
+        }
+    }
+
+    var shortTitle: String {
+        switch self {
+        case .vga: return "VGA"
+        case .hd: return "HD"
+        case .fourK: return "4K"
+        }
+    }
+
+    var displayTitle: String {
+        switch self {
+        case .vga: return "VGA 4:3"
+        case .hd: return "HD 16:9"
+        case .fourK: return "4K 16:9"
         }
     }
 }
@@ -1025,6 +1934,7 @@ private extension CaptureMode {
         case .clip:       return "CLIP"
         case .echo:       return "ECHO"
         case .atmosphere: return "ATMOS"
+        case .photoBooth: return "BOOTH"
         }
     }
     var ghostText: String {
@@ -1034,6 +1944,7 @@ private extension CaptureMode {
         case .clip:       return "C L I P"
         case .echo:       return "E C H O"
         case .atmosphere: return "A T M O S"
+        case .photoBooth: return "B O O T H"
         }
     }
 }

@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>niftyMomnt — Architecture Decision Record v1.1</title>
+<style>
+  :root {
+    --purple:       #6B4EFF;
+    --purple-light: #EAE8FC;
+    --teal:         #0F6E56;
+    --teal-light:   #E1F5EE;
+    --amber:        #BA7517;
+    --amber-light:  #FAEEDA;
+    --coral:        #D85A30;
+    --coral-light:  #FAECE7;
+    --blue:         #185FA5;
+    --blue-light:   #E6F1FB;
+    --gray:         #444441;
+    --gray-light:   #F1EFE8;
+    --border:       #D3D1C7;
+    --text:         #1A1A1A;
+    --text-muted:   #5F5E5A;
+    --bg:           #FFFFFF;
+    --bg-soft:      #F8F7F4;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text);
+    background: var(--bg);
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 40px 80px;
+  }
+
+  /* ── Cover ── */
+  .cover {
+    border-bottom: 3px solid var(--purple);
+    padding-bottom: 40px;
+    margin-bottom: 56px;
+  }
+  .cover .app-name {
+    font-size: 52px;
+    font-weight: 700;
+    color: var(--purple);
+    letter-spacing: -1px;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .cover .doc-title {
+    font-size: 22px;
+    color: var(--gray);
+    font-weight: 400;
+    margin-bottom: 24px;
+  }
+  .cover .meta {
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+  }
+  .cover .meta span { display: flex; align-items: center; gap: 6px; }
+  .cover .meta .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--purple); flex-shrink: 0;
+  }
+
+  /* ── Typography ── */
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--bg);
+    background: #1A1A2E;
+    padding: 14px 20px;
+    border-radius: 8px;
+    margin: 56px 0 24px;
+    letter-spacing: -0.3px;
+  }
+  h2 {
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--purple);
+    border-bottom: 2px solid var(--purple-light);
+    padding-bottom: 6px;
+    margin: 40px 0 16px;
+  }
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 28px 0 10px;
+  }
+  p { margin-bottom: 14px; }
+  ul, ol { padding-left: 24px; margin-bottom: 14px; }
+  li { margin-bottom: 6px; }
+  strong { font-weight: 600; }
+  code {
+    font-family: 'SF Mono', 'Menlo', 'Courier New', monospace;
+    font-size: 13px;
+    background: var(--gray-light);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--coral);
+  }
+
+  /* ── Callout ── */
+  .callout {
+    border-left: 4px solid var(--purple);
+    background: var(--purple-light);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 20px 0;
+    font-weight: 600;
+    color: var(--purple);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .callout.teal  { border-color: var(--teal);  background: var(--teal-light);  color: var(--teal);  }
+  .callout.amber { border-color: var(--amber); background: var(--amber-light); color: var(--amber); }
+  .callout.coral { border-color: var(--coral); background: var(--coral-light); color: var(--coral); }
+
+  /* ── Diagram container ── */
+  .diagram-wrap {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px 24px;
+    margin: 28px 0;
+    overflow-x: auto;
+  }
+  .diagram-caption {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 14px;
+    font-style: italic;
+  }
+
+  /* ── Table ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 13.5px;
+  }
+  th {
+    background: #1A1A2E;
+    color: white;
+    padding: 9px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+  }
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  tr:nth-child(even) td { background: var(--bg-soft); }
+  tr:last-child td { border-bottom: none; }
+
+  /* ── Layer badge ── */
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .badge-purple { background: var(--purple-light); color: var(--purple); }
+  .badge-teal   { background: var(--teal-light);   color: var(--teal);   }
+  .badge-amber  { background: var(--amber-light);  color: var(--amber);  }
+  .badge-coral  { background: var(--coral-light);  color: var(--coral);  }
+  .badge-gray   { background: var(--gray-light);   color: var(--gray);   }
+
+  /* ── Two-column comparison ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .compare-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .compare-card .card-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+  }
+  .compare-card p { font-size: 13.5px; margin-bottom: 0; }
+
+  /* ── Section divider ── */
+  .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 48px 0;
+  }
+
+  /* ── Print ── */
+  @media print {
+    body { max-width: 100%; padding: 20px; font-size: 13px; }
+    h1 { break-before: page; }
+    .diagram-wrap { break-inside: avoid; }
+    table { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════ COVER ═══════ -->
+<div class="cover">
+  <div class="app-name">niftyMomnt</div>
+  <div class="doc-title">Architecture Decision Record (ADR) &amp; Technical Architecture Guide</div>
+  <div class="meta">
+    <span><span class="dot"></span>Version 1.1</span>
+    <span><span class="dot"></span>March 2026</span>
+    <span><span class="dot"></span>SRS v1.2 · PRD v1.6 · UI/UX v1.7 · MRD v1.5</span>
+    <span><span class="dot"></span>Han Wook Cho · hwcho99@gmail.com</span>
+    <span><span class="dot"></span>Confidential</span>
+  </div>
+</div>
+
+<!-- ═══════ PURPOSE ═══════ -->
+<h1>1. Purpose of This Document</h1>
+<p>This Architecture Decision Record captures the <strong>why</strong> behind every major structural decision in niftyMomnt — illustrated visually so that any engineer, designer, or collaborator can understand the system at a glance before reading the detailed SRS.</p>
+<p>The <strong>SRS (v1.2)</strong> specifies <em>what</em> each component does and <em>how</em> its interfaces are defined. Product behavior and scope come from the <strong>PRD (v1.6)</strong>; screen-level design from the <strong>UI/UX Specification (v1.7)</strong>. This ADR answers <em>why the system is shaped the way it is</em>, and shows how the pieces fit together through diagrams that cannot be embedded in a Word document.</p>
+
+<div class="callout">
+  Core requirement that shaped everything: the UI layer must be completely substitutable without touching any business logic, data access, or AI processing code. Multiple app variants — different features, different UI — must share a single codebase except for their UI and configuration.
+</div>
+
+<!-- ═══════ LAYERED ARCHITECTURE ═══════ -->
+<h1>2. Layered Architecture — The Four-Layer Model</h1>
+
+<h2>2.1 Overview</h2>
+<p>niftyMomnt uses <strong>Clean Architecture</strong> adapted for iOS. The system is divided into four layers. The single most important rule is:</p>
+
+<div class="callout teal">
+  Dependencies point inward only. Outer layers know about inner layers. Inner layers know nothing about outer layers. The domain layer — all business logic — has zero knowledge of UIKit, SwiftUI, or any Apple platform framework.
+</div>
+
+<p>This rule is what makes the UI swappable. If the domain layer never imports SwiftUI, swapping the entire UI layer requires zero changes to any engine or use case.</p>
+
+<!-- DIAGRAM 1: Four-layer architecture -->
+<div class="diagram-wrap">
+<svg width="100%" viewBox="0 0 820 740" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- Layer 0 outer shell -->
+  <rect x="20" y="20" width="760" height="700" rx="16" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="1"/>
+  <text x="400" y="48" text-anchor="middle" font-family="system-ui,Arial" font-size="13" font-weight="600" fill="#444441">App Targets Layer — swappable, variant-specific</text>
+  <text x="400" y="64" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#888780">One Xcode target per variant — UI and AppConfig only</text>
+
+  <!-- Three variant boxes -->
+  <rect x="44" y="80" width="196" height="62" rx="8" fill="#EAE8FC" stroke="#6B4EFF" stroke-width="1"/>
+  <text x="142" y="106" text-anchor="middle" font-family="system-ui,Arial" font-size="13" font-weight="600" fill="#3C3489">niftyMomnt (full)</text>
+  <text x="142" y="124" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#534AB7">All features · MZ aesthetic UI</text>
+
+  <rect x="312" y="80" width="196" height="62" rx="8" fill="#EAE8FC" stroke="#6B4EFF" stroke-width="1"/>
+  <text x="410" y="106" text-anchor="middle" font-family="system-ui,Arial" font-size="13" font-weight="600" fill="#3C3489">niftyMomnt Lite</text>
+  <text x="410" y="124" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#534AB7">Still + Clip · minimal UI</text>
+
+  <rect x="580" y="80" width="196" height="62" rx="8" fill="#EAE8FC" stroke="#6B4EFF" stroke-width="1"/>
+  <text x="678" y="106" text-anchor="middle" font-family="system-ui,Arial" font-size="13" font-weight="600" fill="#3C3489">Future variant</text>
+  <text x="678" y="124" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#534AB7">Custom config + new UI</text>
+
+  <!-- Dependency direction text -->
+  <text x="400" y="168" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#888780" font-style="italic">↓  UI depends inward on Domain protocols only  ↓</text>
+
+  <!-- Layer 1: Presentation -->
+  <rect x="44" y="178" width="732" height="110" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="410" y="202" text-anchor="middle" font-family="system-ui,Arial" font-size="14" font-weight="600" fill="#085041">Presentation Layer</text>
+  <text x="410" y="220" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#0F6E56">SwiftUI Views · ViewModels · Coordinators — unique per variant, fully swappable</text>
+
+  <rect x="64" y="232" width="164" height="42" rx="6" fill="#9FE1CB" stroke="#1D9E75" stroke-width="0.5"/>
+  <text x="146" y="258" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#04342C">Capture Hub UI</text>
+
+  <rect x="244" y="232" width="164" height="42" rx="6" fill="#9FE1CB" stroke="#1D9E75" stroke-width="0.5"/>
+  <text x="326" y="258" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#04342C">Film Archive / Vault UI</text>
+
+  <rect x="424" y="232" width="164" height="42" rx="6" fill="#9FE1CB" stroke="#1D9E75" stroke-width="0.5"/>
+  <text x="506" y="258" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#04342C">Nudge Card UI</text>
+
+  <rect x="604" y="232" width="164" height="42" rx="6" fill="#9FE1CB" stroke="#1D9E75" stroke-width="0.5"/>
+  <text x="686" y="258" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#04342C">Settings / Share UI</text>
+
+  <!-- Arrow -->
+  <line x1="410" y1="288" x2="410" y2="314" stroke="#888780" stroke-width="1" marker-end="url(#arr)"/>
+  <text x="430" y="305" font-family="system-ui,Arial" font-size="10" fill="#888780">protocol calls only</text>
+
+  <!-- Layer 2: Domain -->
+  <rect x="44" y="316" width="732" height="120" rx="10" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+  <text x="410" y="340" text-anchor="middle" font-family="system-ui,Arial" font-size="14" font-weight="600" fill="#633806">Domain Layer — NiftyCore (Swift Package)</text>
+  <text x="410" y="358" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#854F0B">Pure Swift — zero UIKit · zero SwiftUI · zero platform imports · 100% shared across all variants</text>
+
+  <rect x="64" y="368" width="130" height="54" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="129" y="390" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#412402">Use Cases</text>
+  <text x="129" y="408" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#633806">business logic</text>
+
+  <rect x="208" y="368" width="130" height="54" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="273" y="390" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#412402">Engines</text>
+  <text x="273" y="408" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#633806">Capture·Index·Story·Nudge</text>
+
+  <rect x="352" y="368" width="130" height="54" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="417" y="390" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#412402">Protocols</text>
+  <text x="417" y="408" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#633806">cross-layer contracts</text>
+
+  <rect x="496" y="368" width="130" height="54" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="561" y="390" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#412402">Models</text>
+  <text x="561" y="408" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#633806">Asset·Moment·Vibe…</text>
+
+  <rect x="640" y="368" width="130" height="54" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="705" y="390" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#412402">AppConfig</text>
+  <text x="705" y="408" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#633806">capability flags</text>
+
+  <!-- Arrow -->
+  <line x1="410" y1="436" x2="410" y2="462" stroke="#888780" stroke-width="1" marker-end="url(#arr)"/>
+  <text x="430" y="453" font-family="system-ui,Arial" font-size="10" fill="#888780">implements protocols</text>
+
+  <!-- Layer 3: Data -->
+  <rect x="44" y="464" width="732" height="110" rx="10" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+  <text x="410" y="488" text-anchor="middle" font-family="system-ui,Arial" font-size="14" font-weight="600" fill="#712B13">Data Layer — NiftyData (Swift Package)</text>
+  <text x="410" y="506" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#993C1D">Repository implementations · Platform adapters — implements Domain protocols</text>
+
+  <rect x="64" y="516" width="148" height="42" rx="6" fill="#F5C4B3" stroke="#D85A30" stroke-width="0.5"/>
+  <text x="138" y="542" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#4A1B0C">VaultRepository</text>
+
+  <rect x="226" y="516" width="148" height="42" rx="6" fill="#F5C4B3" stroke="#D85A30" stroke-width="0.5"/>
+  <text x="300" y="542" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#4A1B0C">GraphRepository</text>
+
+  <rect x="388" y="516" width="148" height="42" rx="6" fill="#F5C4B3" stroke="#D85A30" stroke-width="0.5"/>
+  <text x="462" y="542" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#4A1B0C">LabNetworkAdapter</text>
+
+  <rect x="550" y="516" width="220" height="42" rx="6" fill="#F5C4B3" stroke="#D85A30" stroke-width="0.5"/>
+  <text x="660" y="534" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#4A1B0C">Platform Adapters</text>
+  <text x="660" y="550" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#993C1D">AVFoundation·CoreML·WeatherKit…</text>
+
+  <!-- Arrow -->
+  <line x1="410" y1="574" x2="410" y2="598" stroke="#888780" stroke-width="1" marker-end="url(#arr)"/>
+
+  <!-- Layer 4: iOS Platform -->
+  <rect x="44" y="600" width="732" height="98" rx="10" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="1"/>
+  <text x="410" y="624" text-anchor="middle" font-family="system-ui,Arial" font-size="14" font-weight="600" fill="#444441">iOS Platform &amp; System Frameworks</text>
+  <text x="410" y="642" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#5F5E5A">Never imported above Data layer — accessed only through adapter classes</text>
+
+  <rect x="64"  y="654" width="110" height="30" rx="5" fill="#D3D1C7" stroke="#888780" stroke-width="0.5"/>
+  <text x="119" y="674" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#2C2C2A">AVFoundation</text>
+
+  <rect x="188" y="654" width="90" height="30" rx="5" fill="#D3D1C7" stroke="#888780" stroke-width="0.5"/>
+  <text x="233" y="674" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#2C2C2A">Core ML</text>
+
+  <rect x="292" y="654" width="90" height="30" rx="5" fill="#D3D1C7" stroke="#888780" stroke-width="0.5"/>
+  <text x="337" y="674" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#2C2C2A">Core Data</text>
+
+  <rect x="396" y="654" width="100" height="30" rx="5" fill="#D3D1C7" stroke="#888780" stroke-width="0.5"/>
+  <text x="446" y="674" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#2C2C2A">WeatherKit</text>
+
+  <rect x="510" y="654" width="90" height="30" rx="5" fill="#D3D1C7" stroke="#888780" stroke-width="0.5"/>
+  <text x="555" y="674" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#2C2C2A">WidgetKit</text>
+
+  <rect x="614" y="654" width="162" height="30" rx="5" fill="#D3D1C7" stroke="#888780" stroke-width="0.5"/>
+  <text x="695" y="674" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#2C2C2A">JournalingSuggestions</text>
+</svg>
+<div class="diagram-caption">Figure 1 — Four-layer Clean Architecture. Dependencies flow inward only. The domain layer (amber) contains all business logic and has zero platform imports. Swapping the entire UI layer (green) requires zero changes to any amber or red layer.</div>
+</div>
+
+<h2>2.2 Why This Structure — The Decision</h2>
+<p>The alternative was a more conventional layered iOS app where ViewModels directly call services that use platform frameworks. That approach would work fine for a single-variant app. But niftyMomnt needs to support multiple app variants with different feature sets and different UIs — and the capture engine, indexing engine, and AI pipeline must be identical across all of them.</p>
+
+<div class="two-col">
+  <div class="compare-card">
+    <div class="card-label" style="color:#A32D2D;">Rejected approach</div>
+    <p>ViewModel → Service → AVFoundation directly. Fast to build initially. Becomes a problem when you need a Lite variant: you either duplicate the service code or start adding conditional logic everywhere. UI and platform concerns become entangled.</p>
+  </div>
+  <div class="compare-card">
+    <div class="card-label" style="color:#0F6E56;">Chosen approach</div>
+    <p>ViewModel → Protocol (domain) → Adapter (data) → Platform. Adding a Lite variant means: new Xcode target + new UI + new AppConfig. The capture engine, indexing engine, and all business logic are touched zero times.</p>
+  </div>
+</div>
+
+<h2>2.3 The Dependency Rule in Practice</h2>
+<p>The rule is enforced by CI, not by convention. A SwiftLint custom rule scans every file in <code>NiftyCore/Sources/</code> and fails the build if it finds any import of <code>UIKit</code>, <code>SwiftUI</code>, <code>AVFoundation</code>, <code>CoreML</code>, or any Apple platform framework. This makes the rule impossible to accidentally violate.</p>
+
+<table>
+  <thead><tr><th>Layer</th><th>May import</th><th>Must never import</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge badge-purple">App Target</span></td><td>Everything — it owns the composition root</td><td>Nothing forbidden</td></tr>
+    <tr><td><span class="badge badge-teal">Presentation</span></td><td>SwiftUI, Domain protocols, NiftyCore models</td><td>Data implementations, platform frameworks directly</td></tr>
+    <tr><td><span class="badge badge-amber">Domain (NiftyCore)</span></td><td>Swift standard library only</td><td>UIKit, SwiftUI, AVFoundation, CoreML, Foundation — zero platform imports</td></tr>
+    <tr><td><span class="badge badge-coral">Data (NiftyData)</span></td><td>Domain, Foundation, platform frameworks</td><td>UIKit, SwiftUI, Presentation layer</td></tr>
+    <tr><td><span class="badge badge-gray">Platform</span></td><td>Apple SDKs</td><td>Everything above — only accessed via adapter classes</td></tr>
+  </tbody>
+</table>
+
+<hr class="section-divider"/>
+
+<!-- ═══════ VARIANT MODEL ═══════ -->
+<h1>3. Multi-Variant Architecture — AppConfig Model</h1>
+
+<h2>3.1 The Problem It Solves</h2>
+<p>You have described wanting several variations of niftyMomnt: a full-featured version with the MZ aesthetic UI, a simpler version with fewer features, and potentially other configurations. All of these need to share the same capture engine, the same AI pipeline, the same vault, and the same intelligence graph. Only the UI and the feature configuration should differ.</p>
+
+<div class="callout amber">
+  Adding a new app variant = new Xcode target + new UI layer + new AppConfig. Zero lines of NiftyCore are modified. The same CaptureEngine, IndexingEngine, StoryEngine, NudgeEngine, VaultManager, and GraphManager serve every variant identically.
+</div>
+
+<!-- DIAGRAM 2: Variant model -->
+<div class="diagram-wrap">
+<svg width="100%" viewBox="0 0 820 580" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#534AB7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- Shared Core -->
+  <rect x="20" y="360" width="780" height="200" rx="14" fill="#FAEEDA" stroke="#BA7517" stroke-width="1.5"/>
+  <text x="410" y="388" text-anchor="middle" font-family="system-ui,Arial" font-size="15" font-weight="700" fill="#633806">NiftyCore — Shared Swift Package</text>
+  <text x="410" y="406" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#854F0B">100% shared — identical code across all app variants — never modified for UI reasons</text>
+
+  <!-- Core modules row 1 -->
+  <rect x="40"  y="418" width="130" height="44" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="105" y="435" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#412402">CaptureEngine</text>
+  <text x="105" y="453" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#633806">mode · session · telemetry</text>
+
+  <rect x="184" y="418" width="130" height="44" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="249" y="435" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#412402">IndexingEngine</text>
+  <text x="249" y="453" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#633806">classify · cluster · harvest</text>
+
+  <rect x="328" y="418" width="130" height="44" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="393" y="435" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#412402">StoryEngine</text>
+  <text x="393" y="453" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#633806">score · assemble · caption</text>
+
+  <rect x="472" y="418" width="130" height="44" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="537" y="435" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#412402">NudgeEngine</text>
+  <text x="537" y="453" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#633806">trigger · question · response</text>
+
+  <rect x="616" y="418" width="164" height="44" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="698" y="435" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#412402">AppConfig</text>
+  <text x="698" y="453" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#633806">OptionSet capability flags</text>
+
+  <!-- Core modules row 2 -->
+  <rect x="40"  y="474" width="130" height="44" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="105" y="491" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#412402">VaultManager</text>
+  <text x="105" y="509" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#633806">encrypt · store · query</text>
+
+  <rect x="184" y="474" width="130" height="44" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="249" y="491" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#412402">GraphManager</text>
+  <text x="249" y="509" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#633806">intelligence graph R/W</text>
+
+  <rect x="328" y="474" width="130" height="44" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="393" y="491" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#412402">LabClient</text>
+  <text x="393" y="509" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#633806">Mode 1 + Mode 2 AI</text>
+
+  <rect x="472" y="474" width="130" height="44" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="537" y="491" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#412402">VoiceProseEngine</text>
+  <text x="537" y="509" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#633806">Poet · Foodie · Minimalist</text>
+
+  <rect x="616" y="474" width="164" height="44" rx="6" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="698" y="491" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#412402">Domain Protocols</text>
+  <text x="698" y="509" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#633806">all cross-layer contracts</text>
+
+  <!-- Three app variants (top) -->
+  <!-- Full -->
+  <rect x="20" y="20" width="240" height="200" rx="12" fill="#EAE8FC" stroke="#6B4EFF" stroke-width="1.5"/>
+  <text x="140" y="46" text-anchor="middle" font-family="system-ui,Arial" font-size="13" font-weight="700" fill="#3C3489">niftyMomnt (full)</text>
+  <text x="140" y="64" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#534AB7">AppConfig.full</text>
+  <rect x="36"  y="76" width="208" height="28" rx="5" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="140" y="95" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#04342C">Full Capture Hub UI (5 modes)</text>
+  <rect x="36"  y="112" width="208" height="28" rx="5" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="140" y="131" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#04342C">Film Archive + Mood Map UI</text>
+  <rect x="36"  y="148" width="208" height="28" rx="5" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="140" y="167" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#04342C">AI Nudge + Lab UI</text>
+  <text x="140" y="200" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#534AB7">assetTypes: .all · aiModes: .full</text>
+  <text x="140" y="214" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#534AB7">features: .all</text>
+
+  <!-- Lite -->
+  <rect x="290" y="20" width="240" height="200" rx="12" fill="#EAE8FC" stroke="#6B4EFF" stroke-width="1.5"/>
+  <text x="410" y="46" text-anchor="middle" font-family="system-ui,Arial" font-size="13" font-weight="700" fill="#3C3489">niftyMomnt Lite</text>
+  <text x="410" y="64" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#534AB7">AppConfig.lite</text>
+  <rect x="306" y="76" width="208" height="28" rx="5" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="410" y="95" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#04342C">Simple Capture UI (2 modes)</text>
+  <rect x="306" y="112" width="208" height="28" rx="5" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="410" y="131" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#04342C">Minimal Film Archive UI</text>
+  <rect x="306" y="148" width="208" height="28" rx="5" fill="#D3D1C7" stroke="#888780" stroke-width="0.5"/>
+  <text x="410" y="167" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#444441">Nudge + Lab — disabled</text>
+  <text x="410" y="200" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#534AB7">assetTypes: .basic (Still+Clip)</text>
+  <text x="410" y="214" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#534AB7">aiModes: [.onDevice]</text>
+
+  <!-- Future -->
+  <rect x="560" y="20" width="240" height="200" rx="12" fill="#EAE8FC" stroke="#6B4EFF" stroke-width="1.5"/>
+  <text x="680" y="46" text-anchor="middle" font-family="system-ui,Arial" font-size="13" font-weight="700" fill="#3C3489">Future variant</text>
+  <text x="680" y="64" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#534AB7">AppConfig.custom("…")</text>
+  <rect x="576" y="76" width="208" height="28" rx="5" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="680" y="95" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#04342C">New UI theme / flow</text>
+  <rect x="576" y="112" width="208" height="28" rx="5" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="680" y="131" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#04342C">Selected asset types</text>
+  <rect x="576" y="148" width="208" height="28" rx="5" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="680" y="167" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#04342C">Custom feature set</text>
+  <text x="680" y="200" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#534AB7">Defined via AppConfig</text>
+  <text x="680" y="214" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#534AB7">at new target creation</text>
+
+  <!-- Arrows: variants → core -->
+  <line x1="140" y1="220" x2="140" y2="350" stroke="#534AB7" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="410" y1="220" x2="410" y2="350" stroke="#534AB7" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="680" y1="220" x2="680" y2="350" stroke="#534AB7" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+  <text x="100" y="292" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#534AB7">depends on</text>
+  <text x="370" y="292" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#534AB7">depends on</text>
+  <text x="640" y="292" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#534AB7">depends on</text>
+
+  <!-- Shared label at bottom -->
+  <rect x="20" y="340" width="780" height="18" rx="4" fill="#FAC775" stroke="none"/>
+  <text x="410" y="354" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#412402">NiftyCore is never modified when a new variant is added or the UI changes</text>
+</svg>
+<div class="diagram-caption">Figure 2 — Multi-variant architecture. Three app targets (top, purple) each have their own UI layer (green) and AppConfig. All share identical NiftyCore engines (amber, bottom). Adding a new variant never touches NiftyCore code.</div>
+</div>
+
+<h2>3.2 How AppConfig Works</h2>
+<p>AppConfig is a Swift value type — a struct — injected into every engine at startup. It is an <code>OptionSet</code>-based capability declaration. The engines read it to decide which modes are available, which AI features are active, and which sharing capabilities are enabled.</p>
+
+<table>
+  <thead><tr><th>Config flag</th><th>niftyMomnt (full)</th><th>niftyMomnt Lite</th><th>What the engine does with it</th></tr></thead>
+  <tbody>
+    <tr><td><code>assetTypes</code></td><td>.all (5 types)</td><td>.basic (Still + Clip)</td><td>CaptureEngine filters availableModes() to only offer modes whose asset type is in the set</td></tr>
+    <tr><td><code>aiModes</code></td><td>.full (0+1+2)</td><td>[.onDevice]</td><td>NudgeEngine falls back to template questions; LabClient refuses Mode 1+2 calls gracefully</td></tr>
+    <tr><td><code>features</code></td><td>.all</td><td>[.rollMode, .widgetKit]</td><td>NudgeEngine checks .nudgeEngine flag before scheduling any trigger evaluation</td></tr>
+    <tr><td><code>sharing.labEnabled</code></td><td>true</td><td>false</td><td>LabClient.requestLabSession() returns a capability error immediately if false</td></tr>
+    <tr><td><code>sharing.maxCircleSize</code></td><td>10</td><td>5</td><td>ShareMomentUseCase rejects recipient lists larger than this value</td></tr>
+  </tbody>
+</table>
+
+<h2>3.3 What "New Variant" Looks Like in Practice</h2>
+<p>Suppose you want a travel-agency branded version with a white-label UI and only Still + Atmosphere capture:</p>
+<ol>
+  <li>Create a new Xcode target: <code>niftyMomntBrand</code></li>
+  <li>Create <code>AppConfig+Brand.swift</code> with <code>assetTypes: [.still, .atmosphere]</code> and the desired feature set</li>
+  <li>Create the UI layer in <code>Apps/niftyMomntBrand/UI/</code> — SwiftUI views with the brand's design system</li>
+  <li>Wire the composition root in <code>niftyMomntBrandApp.swift</code></li>
+</ol>
+<p><strong>Zero files in NiftyCore are opened, let alone modified.</strong> The capture engine, indexing engine, vault, and intelligence graph are inherited without a single line of change.</p>
+
+<hr class="section-divider"/>
+
+<!-- ═══════ PROTOCOL BOUNDARY ═══════ -->
+<h1>4. Protocol Boundaries — How Layers Talk</h1>
+
+<h2>4.1 The Pattern</h2>
+<p>Every dependency that crosses a layer boundary is expressed as a Swift protocol defined in the domain layer. The domain layer owns the contract. The data layer provides the implementation. The presentation layer and engines depend only on the contract — never the implementation.</p>
+
+<div class="callout teal">
+  This is what makes each layer independently testable. To test CaptureEngine in isolation, inject a MockCaptureAdapter that conforms to CaptureEngineProtocol. The test never touches AVFoundation, never requires a physical device, and runs in under a millisecond.
+</div>
+
+<div class="diagram-wrap">
+<svg width="100%" viewBox="0 0 820 320" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arr4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#0F6E56" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- ViewModel -->
+  <rect x="20" y="120" width="170" height="60" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="105" y="145" text-anchor="middle" font-family="system-ui,Arial" font-size="12" font-weight="600" fill="#085041">CaptureViewModel</text>
+  <text x="105" y="163" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#0F6E56">Presentation layer</text>
+
+  <!-- Arrow: ViewModel → Protocol -->
+  <line x1="190" y1="150" x2="250" y2="150" stroke="#0F6E56" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <text x="220" y="143" text-anchor="middle" font-family="system-ui,Arial" font-size="9" fill="#0F6E56">calls</text>
+
+  <!-- Protocol box -->
+  <rect x="252" y="100" width="200" height="100" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="352" y="125" text-anchor="middle" font-family="system-ui,Arial" font-size="12" font-weight="600" fill="#633806">CaptureEngineProtocol</text>
+  <text x="352" y="143" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#854F0B">defined in Domain layer</text>
+  <text x="352" y="161" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#854F0B">func captureAsset()</text>
+  <text x="352" y="177" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#854F0B">func switchMode()</text>
+
+  <!-- Arrow: Engine → Protocol (implements) -->
+  <line x1="452" y1="150" x2="512" y2="150" stroke="#888780" stroke-width="1.5" marker-end="url(#arr3)"/>
+  <text x="482" y="143" text-anchor="middle" font-family="system-ui,Arial" font-size="9" fill="#888780">implements</text>
+
+  <!-- CaptureEngine -->
+  <rect x="514" y="100" width="170" height="100" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+  <text x="599" y="125" text-anchor="middle" font-family="system-ui,Arial" font-size="12" font-weight="600" fill="#633806">CaptureEngine</text>
+  <text x="599" y="143" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#854F0B">Domain layer</text>
+  <text x="599" y="163" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#854F0B">uses protocol only</text>
+  <text x="599" y="181" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#854F0B">no AVFoundation import</text>
+
+  <!-- Arrow: Engine → AVAdapter -->
+  <line x1="684" y1="150" x2="730" y2="150" stroke="#888780" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+  <!-- AVCaptureAdapter -->
+  <rect x="732" y="100" width="68" height="100" rx="8" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+  <text x="766" y="125" text-anchor="middle" font-family="system-ui,Arial" font-size="10" font-weight="600" fill="#712B13">AVCapture</text>
+  <text x="766" y="141" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#993C1D">Adapter</text>
+  <text x="766" y="161" text-anchor="middle" font-family="system-ui,Arial" font-size="9" fill="#993C1D">Data layer</text>
+  <text x="766" y="177" text-anchor="middle" font-family="system-ui,Arial" font-size="9" fill="#993C1D">imports AVF</text>
+
+  <!-- MockAdapter for tests -->
+  <rect x="514" y="220" width="170" height="60" rx="8" fill="#F1EFE8" stroke="#888780" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="599" y="245" text-anchor="middle" font-family="system-ui,Arial" font-size="12" font-weight="600" fill="#444441">MockCaptureAdapter</text>
+  <text x="599" y="263" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#5F5E5A">For unit tests — no hardware</text>
+
+  <!-- Arrow: both adapters implement protocol -->
+  <line x1="599" y1="220" x2="520" y2="200" stroke="#888780" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr3)"/>
+  <text x="545" y="217" text-anchor="middle" font-family="system-ui,Arial" font-size="9" fill="#888780">also conforms</text>
+
+  <!-- Labels top -->
+  <text x="105" y="60" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#0F6E56" font-weight="600">Presentation</text>
+  <text x="352" y="60" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#BA7517" font-weight="600">Domain (NiftyCore)</text>
+  <text x="730" y="60" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#D85A30" font-weight="600">Data (NiftyData)</text>
+
+  <line x1="240" y1="40" x2="240" y2="290" stroke="#D3D1C7" stroke-width="0.5" stroke-dasharray="3,3"/>
+  <line x1="720" y1="40" x2="720" y2="290" stroke="#D3D1C7" stroke-width="0.5" stroke-dasharray="3,3"/>
+</svg>
+<div class="diagram-caption">Figure 3 — Protocol boundary pattern. The ViewModel calls the protocol (domain). CaptureEngine implements it without importing AVFoundation. AVCaptureAdapter (data layer) wraps the real hardware. Tests inject MockCaptureAdapter — no hardware, no network, instant execution.</div>
+</div>
+
+<h2>4.2 All Defined Protocols</h2>
+<table>
+  <thead><tr><th>Protocol</th><th>Defined in</th><th>Implemented by</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>CaptureEngineProtocol</code></td><td>Domain</td><td><code>AVCaptureAdapter</code> (Data)</td><td>All camera and microphone access. CaptureEngine never touches hardware directly.</td></tr>
+    <tr><td><code>VaultProtocol</code></td><td>Domain</td><td><code>VaultRepository</code> (Data)</td><td>Encrypted asset save, load, delete, query. VaultManager has no knowledge of CoreData or the file system.</td></tr>
+    <tr><td><code>GraphProtocol</code></td><td>Domain</td><td><code>GraphRepository</code> (Data)</td><td>Intelligence graph read/write. Engines write to it; companion apps read from it.</td></tr>
+    <tr><td><code>IndexingProtocol</code></td><td>Domain</td><td><code>CoreMLIndexingAdapter</code>, <code>WeatherKitAdapter</code>, <code>SpeechAdapter</code>, <code>MusicKitAdapter</code> (Data)</td><td>All on-device AI classification, acoustic analysis, ambient harvesting, speech transcription.</td></tr>
+    <tr><td><code>LabClientProtocol</code></td><td>Domain</td><td><code>LabNetworkAdapter</code> (Data)</td><td>Mode 1 (Enhanced AI text) and Mode 2 (Lab encrypted visual) server interactions.</td></tr>
+    <tr><td><code>NudgeEngineProtocol</code></td><td>Domain</td><td>—</td><td>NudgeEngine is self-contained; this protocol is used for DI in tests.</td></tr>
+  </tbody>
+</table>
+
+<hr class="section-divider"/>
+
+<!-- ═══════ DATA FLOW ═══════ -->
+<h1>5. Data Flow — Capture to Intelligence Graph</h1>
+
+<h2>5.1 The Complete Journey of a Moment</h2>
+<p>This diagram traces what happens from the moment the user taps the shutter to the point where the intelligence graph has a fully enriched Moment — ready for the journal, story assembly, and companion apps.</p>
+
+<div class="diagram-wrap">
+<svg width="100%" viewBox="0 0 820 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- Step boxes -->
+  <!-- 1 -->
+  <rect x="20" y="60" width="140" height="64" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="90" y="84" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#085041">1. User taps</text>
+  <text x="90" y="100" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#0F6E56">Capture Hub UI</text>
+  <text x="90" y="116" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#0F6E56">calls CaptureUseCase</text>
+
+  <line x1="160" y1="92" x2="196" y2="92" stroke="#888780" stroke-width="1" marker-end="url(#arr5)"/>
+
+  <!-- 2 -->
+  <rect x="198" y="60" width="140" height="64" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+  <text x="268" y="84" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#633806">2. CaptureEngine</text>
+  <text x="268" y="100" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#854F0B">delegates to adapter</text>
+  <text x="268" y="116" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#854F0B">gets raw Asset value</text>
+
+  <line x1="338" y1="92" x2="374" y2="92" stroke="#888780" stroke-width="1" marker-end="url(#arr5)"/>
+
+  <!-- 3 -->
+  <rect x="376" y="60" width="140" height="64" rx="8" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+  <text x="446" y="84" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#712B13">3. VaultManager</text>
+  <text x="446" y="100" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#993C1D">encrypts asset binary</text>
+  <text x="446" y="116" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#993C1D">saves to vault</text>
+
+  <line x1="516" y1="92" x2="552" y2="92" stroke="#888780" stroke-width="1" marker-end="url(#arr5)"/>
+
+  <!-- 4 -->
+  <rect x="554" y="60" width="140" height="64" rx="8" fill="#EAE8FC" stroke="#6B4EFF" stroke-width="1"/>
+  <text x="624" y="84" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#3C3489">4. UI updates</text>
+  <text x="624" y="100" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#534AB7">preview shown</text>
+  <text x="624" y="116" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#534AB7">user continues</text>
+
+  <!-- Arrow down from step 3 -->
+  <line x1="446" y1="124" x2="446" y2="166" stroke="#888780" stroke-width="1" marker-end="url(#arr5)"/>
+  <text x="470" y="150" font-family="system-ui,Arial" font-size="9" fill="#888780">background (charging+idle)</text>
+
+  <!-- 5 Indexing Engine -->
+  <rect x="308" y="168" width="276" height="80" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="1.5"/>
+  <text x="446" y="190" text-anchor="middle" font-family="system-ui,Arial" font-size="12" font-weight="600" fill="#633806">5. IndexingEngine (BGProcessingTask)</text>
+
+  <rect x="320" y="202" width="74" height="34" rx="5" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="357" y="224" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#412402">Image classify</text>
+
+  <rect x="402" y="202" width="74" height="34" rx="5" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="439" y="224" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#412402">Audio analyze</text>
+
+  <rect x="484" y="202" width="88" height="34" rx="5" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+  <text x="528" y="224" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#412402">Ambient harvest</text>
+
+  <!-- Arrow down from indexing -->
+  <line x1="446" y1="248" x2="446" y2="288" stroke="#888780" stroke-width="1" marker-end="url(#arr5)"/>
+
+  <!-- 6 Clustering -->
+  <rect x="308" y="290" width="276" height="56" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+  <text x="446" y="314" text-anchor="middle" font-family="system-ui,Arial" font-size="12" font-weight="600" fill="#633806">6. Moment Clustering</text>
+  <text x="446" y="334" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#854F0B">GPS + time + vibe similarity → Moment with label</text>
+
+  <!-- Arrow down from clustering -->
+  <line x1="446" y1="346" x2="446" y2="386" stroke="#888780" stroke-width="1" marker-end="url(#arr5)"/>
+
+  <!-- 7 GraphManager -->
+  <rect x="308" y="388" width="276" height="56" rx="8" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+  <text x="446" y="412" text-anchor="middle" font-family="system-ui,Arial" font-size="12" font-weight="600" fill="#712B13">7. GraphManager writes to graph</text>
+  <text x="446" y="432" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#993C1D">vibe_tags · ambient_metadata · moments · place_history</text>
+
+  <!-- Arrow right to outputs -->
+  <line x1="584" y1="416" x2="630" y2="416" stroke="#888780" stroke-width="1" marker-end="url(#arr5)"/>
+
+  <!-- Outputs -->
+  <rect x="632" y="376" width="168" height="30" rx="6" fill="#EAE8FC" stroke="#6B4EFF" stroke-width="0.5"/>
+  <text x="716" y="396" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#3C3489">Film Archive UI updates</text>
+
+  <rect x="632" y="412" width="168" height="30" rx="6" fill="#EAE8FC" stroke="#6B4EFF" stroke-width="0.5"/>
+  <text x="716" y="432" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#3C3489">Nudge engine triggered</text>
+
+  <rect x="632" y="448" width="168" height="30" rx="6" fill="#EAE8FC" stroke="#6B4EFF" stroke-width="0.5"/>
+  <text x="716" y="468" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#3C3489">Companion apps can read</text>
+
+  <!-- Layer labels left -->
+  <text x="15" y="48" font-family="system-ui,Arial" font-size="10" fill="#0F6E56" font-weight="600">UI</text>
+  <text x="15" y="100" font-family="system-ui,Arial" font-size="10" fill="#0F6E56">→</text>
+  <text x="15" y="200" font-family="system-ui,Arial" font-size="10" fill="#BA7517" font-weight="600">Domain</text>
+  <text x="15" y="420" font-family="system-ui,Arial" font-size="10" fill="#D85A30" font-weight="600">Data</text>
+</svg>
+<div class="diagram-caption">Figure 4 — Data flow from shutter tap to fully enriched Moment in the intelligence graph. Steps 1–4 happen in real time (&lt;300ms). Steps 5–7 happen in the background when the device is charging, without any user action.</div>
+</div>
+
+<hr class="section-divider"/>
+
+<!-- ═══════ COMPANION APP DATA LAYER ═══════ -->
+<h1>6. Companion App Data Layer</h1>
+
+<h2>6.1 Two-Layer Separation</h2>
+<p>The intelligence graph solves the companion app data problem elegantly. Instead of sharing 50–200GB of raw assets across apps, only the metadata graph — typically under 50MB — is shared. Raw assets stay locked in the vault.</p>
+
+<div class="diagram-wrap">
+<svg width="100%" viewBox="0 0 820 360" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr6" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arr6b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#0F6E56" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- niftyMomnt app -->
+  <rect x="20" y="20" width="360" height="300" rx="12" fill="#FFF8F0" stroke="#BA7517" stroke-width="1.5"/>
+  <text x="200" y="46" text-anchor="middle" font-family="system-ui,Arial" font-size="13" font-weight="700" fill="#633806">niftyMomnt</text>
+
+  <!-- Vault -->
+  <rect x="40" y="60" width="320" height="80" rx="8" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+  <text x="200" y="84" text-anchor="middle" font-family="system-ui,Arial" font-size="12" font-weight="600" fill="#712B13">Private Vault (AES-256)</text>
+  <text x="200" y="102" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#993C1D">Raw assets: photos, clips, audio</text>
+  <text x="200" y="120" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#993C1D">50–200 GB · app sandbox only</text>
+
+  <!-- Graph -->
+  <rect x="40" y="158" width="320" height="80" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+  <text x="200" y="182" text-anchor="middle" font-family="system-ui,Arial" font-size="12" font-weight="600" fill="#633806">Intelligence Graph (SQLCipher)</text>
+  <text x="200" y="200" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#854F0B">Tags · places · moods · nudge responses</text>
+  <text x="200" y="218" text-anchor="middle" font-family="system-ui,Arial" font-size="11" fill="#854F0B">&lt; 50 MB · App Group shared container</text>
+
+  <text x="200" y="270" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#BA7517">NiftyCore is the sole writer to both layers</text>
+  <text x="200" y="288" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#BA7517">Companion apps are read-only</text>
+  <text x="200" y="308" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#D85A30">Vault: companion apps request per-asset via XPC (Phase 2)</text>
+
+  <!-- Arrow: graph → companion read -->
+  <line x1="360" y1="198" x2="440" y2="198" stroke="#0F6E56" stroke-width="1.5" marker-end="url(#arr6b)"/>
+  <text x="400" y="190" text-anchor="middle" font-family="system-ui,Arial" font-size="9" fill="#0F6E56">read-only</text>
+
+  <!-- Arrow: vault → companion (dashed, per-request) -->
+  <line x1="360" y1="100" x2="440" y2="140" stroke="#D85A30" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr6)"/>
+  <text x="410" y="112" font-family="system-ui,Arial" font-size="9" fill="#D85A30">per-request</text>
+  <text x="410" y="124" font-family="system-ui,Arial" font-size="9" fill="#D85A30">user consent</text>
+
+  <!-- Companion apps -->
+  <rect x="440" y="60" width="360" height="280" rx="12" fill="#EAF8F0" stroke="#0F6E56" stroke-width="1.5"/>
+  <text x="620" y="86" text-anchor="middle" font-family="system-ui,Arial" font-size="13" font-weight="700" fill="#085041">Companion Apps</text>
+
+  <rect x="460" y="100" width="320" height="50" rx="7" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="620" y="122" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#04342C">Trip Planner</text>
+  <text x="620" y="140" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#085041">reads: place_history, vibe_tags, dwell times, mood_map</text>
+
+  <rect x="460" y="160" width="320" height="50" rx="7" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="620" y="182" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#04342C">Annual Review</text>
+  <text x="620" y="200" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#085041">reads: full graph, nudge_responses, emotional_palette</text>
+
+  <rect x="460" y="220" width="320" height="50" rx="7" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="620" y="242" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#04342C">Travel Portfolio</text>
+  <text x="620" y="260" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#085041">reads: asset_scores + vault (per-asset, user consent)</text>
+
+  <rect x="460" y="280" width="320" height="48" rx="7" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="620" y="302" text-anchor="middle" font-family="system-ui,Arial" font-size="11" font-weight="600" fill="#04342C">Shared Journey</text>
+  <text x="620" y="320" text-anchor="middle" font-family="system-ui,Arial" font-size="10" fill="#085041">reads: graph + trusted-circle sync (multi-user merge)</text>
+</svg>
+<div class="diagram-caption">Figure 5 — Companion app data access model. The intelligence graph (amber, &lt;50MB) is readable by all companion apps via the shared App Group container. Raw vault assets (red, 50–200GB) stay locked in the niftyMomnt sandbox — companion apps request individual assets via XPC with per-request user consent.</div>
+</div>
+
+<hr class="section-divider"/>
+
+<!-- ═══════ KEY DECISIONS SUMMARY ═══════ -->
+<h1>7. Key Architectural Decisions — Summary</h1>
+
+<table>
+  <thead><tr><th>#</th><th>Decision</th><th>What was decided</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>ADR-01</td>
+      <td>Clean Architecture (4 layers)</td>
+      <td>App Target → Presentation → Domain → Data, with inward-only dependencies</td>
+      <td>Enables UI substitution without touching business logic. Enforced by CI SwiftLint rule.</td>
+    </tr>
+    <tr>
+      <td>ADR-02</td>
+      <td>NiftyCore as a local Swift Package</td>
+      <td>All business logic in a separate Swift Package — not inside any app target</td>
+      <td>Makes shared code physically impossible to accidentally entangle with UI code. Package boundary is enforced by the Swift build system.</td>
+    </tr>
+    <tr>
+      <td>ADR-03</td>
+      <td>AppConfig OptionSet for variants</td>
+      <td>Capability flags injected at startup, checked by each engine at runtime</td>
+      <td>New variant = new Xcode target + new AppConfig. Zero engine code changes. All variants always run the same business logic — just with different capability sets.</td>
+    </tr>
+    <tr>
+      <td>ADR-04</td>
+      <td>Protocol-defined cross-layer contracts</td>
+      <td>Every cross-layer dependency is a protocol in the domain layer</td>
+      <td>Makes every engine unit-testable in isolation with mock implementations. No physical hardware, no file system, no network required in engine tests.</td>
+    </tr>
+    <tr>
+      <td>ADR-05</td>
+      <td>Swift Concurrency only (no GCD)</td>
+      <td>async/await + actors + structured concurrency throughout</td>
+      <td>Actors provide compile-time data-race safety. Structured concurrency makes cancellation predictable. No manual queue management.</td>
+    </tr>
+    <tr>
+      <td>ADR-06</td>
+      <td>Intelligence graph separate from vault</td>
+      <td>Raw assets in AES-256 vault (sandbox only). Metadata in SQLCipher graph (App Group shared container)</td>
+      <td>Companion apps need metadata (&lt;50MB), not raw assets (50–200GB). Separation keeps the sharing surface small and the privacy surface manageable.</td>
+    </tr>
+    <tr>
+      <td>ADR-07</td>
+      <td>Three-tier AI processing model</td>
+      <td>Mode 0 on-device (default) / Mode 1 text-only Enhanced AI / Mode 2 Lab encrypted visual — separate toggles, separate data contracts</td>
+      <td>Resolves the contradiction between "never send photos" and "server AI processes images." Each mode has a precisely accurate privacy statement. No ambiguity.</td>
+    </tr>
+    <tr>
+      <td>ADR-08</td>
+      <td>Zero platform imports in domain layer</td>
+      <td>CI enforces that no file in NiftyCore imports UIKit, SwiftUI, AVFoundation, CoreML, or any Apple framework</td>
+      <td>The domain layer is purely about business logic. Platform specifics belong in adapters. This makes NiftyCore portable — theoretically runnable on any Swift platform.</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr class="section-divider"/>
+
+<!-- ═══════ FOOTER ═══════ -->
+<div style="text-align:center; color: var(--text-muted); font-size: 13px; margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border);">
+  niftyMomnt Architecture Decision Record v1.1 · March 2026 · Han Wook Cho · hwcho99@gmail.com · Confidential<br/>
+  SRS v1.2 · PRD v1.6 · UI/UX Spec v1.7 · MRD v1.5
+</div>
+
+</body>
+</html>

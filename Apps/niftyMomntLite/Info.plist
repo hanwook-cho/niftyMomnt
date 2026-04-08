@@ -45,8 +45,8 @@
 	</array>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.hwcho.niftyMomntLite.indexBatch</string>
-		<string>com.hwcho.niftyMomntLite.refresh</string>
+		<string>com.hwcho99.niftyMomntLite.indexBatch</string>
+		<string>com.hwcho99.niftyMomntLite.refresh</string>
 	</array>
 
 	<!-- Privacy usage descriptions -->

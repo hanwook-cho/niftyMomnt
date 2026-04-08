@@ -7,16 +7,86 @@
 // Detail:  MomentDetailView sheet on card tap
 
 import NiftyCore
+import os
+import AVFoundation
+import AVKit
+import Photos
+import PhotosUI
 import SwiftUI
 import UIKit
+
+private let log = Logger(subsystem: "com.hwcho99.niftymomnt", category: "FilmFeed")
+
+// MARK: - PHLivePhotoView representable
+
+/// Wraps PHLivePhotoView for SwiftUI. Starts .full playback automatically on load.
+struct LivePhotoPlayerView: UIViewRepresentable {
+    let livePhoto: PHLivePhoto
+    let replayToken: Int
+
+    final class Coordinator {
+        var lastReplayToken: Int = -1
+        var lastLivePhotoID: ObjectIdentifier?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIView(context: Context) -> PHLivePhotoView {
+        let view = PHLivePhotoView()
+        view.contentMode = .scaleAspectFill
+        view.clipsToBounds = true
+        return view
+    }
+
+    func updateUIView(_ uiView: PHLivePhotoView, context: Context) {
+        let livePhotoID = ObjectIdentifier(livePhoto)
+        let livePhotoChanged = context.coordinator.lastLivePhotoID != livePhotoID
+        let replayRequested = context.coordinator.lastReplayToken != replayToken
+
+        if livePhotoChanged {
+            uiView.livePhoto = livePhoto
+            context.coordinator.lastLivePhotoID = livePhotoID
+        }
+
+        if livePhotoChanged || replayRequested {
+            uiView.stopPlayback()
+            uiView.startPlayback(with: .full)
+            context.coordinator.lastReplayToken = replayToken
+        }
+    }
+}
+
+// MARK: - UIActivityViewController representable
+
+struct ActivityViewController: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+private struct InlineVideoPlayerView: View {
+    let player: AVPlayer
+
+    var body: some View {
+        VideoPlayer(player: player)
+            .onAppear { player.play() }
+            .onDisappear { player.pause() }
+    }
+}
 
 struct FilmFeedView: View {
     let container: AppContainer
     let onScrollTopChanged: (Bool) -> Void
     let onPullDownToDismiss: () -> Void
 
-    @State private var moments: [Moment] = Moment.filmPreviews
+    @State private var moments: [Moment] = []
+    @State private var l4cRecords: [L4CRecord] = []
     @State private var selectedMoment: Moment? = nil
+    @State private var selectedL4C: L4CRecord? = nil
     @State private var isGridLayout: Bool = false
     @State private var topSafeArea: CGFloat = 59
     @State private var isAtTop: Bool = true
@@ -25,7 +95,7 @@ struct FilmFeedView: View {
         ZStack(alignment: .top) {
             Color.niftyFilmBg.ignoresSafeArea()
 
-            if moments.isEmpty {
+            if moments.isEmpty && l4cRecords.isEmpty {
                 emptyState
                     .onAppear { onScrollTopChanged(true) }
             } else {
@@ -45,21 +115,30 @@ struct FilmFeedView: View {
                             .padding(.horizontal, NiftySpacing.lg)
                             .padding(.top, topSafeArea) //NiftySpacing.md)
 
-                        // Sectioned card feed
-                        ForEach(groupedMoments, id: \.0) { (sectionLabel, dayMoments) in
+                        // Sectioned card feed (Moments + L4C interleaved chronologically)
+                        ForEach(groupedFeedItems, id: \.0) { (sectionLabel, items) in
                             sectionHeader(sectionLabel)
                                 .padding(.horizontal, NiftySpacing.lg)
                                 .padding(.top, NiftySpacing.xs)
 
-                            ForEach(dayMoments) { moment in
-                                MomentCardView(
-                                    moment: moment,
-                                    presetName: derivedPresetName(for: moment),
-                                    presetAccent: derivedPresetAccent(for: moment),
-                                    onTap: { selectedMoment = moment },
-                                    onPlay: { selectedMoment = moment }
-                                )
-                                .padding(.horizontal, NiftySpacing.sm)
+                            ForEach(items, id: \.id) { item in
+                                switch item {
+                                case .moment(let moment):
+                                    MomentCardView(
+                                        moment: moment,
+                                        presetName: derivedPresetName(for: moment),
+                                        presetAccent: derivedPresetAccent(for: moment),
+                                        onTap: { selectedMoment = moment },
+                                        onPlay: { selectedMoment = moment }
+                                    )
+                                    .padding(.horizontal, NiftySpacing.sm)
+                                case .l4c(let record):
+                                    L4CMomentCardView(
+                                        record: record,
+                                        onTap: { selectedL4C = record }
+                                    )
+                                    .padding(.horizontal, NiftySpacing.sm)
+                                }
                             }
                         }
 
@@ -92,7 +171,36 @@ struct FilmFeedView: View {
         .sheet(item: $selectedMoment) { moment in
             MomentDetailView(moment: moment, container: container)
         }
-        .onAppear { readWindowSafeArea() }
+        .sheet(item: $selectedL4C) { record in
+            L4CDetailView(record: record, container: container)
+        }
+        .onAppear {
+            readWindowSafeArea()
+            log.debug("FilmFeedView appeared — loading moments")
+            Task { await loadFeed() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .niftyMomentCaptured)) { _ in
+            log.debug("FilmFeedView received niftyMomentCaptured — refreshing")
+            Task { await loadFeed() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .niftyMomentDeleted)) { _ in
+            log.debug("FilmFeedView received niftyMomentDeleted — refreshing")
+            Task { await loadFeed() }
+        }
+    }
+
+    private func loadFeed() async {
+        log.debug("loadFeed called")
+        async let fetchMoments = container.graphManager.fetchMoments()
+        async let fetchL4C = container.graphManager.fetchL4CRecords()
+        do {
+            let (m, l) = try await (fetchMoments, fetchL4C)
+            moments = m
+            l4cRecords = l
+            log.debug("loadFeed — \(m.count) moment(s), \(l.count) L4C(s)")
+        } catch {
+            log.error("loadFeed — failed: \(error)")
+        }
     }
 
     private func readWindowSafeArea() {
@@ -176,6 +284,48 @@ struct FilmFeedView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    // MARK: - Feed Item
+
+    /// Union type for items in the chronological feed (Moments and L4C records).
+    enum FeedItem: Identifiable {
+        case moment(Moment)
+        case l4c(L4CRecord)
+
+        var id: UUID {
+            switch self {
+            case .moment(let m): return m.id
+            case .l4c(let r):   return r.id
+            }
+        }
+        var date: Date {
+            switch self {
+            case .moment(let m): return m.startTime
+            case .l4c(let r):   return r.capturedAt
+            }
+        }
+    }
+
+    private var groupedFeedItems: [(String, [FeedItem])] {
+        let calendar = Calendar.current
+        let now = Date()
+
+        var all: [FeedItem] = moments.map { .moment($0) } + l4cRecords.map { .l4c($0) }
+        all.sort { $0.date > $1.date }
+
+        var result: [(String, [FeedItem])] = []
+        var seen: [String: Int] = [:]
+        for item in all {
+            let key = sectionLabel(for: item.date, calendar: calendar, now: now)
+            if let idx = seen[key] {
+                result[idx].1.append(item)
+            } else {
+                seen[key] = result.count
+                result.append((key, [item]))
+            }
+        }
+        return result
+    }
+
     // MARK: - Grouping
 
     private var groupedMoments: [(String, [Moment])] {
@@ -252,12 +402,26 @@ private struct FilmFeedScrollOffsetPreferenceKey: PreferenceKey {
 
 // MARK: - Moment Detail
 
+private let detailLog = Logger(subsystem: "com.hwcho99.niftymomnt", category: "MomentDetail")
+
 struct MomentDetailView: View {
     let moment: Moment
     let container: AppContainer
 
     @Environment(\.dismiss) private var dismiss
     @State private var currentAssetIndex: Int = 0
+    @State private var isSharePresented: Bool = false
+    @State private var shareItems: [Any] = []
+    @State private var isDeleteConfirmPresented: Bool = false
+    @State private var isDeleting: Bool = false
+    @State private var isExportingToPhotoLibrary: Bool = false
+    @State private var exportAlertMessage: String? = nil
+    @State private var heroImage: UIImage? = nil
+    @State private var livePhoto: PHLivePhoto? = nil
+    @State private var videoPlayer: AVPlayer? = nil
+    @State private var videoAspectRatio: CGFloat? = nil
+    @State private var livePhotoReplayToken: Int = 0
+    @State private var heroLoadRequestID: String? = nil
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -280,6 +444,247 @@ struct MomentDetailView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .task(id: moment.id) { await loadHeroImage() }
+        .alert(
+            "Photo Library Export",
+            isPresented: Binding(
+                get: { exportAlertMessage != nil },
+                set: { if !$0 { exportAlertMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(exportAlertMessage ?? "")
+        }
+    }
+
+    private func loadHeroImage() async {
+        guard let first = moment.assets.first else { return }
+        let requestID = UUID().uuidString
+        heroLoadRequestID = requestID
+        detailLog.debug("loadHeroImage[\(requestID)] start — momentID=\(moment.id.uuidString) assetID=\(first.id.uuidString) type=\(first.type.rawValue) cancelled=\(Task.isCancelled)")
+        guard let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let assetsDir = dir.appendingPathComponent("assets")
+        let jpegURL = assetsDir.appendingPathComponent("\(first.id.uuidString).jpg")
+        detailLog.debug("loadHeroImage[\(requestID)] — jpeg=\(jpegURL.lastPathComponent)")
+        heroImage = nil
+        livePhoto = nil
+        videoPlayer = nil
+        videoAspectRatio = nil
+        guard let data = try? Data(contentsOf: jpegURL), let img = UIImage(data: data) else {
+            if [.clip, .echo, .atmosphere].contains(first.type) {
+                let movURL = assetsDir.appendingPathComponent("\(first.id.uuidString).mov")
+                guard FileManager.default.fileExists(atPath: movURL.path) else {
+                    detailLog.error("loadHeroImage[\(requestID)] — missing MOV for video assetID=\(first.id.uuidString)")
+                    return
+                }
+
+                let avAsset = AVURLAsset(url: movURL)
+                let generator = AVAssetImageGenerator(asset: avAsset)
+                generator.appliesPreferredTrackTransform = true
+                generator.maximumSize = CGSize(width: 1600, height: 1600)
+
+                if let ratio = await resolvedVideoAspectRatio(for: avAsset) {
+                    videoAspectRatio = ratio
+                    detailLog.debug("loadHeroImage[\(requestID)] — video aspectRatio=\(ratio)")
+                }
+
+                if let cgImage = try? generator.copyCGImage(at: .zero, actualTime: nil) {
+                    heroImage = UIImage(cgImage: cgImage)
+                } else {
+                    detailLog.warning("loadHeroImage[\(requestID)] — could not extract poster frame for video assetID=\(first.id.uuidString)")
+                }
+
+                let player = AVPlayer(url: movURL)
+                player.actionAtItemEnd = .pause
+                videoPlayer = player
+                detailLog.debug("loadHeroImage[\(requestID)] — video player ready for \(movURL.lastPathComponent)")
+                return
+            }
+
+            detailLog.error("loadHeroImage[\(requestID)] — failed to decode JPEG for assetID=\(first.id.uuidString)")
+            return
+        }
+        detailLog.debug("loadHeroImage[\(requestID)] — JPEG OK \(data.count)B cancelled=\(Task.isCancelled)")
+        heroImage = img
+
+        // For Live assets: also load the companion MOV as a PHLivePhoto for playback.
+        if first.type == .live {
+            let movURL = assetsDir.appendingPathComponent("\(first.id.uuidString).mov")
+            guard FileManager.default.fileExists(atPath: movURL.path) else {
+                detailLog.warning("loadHeroImage[\(requestID)] — live MOV not found at \(movURL.lastPathComponent), showing static frame")
+                return
+            }
+            detailLog.debug("loadHeroImage[\(requestID)] — requesting PHLivePhoto jpeg=\(jpegURL.lastPathComponent) mov=\(movURL.lastPathComponent)")
+            var callbackCount = 0
+            PHLivePhoto.request(
+                withResourceFileURLs: [jpegURL, movURL],
+                placeholderImage: img,
+                targetSize: CGSize(width: 1080, height: 1920),
+                contentMode: .aspectFill
+            ) { photo, info in
+                callbackCount += 1
+                let infoSummary = info
+                    .map { "\($0.key)=\($0.value)" }
+                    .sorted()
+                    .joined(separator: ", ")
+                let isDegraded = (info[PHLivePhotoInfoIsDegradedKey] as? NSNumber)?.boolValue ?? false
+                detailLog.debug("loadHeroImage[\(requestID)] callback #\(callbackCount) — photoNil=\(photo == nil) degraded=\(isDegraded) activeRequest=\(heroLoadRequestID == requestID) info={\(infoSummary)}")
+
+                guard heroLoadRequestID == requestID else {
+                    detailLog.debug("loadHeroImage[\(requestID)] — ignoring stale PHLivePhoto callback #\(callbackCount)")
+                    return
+                }
+
+                guard let photo else {
+                    detailLog.warning("loadHeroImage[\(requestID)] — PHLivePhoto.request returned nil on callback #\(callbackCount)")
+                    return
+                }
+
+                detailLog.debug("loadHeroImage[\(requestID)] — applying PHLivePhoto from callback #\(callbackCount)")
+                Task { @MainActor in
+                    self.livePhoto = photo
+                    self.livePhotoReplayToken += 1
+                }
+            }
+        }
+        detailLog.debug("loadHeroImage[\(requestID)] finish — livePhotoSet=\(livePhoto != nil) cancelled=\(Task.isCancelled)")
+    }
+
+    private func resolvedVideoAspectRatio(for asset: AVURLAsset) async -> CGFloat? {
+        do {
+            let tracks = try await asset.loadTracks(withMediaType: .video)
+            guard let track = tracks.first else { return nil }
+            let naturalSize = try await track.load(.naturalSize)
+            let preferredTransform = try await track.load(.preferredTransform)
+            let transformed = naturalSize.applying(preferredTransform)
+            let width = abs(transformed.width)
+            let height = abs(transformed.height)
+            guard width > 0, height > 0 else { return nil }
+            return width / height
+        } catch {
+            detailLog.error("resolvedVideoAspectRatio — failed: \(error)")
+            return nil
+        }
+    }
+
+    private func deleteMoment() async {
+        isDeleting = true
+        detailLog.debug("deleteMoment — momentID=\(moment.id.uuidString) assets=\(moment.assets.count)")
+        do {
+            // 1. Delete vault files for every asset in this moment
+            for asset in moment.assets {
+                try? await container.vaultManager.delete(asset.id)
+            }
+            // 2. Remove moment + asset rows from graph
+            try await container.graphManager.deleteMoment(moment.id)
+            detailLog.debug("deleteMoment — done")
+        } catch {
+            detailLog.error("deleteMoment — failed: \(error)")
+        }
+        // 3. Notify feed to refresh, then dismiss
+        NotificationCenter.default.post(name: .niftyMomentDeleted, object: nil)
+        dismiss()
+    }
+
+    private func exportCurrentAssetToPhotoLibrary() {
+        guard moment.assets.indices.contains(currentAssetIndex) else {
+            exportAlertMessage = "This shot is no longer available to export."
+            return
+        }
+
+        let asset = moment.assets[currentAssetIndex]
+        isExportingToPhotoLibrary = true
+        detailLog.debug("exportToPhotoLibrary — start assetID=\(asset.id.uuidString) type=\(asset.type.rawValue)")
+
+        Task {
+            do {
+                try await container.shareUseCase.exportToPhotoLibrary(assetID: asset.id)
+                await MainActor.run {
+                    isExportingToPhotoLibrary = false
+                    exportAlertMessage = asset.type == .live
+                        ? "Live Photo saved to your Photo Library."
+                        : exportSuccessMessage(for: asset.type)
+                }
+                detailLog.debug("exportToPhotoLibrary — success assetID=\(asset.id.uuidString)")
+            } catch {
+                await MainActor.run {
+                    isExportingToPhotoLibrary = false
+                    exportAlertMessage = exportFailureMessage(for: error, assetType: asset.type)
+                }
+                detailLog.error("exportToPhotoLibrary — failed assetID=\(asset.id.uuidString): \(error)")
+            }
+        }
+    }
+
+    private func presentShareSheet() {
+        guard moment.assets.indices.contains(currentAssetIndex) else {
+            exportAlertMessage = "This shot is no longer available to share."
+            return
+        }
+
+        let asset = moment.assets[currentAssetIndex]
+        guard let items = shareItems(for: asset), !items.isEmpty else {
+            exportAlertMessage = "Could not prepare this shot for sharing."
+            return
+        }
+
+        shareItems = items
+        isSharePresented = true
+        detailLog.debug("shareSheet — present assetID=\(asset.id.uuidString) type=\(asset.type.rawValue) items=\(items.count)")
+    }
+
+    private func shareItems(for asset: Asset) -> [Any]? {
+        guard let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+        let assetsDir = dir.appendingPathComponent("assets")
+        let jpegURL = assetsDir.appendingPathComponent("\(asset.id.uuidString).jpg")
+        let movURL = assetsDir.appendingPathComponent("\(asset.id.uuidString).mov")
+
+        switch asset.type {
+        case .still, .l4c:
+            return FileManager.default.fileExists(atPath: jpegURL.path) ? [jpegURL] : nil
+        case .live:
+            if FileManager.default.fileExists(atPath: jpegURL.path),
+               FileManager.default.fileExists(atPath: movURL.path) {
+                return [jpegURL, movURL]
+            }
+            return FileManager.default.fileExists(atPath: jpegURL.path) ? [jpegURL] : nil
+        case .clip, .echo, .atmosphere:
+            return FileManager.default.fileExists(atPath: movURL.path) ? [movURL] : nil
+        }
+    }
+
+    private func exportFailureMessage(for error: Error, assetType: AssetType) -> String {
+        if String(describing: error).contains("photoLibraryAccessDenied") {
+            return "Photo Library access was denied. Please allow Add Photos access in Settings and try again."
+        }
+        return assetType == .live
+            ? "Could not save this Live Photo to your Photo Library."
+            : exportFailureFallbackMessage(for: assetType)
+    }
+
+    private func exportSuccessMessage(for assetType: AssetType) -> String {
+        switch assetType {
+        case .still, .l4c:
+            return "Photo saved to your Photo Library."
+        case .live:
+            return "Live Photo saved to your Photo Library."
+        case .clip, .echo, .atmosphere:
+            return "Video saved to your Photo Library."
+        }
+    }
+
+    private func exportFailureFallbackMessage(for assetType: AssetType) -> String {
+        switch assetType {
+        case .still, .l4c:
+            return "Could not save this photo to your Photo Library."
+        case .live:
+            return "Could not save this Live Photo to your Photo Library."
+        case .clip, .echo, .atmosphere:
+            return "Could not save this video to your Photo Library."
+        }
     }
 
     private var detailNavBar: some View {
@@ -309,8 +714,8 @@ struct MomentDetailView: View {
 
             Spacer()
 
-            // Share — lavender tint per spec
-            Button {} label: {
+            // Share
+            Button { presentShareSheet() } label: {
                 Circle()
                     .fill(Color.niftyBrand.opacity(0.18))
                     .overlay(Circle().strokeBorder(Color.niftyBrand.opacity(0.36), lineWidth: 0.5))
@@ -322,6 +727,9 @@ struct MomentDetailView: View {
                     )
             }
             .buttonStyle(.plain)
+            .sheet(isPresented: $isSharePresented) {
+                ActivityViewController(activityItems: shareItems)
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 14)
@@ -337,15 +745,38 @@ struct MomentDetailView: View {
 
     private var heroPhoto: some View {
         ZStack(alignment: .top) {
-            // Placeholder gradient — replaced by real asset in production
-            LinearGradient(
-                stops: [
-                    .init(color: Color(hex: "#180A00"), location: 0),
-                    .init(color: Color(hex: "#B06820"), location: 0.52),
-                    .init(color: Color(hex: "#FFE8B0"), location: 1),
-                ],
-                startPoint: .top, endPoint: .bottom
-            )
+            // Live Photo playback (PHLivePhotoView) when MOV companion is present.
+            if let lp = livePhoto {
+                LivePhotoPlayerView(livePhoto: lp, replayToken: livePhotoReplayToken)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
+                    .contentShape(Rectangle())
+                    .onTapGesture { livePhotoReplayToken += 1 }
+            } else if let player = videoPlayer {
+                InlineVideoPlayerView(player: player)
+                    .aspectRatio(videoAspectRatio ?? (9.0 / 16.0), contentMode: .fit)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.top, 18)
+                    .padding(.bottom, 12)
+                    .clipped()
+            } else if let img = heroImage {
+                // Static JPEG fallback (also used for all non-Live asset types).
+                Image(uiImage: img)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
+            } else {
+                LinearGradient(
+                    stops: [
+                        .init(color: Color(hex: "#180A00"), location: 0),
+                        .init(color: Color(hex: "#B06820"), location: 0.52),
+                        .init(color: Color(hex: "#FFE8B0"), location: 1),
+                    ],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
 
             // Location chip
             HStack {
@@ -414,26 +845,49 @@ struct MomentDetailView: View {
             // Actions row
             HStack(spacing: NiftySpacing.sm) {
                 actionButton(title: "Fix this shot", icon: "checkmark.circle", isGlass: true)
-                actionButton(title: "Share", icon: nil, isGlass: false, tinted: true)
-                // ··· overflow
-                Button {} label: {
+                actionButton(
+                    title: isExportingToPhotoLibrary ? "Exporting..." : "Export to Photo Library",
+                    icon: isExportingToPhotoLibrary ? nil : "square.and.arrow.down",
+                    isGlass: false,
+                    tinted: true
+                ) {
+                    exportCurrentAssetToPhotoLibrary()
+                }
+                Spacer()
+                // Delete button
+                Button { isDeleteConfirmPresented = true } label: {
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(.white.opacity(0.06))
-                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.white.opacity(0.10), lineWidth: 0.5))
+                        .fill(Color.red.opacity(0.08))
+                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.red.opacity(0.22), lineWidth: 0.5))
                         .frame(width: 40, height: 40)
                         .overlay(
-                            HStack(spacing: 2) {
-                                ForEach(0..<3, id: \.self) { _ in
-                                    Circle().fill(.white.opacity(0.58)).frame(width: 2.6, height: 2.6)
+                            Group {
+                                if isDeleting {
+                                    ProgressView()
+                                        .tint(.red.opacity(0.7))
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "trash")
+                                        .font(.system(size: 15, weight: .medium))
+                                        .foregroundStyle(.red.opacity(0.70))
                                 }
                             }
                         )
                 }
                 .buttonStyle(.plain)
+                .disabled(isDeleting)
+                .confirmationDialog("Delete this photo?", isPresented: $isDeleteConfirmPresented, titleVisibility: .visible) {
+                    Button("Delete Photo", role: .destructive) {
+                        Task { await deleteMoment() }
+                    }
+                } message: {
+                    Text("This will permanently remove the photo and its data.")
+                }
             }
             .padding(.horizontal, NiftySpacing.lg)
             .padding(.vertical, NiftySpacing.lg)
         }
+        .frame(maxWidth: .infinity)
         .background(
             Rectangle()
                 .fill(Color(red: 12/255, green: 9/255, blue: 6/255).opacity(0.82))
@@ -463,8 +917,11 @@ struct MomentDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
-    private func actionButton(title: String, icon: String?, isGlass: Bool, tinted: Bool = false) -> some View {
-        Button {} label: {
+    private func actionButton(
+        title: String, icon: String?, isGlass: Bool, tinted: Bool = false,
+        action: @escaping () -> Void = {}
+    ) -> some View {
+        Button(action: action) {
             HStack(spacing: NiftySpacing.sm) {
                 if let icon {
                     Image(systemName: icon)
@@ -550,6 +1007,21 @@ extension VibeTag {
         case .raw:       return "🌑"
         case .dreamy:    return "🌙"
         case .cozy:      return "🕯️"
+        }
+    }
+}
+
+// MARK: - WeatherCondition emoji helper
+
+extension WeatherCondition {
+    var emoji: String {
+        switch self {
+        case .clear:   return "☀️"
+        case .cloudy:  return "☁️"
+        case .rain:    return "🌧"
+        case .snow:    return "❄️"
+        case .fog:     return "🌫"
+        case .thunder: return "⛈"
         }
     }
 }

@@ -58,7 +58,7 @@ struct NiftyMomntLiteApp: App {
         WindowGroup {
             LiteRootView(container: container)
         }
-        .backgroundTask(.appRefresh("com.hwcho.niftyMomntLite.refresh")) { [nudgeEngine] in
+        .backgroundTask(.appRefresh("com.hwcho99.niftyMomntLite.refresh")) { [nudgeEngine] in
             await nudgeEngine.refresh()
         }
     }
@@ -69,7 +69,7 @@ struct NiftyMomntLiteApp: App {
 extension NiftyMomntLiteApp {
     static func registerBackgroundTasks(indexingEngine: IndexingEngine) {
         BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: "com.hwcho.niftyMomntLite.indexBatch",
+            forTaskWithIdentifier: "com.hwcho99.niftyMomntLite.indexBatch",
             using: nil
         ) { task in
             guard let processingTask = task as? BGProcessingTask else { return }
@@ -85,7 +85,7 @@ extension NiftyMomntLiteApp {
     }
 
     static func scheduleIndexBatch() {
-        let request = BGProcessingTaskRequest(identifier: "com.hwcho.niftyMomntLite.indexBatch")
+        let request = BGProcessingTaskRequest(identifier: "com.hwcho99.niftyMomntLite.indexBatch")
         request.requiresNetworkConnectivity = false
         request.requiresExternalPower = false
         try? BGTaskScheduler.shared.submit(request)

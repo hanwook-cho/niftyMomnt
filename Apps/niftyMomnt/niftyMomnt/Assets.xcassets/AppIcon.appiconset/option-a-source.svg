@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="niftyMomnt app icon option A-2">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="65%">
+      <stop offset="0%" stop-color="#181010"/>
+      <stop offset="100%" stop-color="#0A0807"/>
+    </radialGradient>
+    <radialGradient id="lightLeak" cx="90%" cy="5%" r="44%">
+      <stop offset="0%" stop-color="#E8A020" stop-opacity=".40"/>
+      <stop offset="100%" stop-color="#E8A020" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="shutterBody" cx="40%" cy="36%" r="65%">
+      <stop offset="0%" stop-color="#F4F4EE"/>
+      <stop offset="52%" stop-color="#D8D8D0"/>
+      <stop offset="100%" stop-color="#B8B8B0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#lightLeak)"/>
+  <text
+    x="124"
+    y="844"
+    fill="rgba(255,255,255,.95)"
+    font-family="-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif"
+    font-size="536"
+    font-weight="900"
+    letter-spacing="-12">n</text>
+  <g transform="translate(700 324)">
+    <circle r="246" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="24"/>
+    <circle r="218" fill="none" stroke="#E8A020" stroke-width="58" opacity=".92"/>
+    <circle r="160" fill="url(#shutterBody)"/>
+    <circle r="160" fill="none" stroke="rgba(255,255,255,.48)" stroke-width="10"/>
+    <circle r="112" fill="none" stroke="#E8A020" stroke-width="30" opacity=".82"/>
+  </g>
+  <ellipse cx="642" cy="270" rx="62" ry="32" fill="rgba(255,255,255,.26)" opacity=".52" transform="rotate(-20 642 270)"/>
+</svg>

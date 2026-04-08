@@ -15,16 +15,19 @@ struct NiftyMomntApp: App {
 
     @MainActor
     init() {
-        let config = AppConfig.full
+        let config = AppConfig.v0_3_5
 
         // Platform adapters (NiftyData)
         let captureAdapter     = AVCaptureAdapter(config: config)
         let soundStampAdapter  = SoundStampAdapter(config: config)
-        let indexingAdapter    = CoreMLIndexingAdapter(config: config)
+        let weatherAdapter     = OpenMeteoWeatherAdapter()
+        let geocoderAdapter    = MapKitGeocoderAdapter()
+        let indexingAdapter    = CoreMLIndexingAdapter(config: config, weather: weatherAdapter)
         let vaultRepo          = VaultRepository(config: config)
         let graphRepo          = GraphRepository(config: config)
         let labClient          = LabNetworkAdapter(config: config)
         let nudgeTrigger       = JournalSuggestionsAdapter(config: config)
+        let compositingAdapter = CoreImageCompositingAdapter()
 
         // Fix adapter needs vault reference
         let fixAdapter = CoreImageFixAdapter(config: config, vault: vaultRepo)
@@ -61,7 +64,16 @@ struct NiftyMomntApp: App {
         let captureUseCase = CaptureMomentUseCase(
             engine: captureEngine,
             vault: vaultManager,
-            indexing: indexingEngine
+            indexing: indexingEngine,
+            graph: graphManager,
+            geocoder: geocoderAdapter
+        )
+        let lifeFourCutsUseCase = LifeFourCutsUseCase(
+            captureEngine: captureEngine,
+            compositor: compositingAdapter,
+            vault: vaultManager,
+            graph: graphManager,
+            geocoder: geocoderAdapter
         )
         let fixUseCase = FixAssetUseCase(
             fixRepo: fixAdapter,
@@ -74,6 +86,7 @@ struct NiftyMomntApp: App {
         container = AppContainer(
             config: config,
             captureUseCase: captureUseCase,
+            lifeFourCutsUseCase: lifeFourCutsUseCase,
             fixUseCase: fixUseCase,
             storyUseCase: storyUseCase,
             shareUseCase: shareUseCase,
@@ -84,6 +97,14 @@ struct NiftyMomntApp: App {
         )
         self.nudgeEngine = nudgeEngine
 
+        // Forward resolved place name into AppContainer so CaptureHubView overlay can display it.
+        captureUseCase.onPlaceResolved = { [weak container] name in
+            container?.lastCapturedPlaceName = name
+        }
+        lifeFourCutsUseCase.onPlaceResolved = { [weak container] name in
+            container?.lastCapturedPlaceName = name
+        }
+
         NiftyMomntApp.registerBackgroundTasks(indexingEngine: indexingEngine)
         NiftyMomntApp.scheduleIndexBatch()
     }
@@ -92,7 +113,7 @@ struct NiftyMomntApp: App {
         WindowGroup {
             RootView(container: container)
         }
-        .backgroundTask(.appRefresh("com.hwcho.niftyMomnt.refresh")) { [nudgeEngine] in
+        .backgroundTask(.appRefresh("com.hwcho99.niftyMomnt.refresh")) { [nudgeEngine] in
             await nudgeEngine.refresh()
         }
     }
@@ -105,7 +126,7 @@ extension NiftyMomntApp {
     /// The task identifier must match BGTaskSchedulerPermittedIdentifiers in Info.plist.
     static func registerBackgroundTasks(indexingEngine: IndexingEngine) {
         BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: "com.hwcho.niftyMomnt.indexBatch",
+            forTaskWithIdentifier: "com.hwcho99.niftyMomnt.indexBatch",
             using: nil
         ) { task in
             guard let processingTask = task as? BGProcessingTask else { return }
@@ -121,7 +142,7 @@ extension NiftyMomntApp {
     }
 
     static func scheduleIndexBatch() {
-        let request = BGProcessingTaskRequest(identifier: "com.hwcho.niftyMomnt.indexBatch")
+        let request = BGProcessingTaskRequest(identifier: "com.hwcho99.niftyMomnt.indexBatch")
         request.requiresNetworkConnectivity = false
         request.requiresExternalPower = false
         try? BGTaskScheduler.shared.submit(request)
