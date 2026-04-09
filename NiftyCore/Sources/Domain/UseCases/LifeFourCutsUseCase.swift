@@ -62,6 +62,7 @@ public final class LifeFourCutsUseCase {
     public func buildAndSave(
         shots: [(Asset, Data)],
         frame: FeaturedFrame,
+        photoShape: L4CPhotoShape,
         borderColor: L4CBorderColor,
         config: AppConfig
     ) async throws -> L4CRecord {
@@ -103,6 +104,7 @@ public final class LifeFourCutsUseCase {
         let frameAssetName: String? = frame.id == "none" ? nil : frame.id
         let compositeData = try await compositor.compositeStrip(
             photos: photoDatas,
+            photoShape: photoShape,
             borderColor: borderColor,
             frameAssetName: frameAssetName,
             stamp: stamp
@@ -149,11 +151,13 @@ public final class LifeFourCutsUseCase {
     public func recomposite(
         photos: [Data],
         frame: FeaturedFrame,
+        photoShape: L4CPhotoShape,
         borderColor: L4CBorderColor
     ) async throws -> Data {
         let frameAssetName: String? = frame.id == "none" ? nil : frame.id
         return try await compositor.compositeStrip(
             photos: photos,
+            photoShape: photoShape,
             borderColor: borderColor,
             frameAssetName: frameAssetName,
             stamp: L4CStampConfig(dateText: "", locationText: "", showAppLogo: false)

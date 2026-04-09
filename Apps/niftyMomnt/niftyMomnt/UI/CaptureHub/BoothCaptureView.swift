@@ -92,6 +92,8 @@ struct BoothCaptureView: View {
                 container: container,
                 shots: capturedShots,
                 initialFrame: selectedFrame,
+                initialBorder: .white,
+                photoShape: .fourByThree,
                 onSaved: { _ in showPreviewSheet = false; onDismiss() },
                 onRetake: { showPreviewSheet = false; resetCapture() }
             )

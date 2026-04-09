@@ -68,6 +68,14 @@ struct CaptureHubView: View {
     @State private var lastCapturedThumbnailUsesFit: Bool = false
     @State private var isPreviewRunning: Bool = false
     @State private var clipTimerTask: Task<Void, Never>? = nil
+    @State private var boothCaptureState: BoothCaptureState = .idle
+    @State private var boothCapturedShots: [(Asset, Data)] = []
+    @State private var boothCapturedImages: [UIImage?] = Array(repeating: nil, count: 4)
+    @State private var boothSelectedFrame: FeaturedFrame = .none
+    @State private var boothSelectedBorderColor: L4CBorderColor = .white
+    @State private var boothPhotoShape: L4CPhotoShape = .fourByThree
+    @State private var showBoothReviewSheet: Bool = false
+    @State private var boothFlashOpacity: Double = 0
 
     // Roll mode
     @State private var rollShotsRemaining: Int = 17
@@ -112,19 +120,6 @@ struct CaptureHubView: View {
                 }
                 .ignoresSafeArea()
 
-                // ── BOOTH mode: overlay BoothCaptureView (no camera preview inside) ──
-                if currentMode == .photoBooth {
-                    BoothCaptureView(
-                        container: container,
-                        onDismiss: {
-                            withAnimation(.niftyPresetSwitch) { currentMode = .still }
-                            Task { try? await container.captureUseCase.switchMode(to: .still, config: container.config) }
-                        }
-                    )
-                    .ignoresSafeArea()
-                    .transition(.opacity)
-                } else {
-
                 // ── §4.1a AF/AE Lock — pulsing amber dot at lock point ──
                 if afLockActive {
                     afLockDot
@@ -134,6 +129,10 @@ struct CaptureHubView: View {
                 // ── §4.5 Post-capture overlay (covers Zone B only) ──
                 if showPostCapture {
                     postCaptureOverlay(geo: geo)
+                }
+
+                if currentMode == .photoBooth {
+                    boothOverlay(geo: geo)
                 }
 
                 // ── Mode anchor (Zone B, above preset bar) ──
@@ -197,7 +196,6 @@ struct CaptureHubView: View {
                 if showCaptureSettingsDeck {
                     captureSettingsDeckOverlay
                 }
-                } // end else (non-BOOTH modes)
             }
             .gesture(viewfinderGestures(geo: geo))
             .onTapGesture(count: 2) { flipCamera() }
@@ -219,6 +217,23 @@ struct CaptureHubView: View {
                     await stopCameraPreview()
                 }
             }
+        }
+        .sheet(isPresented: $showBoothReviewSheet, onDismiss: handleBoothReviewDismiss) {
+            StripPreviewSheet(
+                container: container,
+                shots: boothCapturedShots,
+                initialFrame: boothSelectedFrame,
+                initialBorder: boothSelectedBorderColor,
+                photoShape: boothPhotoShape,
+                onSaved: { _ in
+                    showBoothReviewSheet = false
+                    resetBoothSession()
+                },
+                onRetake: {
+                    showBoothReviewSheet = false
+                    resetBoothSession()
+                }
+            )
         }
     }
 
@@ -853,6 +868,17 @@ struct CaptureHubView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(activePreset.accentColor.opacity(0.8))
             }
+        case .photoBooth:
+            if boothSequenceIsRunning {
+                Text("\(boothActiveSlotIndex + 1)/4")
+                    .font(.system(size: 14, weight: .black))
+                    .foregroundStyle(activePreset.accentColor.opacity(0.92))
+            } else {
+                Text("START")
+                    .font(.system(size: 10, weight: .black))
+                    .kerning(0.8)
+                    .foregroundStyle(.black.opacity(0.74))
+            }
         default:
             EmptyView()
         }
@@ -916,7 +942,7 @@ struct CaptureHubView: View {
     private var recordingHintText: String {
         switch currentMode {
         case .clip:
-            return "\(clipCountdown)s left · release to stop"
+            return "\(clipCountdown)s left · tap shutter to stop"
         case .echo:
             return "Tap shutter again to stop"
         case .atmosphere:
@@ -926,20 +952,230 @@ struct CaptureHubView: View {
         }
     }
 
+    @ViewBuilder
+    private func boothOverlay(geo: GeometryProxy) -> some View {
+        let previewFrame = previewGuideFrame(in: geo.size)
+        let guideSize = boothGuideSize(in: previewFrame)
+        let guideRect = CGRect(
+            x: previewFrame.midX - (guideSize.width / 2),
+            y: previewFrame.midY - (guideSize.height / 2),
+            width: guideSize.width,
+            height: guideSize.height
+        )
+
+        ZStack {
+            boothGuideMask(previewFrame: previewFrame, guideRect: guideRect)
+
+            if boothFlashOpacity > 0 {
+                Color.white
+                    .opacity(boothFlashOpacity)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+            }
+
+            VStack(spacing: 12) {
+                if let status = boothStatusLabel {
+                    Text(status)
+                        .font(.system(size: 11, weight: .black))
+                        .kerning(0.8)
+                        .foregroundStyle(.white.opacity(0.82))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color.black.opacity(0.32))
+                        .background(.ultraThinMaterial)
+                        .overlay(
+                            Capsule()
+                                .strokeBorder(.white.opacity(0.12), lineWidth: 0.5)
+                        )
+                        .clipShape(Capsule())
+                }
+
+                HStack(spacing: 10) {
+                    ForEach(0..<4, id: \.self) { index in
+                        Circle()
+                            .fill(index < boothCapturedShots.count ? .white : .white.opacity(index == boothActiveSlotIndex ? 0.78 : 0.20))
+                            .frame(width: index == boothActiveSlotIndex ? 18 : 14, height: index == boothActiveSlotIndex ? 18 : 14)
+                            .overlay(
+                                Circle()
+                                    .strokeBorder(index == boothActiveSlotIndex ? activePreset.accentColor.opacity(0.92) : .clear, lineWidth: 2)
+                            )
+                    }
+                }
+            }
+            .position(x: previewFrame.midX, y: guideRect.minY - 42)
+
+            ZStack {
+                RoundedRectangle(cornerRadius: 22)
+                    .fill(Color.white.opacity(0.05))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22)
+                            .strokeBorder(.white.opacity(0.08), lineWidth: 0.6)
+                    )
+
+                RoundedRectangle(cornerRadius: 22)
+                    .strokeBorder(.white.opacity(0.96), lineWidth: 2)
+
+                if let image = boothCurrentGuideImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: guideSize.width, height: guideSize.height)
+                        .clipShape(RoundedRectangle(cornerRadius: 22))
+                } else if let countdown = boothCountdownValue(for: boothActiveSlotIndex) {
+                    Text("\(countdown)")
+                        .font(.system(size: 52, weight: .black))
+                        .foregroundStyle(.white.opacity(0.96))
+                } else {
+                    VStack(spacing: 10) {
+                        Text(boothPhotoShape.displayTitle)
+                            .font(.system(size: 12, weight: .black))
+                            .kerning(0.8)
+                            .foregroundStyle(.white.opacity(0.86))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(Color.black.opacity(0.28))
+                            .background(.ultraThinMaterial)
+                            .overlay(
+                                Capsule()
+                                    .strokeBorder(.white.opacity(0.12), lineWidth: 0.5)
+                            )
+                            .clipShape(Capsule())
+
+                        Text("frame inside this guide")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.44))
+                    }
+                }
+            }
+            .frame(width: guideSize.width, height: guideSize.height)
+            .position(x: guideRect.midX, y: guideRect.midY)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .allowsHitTesting(false)
+    }
+
+    private var boothCurrentGuideImage: UIImage? {
+        let activeIndex = boothActiveSlotIndex
+        if case .freeze(let slotIndex) = boothCaptureState, slotIndex == activeIndex {
+            return boothCapturedImages[slotIndex]
+        }
+        return nil
+    }
+
+    private func boothThumbnail(index: Int) -> some View {
+        let image = boothCapturedImages[index]
+        return RoundedRectangle(cornerRadius: 10)
+            .fill(Color.black.opacity(0.22))
+            .frame(width: 42, height: 42)
+            .overlay {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 42, height: 42)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                } else {
+                    Text("\(index + 1)")
+                        .font(.system(size: 11, weight: .black))
+                        .foregroundStyle(.white.opacity(0.38))
+                }
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(index == boothActiveSlotIndex ? activePreset.accentColor.opacity(0.92) : .white.opacity(0.12), lineWidth: 1)
+            )
+    }
+
+    private func boothGuideMask(previewFrame: CGRect, guideRect: CGRect) -> some View {
+        ZStack {
+            Rectangle()
+                .fill(Color.black.opacity(0.52))
+                .frame(width: previewFrame.width, height: max(guideRect.minY - previewFrame.minY, 0))
+                .position(x: previewFrame.midX, y: previewFrame.minY + max(guideRect.minY - previewFrame.minY, 0) / 2)
+
+            Rectangle()
+                .fill(Color.black.opacity(0.52))
+                .frame(width: previewFrame.width, height: max(previewFrame.maxY - guideRect.maxY, 0))
+                .position(x: previewFrame.midX, y: guideRect.maxY + max(previewFrame.maxY - guideRect.maxY, 0) / 2)
+
+            Rectangle()
+                .fill(Color.black.opacity(0.52))
+                .frame(width: max(guideRect.minX - previewFrame.minX, 0), height: guideRect.height)
+                .position(x: previewFrame.minX + max(guideRect.minX - previewFrame.minX, 0) / 2, y: guideRect.midY)
+
+            Rectangle()
+                .fill(Color.black.opacity(0.52))
+                .frame(width: max(previewFrame.maxX - guideRect.maxX, 0), height: guideRect.height)
+                .position(x: guideRect.maxX + max(previewFrame.maxX - guideRect.maxX, 0) / 2, y: guideRect.midY)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .allowsHitTesting(false)
+    }
+
+    private func boothGuideSize(in previewFrame: CGRect) -> CGSize {
+        let horizontalInset: CGFloat = 26
+        let verticalInset: CGFloat = 84
+        let maxWidth = max(previewFrame.width - (horizontalInset * 2), 1)
+        let maxHeight = max(previewFrame.height - (verticalInset * 2), 1)
+        let aspect = boothPhotoShape.widthToHeightAspect
+
+        let widthFromHeight = maxHeight * aspect
+        let finalWidth = min(maxWidth, widthFromHeight)
+        let finalHeight = finalWidth / aspect
+        return CGSize(width: finalWidth, height: finalHeight)
+    }
+
+    private func boothGuideCropRect(for imageSize: CGSize) -> CGRect {
+        let targetAspect = boothPhotoShape.widthToHeightAspect
+        let imageAspect = imageSize.width / max(imageSize.height, 1)
+
+        if imageAspect > targetAspect {
+            let cropWidth = imageSize.height * targetAspect
+            return CGRect(
+                x: (imageSize.width - cropWidth) / 2,
+                y: 0,
+                width: cropWidth,
+                height: imageSize.height
+            )
+        }
+
+        let cropHeight = imageSize.width / targetAspect
+        return CGRect(
+            x: 0,
+            y: (imageSize.height - cropHeight) / 2,
+            width: imageSize.width,
+            height: cropHeight
+        )
+    }
+
+    private func normalizedBoothPreviewImage(_ image: UIImage) -> UIImage {
+        let normalized = image.normalizedOrientationImage()
+        guard let cgImage = normalized.cgImage else { return normalized }
+        let cropRect = boothGuideCropRect(for: CGSize(width: cgImage.width, height: cgImage.height))
+        guard let cropped = cgImage.cropping(to: cropRect.integral) else { return normalized }
+        return UIImage(cgImage: cropped, scale: normalized.scale, orientation: .up)
+    }
+
+    private func boothOrientedImage(from data: Data) -> UIImage? {
+        UIImage(data: data)?.normalizedOrientationImage()
+    }
+
     // MARK: - Sound Stamp Pulse Arcs
 
     private var soundStampArcs: some View {
         ZStack {
             ForEach([0, 1, 2], id: \.self) { i in
                 Circle()
-                    .stroke(activePreset.accentColor.opacity([0.55, 0.30, 0.12][i]),
-                            lineWidth: CGFloat(1.5 - Double(i) * 0.5))
+                    .stroke(
+                        activePreset.accentColor.opacity([0.55, 0.30, 0.12][i]),
+                        lineWidth: CGFloat(1.5 - Double(i) * 0.5)
+                    )
                     .frame(width: CGFloat(48 + i * 14), height: CGFloat(48 + i * 14))
                     .scaleEffect(soundStampPulse ? 1.0 : 0.6)
                     .opacity(soundStampPulse ? 1.0 : 0.0)
                     .animation(
-                        reduceMotion ? .easeOut(duration: 1.0) :
-                            .easeOut(duration: 1.5).delay(Double(i) * 0.15),
+                        reduceMotion ? .easeOut(duration: 1.0)
+                        : .easeOut(duration: 1.5).delay(Double(i) * 0.15),
                         value: soundStampPulse
                     )
             }
@@ -1197,7 +1433,7 @@ struct CaptureHubView: View {
         case .atmosphere:
             return "Control the loop length of the moment."
         case .photoBooth:
-            return "Booth controls arrive with the strip workflow."
+            return "Pick the strip vibe before the four-shot run."
         }
     }
 
@@ -1357,12 +1593,50 @@ struct CaptureHubView: View {
             ]
         case .photoBooth:
             return [
-                .toggle(
-                    title: "Booth Soon",
-                    icon: "square.grid.2x2",
+                .chips(
+                    title: "Photo Shape",
+                    icon: "aspectratio",
                     tint: activePreset.accentColor,
-                    caption: "L4C controls next",
-                    value: .constant(true)
+                    caption: boothPhotoShape.displayTitle,
+                    options: boothPhotoShapeOptions,
+                    selection: Binding(
+                        get: { boothPhotoShape.optionValue },
+                        set: {
+                            if let shape = L4CPhotoShape(optionValue: $0) {
+                                boothPhotoShape = shape
+                            }
+                        }
+                    )
+                ),
+                .chips(
+                    title: "Template",
+                    icon: "square.stack.3d.up",
+                    tint: activePreset.accentColor,
+                    caption: boothSelectedFrame.displayName,
+                    options: boothFrameOptions,
+                    selection: Binding(
+                        get: { boothSelectedFrame.optionValue },
+                        set: {
+                            if let frame = FeaturedFrame(optionValue: $0) {
+                                boothSelectedFrame = frame
+                            }
+                        }
+                    )
+                ),
+                .chips(
+                    title: "Border Colour",
+                    icon: "swatchpalette",
+                    tint: Color(hex: "#FFD6E0"),
+                    caption: boothSelectedBorderColor.displayTitle,
+                    options: boothBorderColorOptions,
+                    selection: Binding(
+                        get: { boothSelectedBorderColor.optionValue },
+                        set: {
+                            if let border = L4CBorderColor(optionValue: $0) {
+                                boothSelectedBorderColor = border
+                            }
+                        }
+                    )
                 )
             ]
         }
@@ -1394,6 +1668,28 @@ struct CaptureHubView: View {
 
     private var clipVideoFormatOptions: [CaptureSettingsOption] {
         ClipVideoFormat.allCases.map { .init(title: $0.shortTitle, value: $0.optionValue) }
+    }
+
+    private var boothFrameOptions: [CaptureSettingsOption] {
+        FeaturedFrame.allCases.enumerated().map { index, frame in
+            .init(title: frame.displayName, value: index)
+        }
+    }
+
+    private var boothPhotoShapeOptions: [CaptureSettingsOption] {
+        [
+            .init(title: "4:3", value: 0),
+            .init(title: "3:4", value: 1)
+        ]
+    }
+
+    private var boothBorderColorOptions: [CaptureSettingsOption] {
+        [
+            .init(title: "White", value: 0),
+            .init(title: "Black", value: 1),
+            .init(title: "Pink", value: 2),
+            .init(title: "Blue", value: 3)
+        ]
     }
 
     @ViewBuilder
@@ -1483,6 +1779,9 @@ struct CaptureHubView: View {
     private func viewfinderGestures(geo: GeometryProxy) -> some Gesture {
         DragGesture(minimumDistance: 20)
             .onEnded { value in
+                if currentMode == .photoBooth && boothSequenceIsRunning {
+                    return
+                }
                 let isHorizontal = abs(value.translation.width) > abs(value.translation.height)
                 if !isHorizontal && value.translation.height < -60 {
                     onNavigateToJournal()
@@ -1513,6 +1812,12 @@ struct CaptureHubView: View {
         let modes = availableModes()
         guard let idx = modes.firstIndex(of: currentMode) else { return }
         let newMode = modes[(idx + delta + modes.count) % modes.count]
+        if currentMode == .photoBooth && boothSequenceIsRunning {
+            return
+        }
+        if currentMode == .photoBooth && newMode != .photoBooth {
+            resetBoothSession()
+        }
         withAnimation(.niftyPresetSwitch) { currentMode = newMode }
         showGhostLabel(newMode.ghostText)
         if afLockActive { dismissAfLock() }
@@ -1616,7 +1921,7 @@ struct CaptureHubView: View {
                 startVideoCapture(mode: .clip)
             }
         case .photoBooth:
-            break // handled by BoothCaptureView overlay
+            startBoothCapture()
         }
     }
 
@@ -1781,6 +2086,148 @@ struct CaptureHubView: View {
             }
         }
     }
+
+    private var boothSequenceIsRunning: Bool {
+        boothCaptureState != .idle && boothCaptureState != .completed
+    }
+
+    private var boothActiveSlotIndex: Int {
+        switch boothCaptureState {
+        case .idle:
+            return boothCapturedImages.firstIndex(where: { $0 == nil }) ?? 0
+        case .countingDown(let slotIndex, _),
+             .flashing(let slotIndex),
+             .freeze(let slotIndex):
+            return slotIndex
+        case .advancing(let nextSlotIndex):
+            return min(nextSlotIndex, 3)
+        case .completed:
+            return 3
+        }
+    }
+
+    private var boothStatusLabel: String? {
+        switch boothCaptureState {
+        case .idle:
+            return "4 CUTS · \(boothSelectedFrame.displayName)"
+        case .countingDown(let slotIndex, _):
+            return "SHOT \(slotIndex + 1) OF 4"
+        case .flashing(let slotIndex):
+            return "SNAP \(slotIndex + 1) OF 4"
+        case .freeze(let slotIndex):
+            return "LOCKED \(slotIndex + 1) OF 4"
+        case .advancing(let nextSlotIndex):
+            return nextSlotIndex < 4 ? "UP NEXT \(nextSlotIndex + 1) OF 4" : "BUILDING STRIP"
+        case .completed:
+            return "REVIEW YOUR STRIP"
+        }
+    }
+
+    private func boothCountdownValue(for index: Int) -> Int? {
+        if case .countingDown(let slotIndex, let count) = boothCaptureState, slotIndex == index {
+            return count
+        }
+        return nil
+    }
+
+    private func startBoothCapture() {
+        guard currentMode == .photoBooth else { return }
+        guard !boothSequenceIsRunning else { return }
+        resetBoothSession(keepSelections: true)
+        withAnimation(.niftySpring) {
+            showCaptureSettingsDeck = false
+            presetBarCollapsed = true
+        }
+        Task { await runBoothCaptureSequence() }
+    }
+
+    private func runBoothCaptureSequence() async {
+        do {
+            try await container.captureUseCase.switchMode(to: .still, config: container.config)
+
+            for slotIndex in 0..<4 {
+                for count in stride(from: 3, through: 1, by: -1) {
+                    await MainActor.run {
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
+                            boothCaptureState = .countingDown(slotIndex: slotIndex, count: count)
+                        }
+                    }
+                    try await Task.sleep(for: .seconds(1))
+                }
+
+                await MainActor.run {
+                    boothCaptureState = .flashing(slotIndex: slotIndex)
+                    withAnimation(.easeOut(duration: 0.12)) { boothFlashOpacity = 0.92 }
+                }
+                try await Task.sleep(for: .milliseconds(120))
+                await MainActor.run {
+                    withAnimation(.easeIn(duration: 0.18)) { boothFlashOpacity = 0 }
+                }
+
+                let shot = try await container.lifeFourCutsUseCase.captureOneShot()
+                let normalizedShot = normalizeBoothShot(shot)
+                let image = UIImage(data: normalizedShot.1)
+
+                await MainActor.run {
+                    boothCapturedShots.append(normalizedShot)
+                    boothCapturedImages[slotIndex] = image
+                    boothCaptureState = .freeze(slotIndex: slotIndex)
+                    lastCapturedImage = image
+                    lastCapturedThumbnailUsesFit = false
+                }
+                try await Task.sleep(for: .milliseconds(420))
+
+                await MainActor.run {
+                    let next = min(slotIndex + 1, 4)
+                    boothCaptureState = next < 4 ? .advancing(nextSlotIndex: next) : .completed
+                }
+                try await Task.sleep(for: .milliseconds(slotIndex == 3 ? 140 : 260))
+            }
+
+            await MainActor.run {
+                showBoothReviewSheet = true
+            }
+        } catch {
+            #if DEBUG
+            print("[CaptureHub] booth capture failed: \(error)")
+            #endif
+            await MainActor.run {
+                resetBoothSession(keepSelections: true)
+            }
+        }
+    }
+
+    private func handleBoothReviewDismiss() {
+        if currentMode == .photoBooth {
+            withAnimation(.easeOut(duration: 0.2)) {
+                presetBarCollapsed = false
+            }
+        }
+    }
+
+    private func resetBoothSession(keepSelections: Bool = true) {
+        boothCaptureState = .idle
+        boothCapturedShots = []
+        boothCapturedImages = Array(repeating: nil, count: 4)
+        showBoothReviewSheet = false
+        boothFlashOpacity = 0
+        if !keepSelections {
+            boothSelectedFrame = .none
+            boothSelectedBorderColor = .white
+        }
+        withAnimation(.easeOut(duration: 0.2)) {
+            presetBarCollapsed = false
+        }
+    }
+
+    private func normalizeBoothShot(_ shot: (Asset, Data)) -> (Asset, Data) {
+        guard let oriented = boothOrientedImage(from: shot.1) else { return shot }
+        let normalized = normalizedBoothPreviewImage(oriented)
+        guard let data = normalized.jpegData(compressionQuality: 0.92) else {
+            return shot
+        }
+        return (shot.0, data)
+    }
 }
 
 private struct CaptureSettingsOption: Identifiable {
@@ -1920,6 +2367,109 @@ private enum ClipVideoFormat: String, CaseIterable {
         case .vga: return "VGA 4:3"
         case .hd: return "HD 16:9"
         case .fourK: return "4K 16:9"
+        }
+    }
+}
+
+private enum BoothCaptureState: Equatable {
+    case idle
+    case countingDown(slotIndex: Int, count: Int)
+    case flashing(slotIndex: Int)
+    case freeze(slotIndex: Int)
+    case advancing(nextSlotIndex: Int)
+    case completed
+}
+
+private extension FeaturedFrame {
+    var optionValue: Int {
+        FeaturedFrame.allCases.firstIndex(where: { $0.id == id }) ?? 0
+    }
+
+    init?(optionValue: Int) {
+        guard FeaturedFrame.allCases.indices.contains(optionValue) else { return nil }
+        self = FeaturedFrame.allCases[optionValue]
+    }
+}
+
+private extension L4CBorderColor {
+    var boothPreviewColor: Color {
+        switch self {
+        case .white:
+            return Color.white.opacity(0.90)
+        case .black:
+            return Color(red: 22/255, green: 22/255, blue: 24/255).opacity(0.94)
+        case .pastelPink:
+            return Color(red: 1.0, green: 0.87, blue: 0.91).opacity(0.94)
+        case .skyBlue:
+            return Color(red: 0.78, green: 0.90, blue: 1.0).opacity(0.94)
+        }
+    }
+
+    var optionValue: Int {
+        switch self {
+        case .white: return 0
+        case .black: return 1
+        case .pastelPink: return 2
+        case .skyBlue: return 3
+        }
+    }
+
+    init?(optionValue: Int) {
+        switch optionValue {
+        case 0: self = .white
+        case 1: self = .black
+        case 2: self = .pastelPink
+        case 3: self = .skyBlue
+        default: return nil
+        }
+    }
+
+    var displayTitle: String {
+        switch self {
+        case .white: return "White"
+        case .black: return "Black"
+        case .pastelPink: return "Pink"
+        case .skyBlue: return "Blue"
+        }
+    }
+}
+
+private extension L4CPhotoShape {
+    var optionValue: Int {
+        switch self {
+        case .fourByThree: return 0
+        case .threeByFour: return 1
+        }
+    }
+
+    init?(optionValue: Int) {
+        switch optionValue {
+        case 0: self = .fourByThree
+        case 1: self = .threeByFour
+        default: return nil
+        }
+    }
+
+    var displayTitle: String { rawValue }
+
+    var widthToHeightAspect: CGFloat {
+        switch self {
+        case .fourByThree:
+            return 4.0 / 3.0
+        case .threeByFour:
+            return 3.0 / 4.0
+        }
+    }
+}
+
+private extension UIImage {
+    func normalizedOrientationImage() -> UIImage {
+        if imageOrientation == .up { return self }
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = scale
+        format.opaque = false
+        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            draw(in: CGRect(origin: .zero, size: size))
         }
     }
 }

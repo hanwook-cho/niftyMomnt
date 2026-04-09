@@ -11,6 +11,8 @@ struct StripPreviewSheet: View {
     let container: AppContainer
     let shots: [(Asset, Data)]
     let initialFrame: FeaturedFrame
+    let initialBorder: L4CBorderColor
+    let photoShape: L4CPhotoShape
     let onSaved: (L4CRecord) -> Void
     let onRetake: () -> Void
 
@@ -27,14 +29,19 @@ struct StripPreviewSheet: View {
 
     init(container: AppContainer, shots: [(Asset, Data)],
          initialFrame: FeaturedFrame,
+         initialBorder: L4CBorderColor = .white,
+         photoShape: L4CPhotoShape = .fourByThree,
          onSaved: @escaping (L4CRecord) -> Void,
          onRetake: @escaping () -> Void) {
         self.container = container
         self.shots = shots
         self.initialFrame = initialFrame
+        self.initialBorder = initialBorder
+        self.photoShape = photoShape
         self.onSaved = onSaved
         self.onRetake = onRetake
         self._selectedFrame = State(initialValue: initialFrame)
+        self._selectedBorder = State(initialValue: initialBorder)
         self.photoDatas = shots.map(\.1)
     }
 
@@ -202,6 +209,7 @@ struct StripPreviewSheet: View {
             let data = try await container.lifeFourCutsUseCase.recomposite(
                 photos: photoDatas,
                 frame: selectedFrame,
+                photoShape: photoShape,
                 borderColor: selectedBorder
             )
             previewImage = UIImage(data: data)
@@ -220,6 +228,7 @@ struct StripPreviewSheet: View {
                 let record = try await container.lifeFourCutsUseCase.buildAndSave(
                     shots: shots,
                     frame: selectedFrame,
+                    photoShape: photoShape,
                     borderColor: selectedBorder,
                     config: container.config
                 )

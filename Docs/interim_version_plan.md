@@ -361,9 +361,11 @@ _Last updated: 2026-04-08 · v0.2 + v0.3 signed off; v0.3.5 mode-switching perfo
 
 ## v0.3.5 — Life Four Cuts (Photo Booth Mode)
 
-> **Status: 🔄 In Progress — code complete; mode-switch performance resolved; pending device verification**
+> **Status: 🔄 In Progress — BOOTH flow is implemented inside CaptureHub, but preview-to-capture framing still needs refinement**
 
 > **Design reference:** See `Docs/l4c_template_design_spec.md` for the current template-first L4C UX direction. That note is the working design reference for keeping BOOTH inside the standard CaptureHub shell while moving styling/template expression into the review phase.
+
+> **Current engineering note:** The BOOTH sequence, review sheet, border selection, and slot-shape selection are all working. The main remaining gap is that the live preview guide and the final booth crop still do not match closely enough for user-trustworthy framing.
 
 **Verification goal:** User can trigger a 4-shot photo-booth countdown from Capture Hub, preview the assembled vertical strip with a Featured Frame overlay, customise the border colour, and export a single share-ready 9:16 JPEG to the system share sheet or directly to Camera Roll.
 

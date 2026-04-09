@@ -13,6 +13,7 @@ public protocol CompositingAdapterProtocol: AnyObject, Sendable {
     /// - Returns: JPEG data for the composite strip (1080 × 1920px).
     func compositeStrip(
         photos: [Data],
+        photoShape: L4CPhotoShape,
         borderColor: L4CBorderColor,
         frameAssetName: String?,
         stamp: L4CStampConfig

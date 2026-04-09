@@ -143,8 +143,30 @@ Swiping to `.photoBooth` does **not** fire `switchMode` on `AVCaptureAdapter`. T
 ### N — End-to-end gesture latency instrumentation
 `cycleMode` captures `CACurrentMediaTime()` at gesture receipt and threads it through `CaptureMomentUseCase.switchMode → CaptureEngineProtocol.switchMode → AVCaptureAdapter.switchMode`. Logs show: task-start lag, sessionQueue lag, commitConfiguration time, and total-from-gesture time. Measured class-change latency: ~0.31–0.44s (hardware constraint, not addressable further without pre-warming the session).
 
+**Current BOOTH implementation status:**
+- BOOTH now runs inside the standard `CaptureHub` shell rather than replacing the camera UI
+- `START` drives a full 4-shot countdown sequence with flash/freeze feedback and a review sheet after shot 4
+- BOOTH `More` deck now supports:
+  - `Photo Shape`
+  - `Template`
+  - `Border Colour`
+- Slot-shape support is now present for:
+  - `4:3`
+  - `3:4`
+- `StripPreviewSheet` and the compositing pipeline now use the selected BOOTH photo shape
+
+**Remaining BOOTH quality gap:**
+- preview framing and final captured crop do not yet match closely enough
+- this means BOOTH is operational, but not yet trustworthy as a precise framing experience
+- the next BOOTH milestone should unify:
+  - live preview guide geometry
+  - booth still normalization/cropping
+  - final strip slot geometry
+
 **Pending:**
-- Device verification of full booth flow (countdown → strip → share)
+- Tighten preview-to-capture crop matching in BOOTH
+- Finalise the BOOTH active preview guide for `4:3` and `3:4`
+- Device verification of the updated BOOTH framing behavior
 - Frame PNG art assets (design deliverable)
 
 ### O — L4C should stay inside the same CaptureHub shell

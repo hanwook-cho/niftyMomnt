@@ -44,6 +44,11 @@ public enum L4CBorderColor: String, CaseIterable, Sendable {
     case skyBlue
 }
 
+public enum L4CPhotoShape: String, CaseIterable, Sendable {
+    case fourByThree = "4:3"
+    case threeByFour = "3:4"
+}
+
 // MARK: - L4CStampConfig
 
 public struct L4CStampConfig: Sendable {

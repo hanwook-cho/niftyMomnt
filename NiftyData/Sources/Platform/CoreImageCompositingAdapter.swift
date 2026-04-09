@@ -5,10 +5,9 @@
 // Strip geometry (all in pixels, canvas = 1080 × 1920):
 //   border:      28px all sides
 //   gap between slots: 20px
-//   slot width:  1080 − 2×28 = 1024px
-//   slot height: (1920 − 2×28 − 3×20) / 4 = 444px
+//   slot height: fit four slots vertically while leaving a bottom stamp zone
+//   slot width:  derived from the selected booth photo shape (4:3 or 3:4)
 //   stamp zone:  64px (below slot 4, within border)
-//   slot y[i]:   28 + i × (444 + 20)
 
 import CoreGraphics
 import CoreImage
@@ -21,13 +20,10 @@ import UIKit  // UIFont/UIImage for convenience; no UIView
 private let log = Logger(subsystem: "com.hwcho99.niftymomnt", category: "CoreImageCompositing")
 
 // Canvas constants
-private let kW: CGFloat     = 1080
-private let kH: CGFloat     = 1920
+private let kW: CGFloat      = 1080
 private let kBorder: CGFloat = 28
 private let kGap: CGFloat    = 20
-private let kSlotW: CGFloat  = kW - 2 * kBorder          // 1024
-private let kSlotH: CGFloat  = (kH - 2 * kBorder - 3 * kGap) / 4  // 444
-private let kStampH: CGFloat = 64
+private let kStampH: CGFloat = 160
 
 public final class CoreImageCompositingAdapter: CompositingAdapterProtocol {
 
@@ -35,13 +31,14 @@ public final class CoreImageCompositingAdapter: CompositingAdapterProtocol {
 
     public func compositeStrip(
         photos: [Data],
+        photoShape: L4CPhotoShape,
         borderColor: L4CBorderColor,
         frameAssetName: String?,
         stamp: L4CStampConfig
     ) async throws -> Data {
         // Run heavy CGContext work on a detached background task
         return try await Task.detached(priority: .userInitiated) {
-            try Self.renderStrip(photos: photos, borderColor: borderColor,
+            try Self.renderStrip(photos: photos, photoShape: photoShape, borderColor: borderColor,
                                  frameAssetName: frameAssetName, stamp: stamp)
         }.value
     }
@@ -50,6 +47,7 @@ public final class CoreImageCompositingAdapter: CompositingAdapterProtocol {
 
     private static func renderStrip(
         photos: [Data],
+        photoShape: L4CPhotoShape,
         borderColor: L4CBorderColor,
         frameAssetName: String?,
         stamp: L4CStampConfig
@@ -58,56 +56,51 @@ public final class CoreImageCompositingAdapter: CompositingAdapterProtocol {
             throw CompositingError.wrongPhotoCount(photos.count)
         }
 
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        guard let ctx = CGContext(
-            data: nil,
-            width: Int(kW), height: Int(kH),
-            bitsPerComponent: 8,
-            bytesPerRow: Int(kW) * 4,
-            space: colorSpace,
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-        ) else {
-            throw CompositingError.contextCreationFailed
-        }
+        let layout = stripLayout(for: photoShape)
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        format.opaque = true
 
-        // CoreGraphics origin is bottom-left; flip to top-left for easier layout
-        ctx.translateBy(x: 0, y: kH)
-        ctx.scaleBy(x: 1, y: -1)
+        let rendered = UIGraphicsImageRenderer(size: layout.canvasSize, format: format).image { rendererContext in
+            let ctx = rendererContext.cgContext
 
-        // 1. Fill border colour
-        ctx.setFillColor(borderColor.cgColor)
-        ctx.fill(CGRect(x: 0, y: 0, width: kW, height: kH))
+            // 1. Fill border colour
+            ctx.setFillColor(borderColor.cgColor)
+            ctx.fill(CGRect(origin: .zero, size: layout.canvasSize))
 
-        // 2. Draw 4 photos into slots
-        for (i, photoData) in photos.enumerated() {
-            let slotY = kBorder + CGFloat(i) * (kSlotH + kGap)
-            let slotRect = CGRect(x: kBorder, y: slotY, width: kSlotW, height: kSlotH)
-            if let cgImage = cgImage(from: photoData) {
-                drawImageFill(cgImage, in: slotRect, context: ctx)
-            } else {
-                // Fallback: dark placeholder
-                ctx.setFillColor(CGColor(gray: 0.15, alpha: 1))
-                ctx.fill(slotRect)
+            // 2. Draw 4 photos into slots
+            for (i, photoData) in photos.enumerated() {
+                let slotRect = layout.slotRects[i]
+                if let image = image(from: photoData) {
+                    drawImageFill(image, in: slotRect, context: ctx)
+                } else {
+                    ctx.setFillColor(CGColor(gray: 0.15, alpha: 1))
+                    ctx.fill(slotRect)
+                }
+            }
+
+            // 3. Bottom stamp
+            drawStamp(
+                stamp,
+                in: CGRect(
+                    x: kBorder,
+                    y: layout.stampOriginY,
+                    width: layout.slotRects.first?.width ?? (kW - 2 * kBorder),
+                    height: kStampH
+                ),
+                context: ctx
+            )
+
+            // 4. Featured Frame overlay
+            if let assetName = frameAssetName, assetName != "none",
+               let frameImage = UIImage(named: assetName) {
+                frameImage.draw(in: CGRect(origin: .zero, size: layout.canvasSize))
+                log.debug("compositeStrip — frame '\(assetName)' composited")
             }
         }
 
-        // 3. Bottom stamp
-        let stampY = kBorder + 4 * (kSlotH + kGap) - kGap  // start of stamp zone
-        drawStamp(stamp, in: CGRect(x: kBorder, y: stampY, width: kSlotW, height: kStampH), context: ctx)
-
-        // 4. Featured Frame overlay
-        if let assetName = frameAssetName, assetName != "none",
-           let frameImage = UIImage(named: assetName)?.cgImage {
-            ctx.draw(frameImage, in: CGRect(x: 0, y: 0, width: kW, height: kH))
-            log.debug("compositeStrip — frame '\(assetName)' composited")
-        }
-
         // 5. Export JPEG
-        guard let cgResult = ctx.makeImage() else {
-            throw CompositingError.renderFailed
-        }
-        let uiImage = UIImage(cgImage: cgResult)
-        guard let jpegData = uiImage.jpegData(compressionQuality: 0.88) else {
+        guard let jpegData = rendered.jpegData(compressionQuality: 0.88) else {
             throw CompositingError.encodingFailed
         }
         log.debug("compositeStrip done — \(jpegData.count) bytes")
@@ -116,18 +109,15 @@ public final class CoreImageCompositingAdapter: CompositingAdapterProtocol {
 
     // MARK: - Helpers
 
-    /// Decode JPEG/PNG Data → CGImage
-    private static func cgImage(from data: Data) -> CGImage? {
-        guard let provider = CGDataProvider(data: data as CFData) else { return nil }
-        // Try JPEG first, then PNG
-        return CGImage(jpegDataProviderSource: provider, decode: nil, shouldInterpolate: true, intent: .defaultIntent)
-            ?? CGImage(pngDataProviderSource: provider, decode: nil, shouldInterpolate: true, intent: .defaultIntent)
+    /// Decode booth photo data into an upright image that can be cropped consistently.
+    private static func image(from data: Data) -> UIImage? {
+        UIImage(data: data)?.normalizedOrientationImage()
     }
 
     /// Draw `image` filling `rect` with aspect-fill (center crop).
-    private static func drawImageFill(_ image: CGImage, in rect: CGRect, context ctx: CGContext) {
-        let imgW = CGFloat(image.width)
-        let imgH = CGFloat(image.height)
+    private static func drawImageFill(_ image: UIImage, in rect: CGRect, context ctx: CGContext) {
+        let imgW = image.size.width
+        let imgH = image.size.height
         let scaleW = rect.width  / imgW
         let scaleH = rect.height / imgH
         let scale  = max(scaleW, scaleH)
@@ -138,7 +128,9 @@ public final class CoreImageCompositingAdapter: CompositingAdapterProtocol {
 
         ctx.saveGState()
         ctx.clip(to: rect)
-        ctx.draw(image, in: CGRect(x: drawX, y: drawY, width: drawW, height: drawH))
+        UIGraphicsPushContext(ctx)
+        image.draw(in: CGRect(x: drawX, y: drawY, width: drawW, height: drawH))
+        UIGraphicsPopContext()
         ctx.restoreGState()
     }
 
@@ -173,6 +165,26 @@ public final class CoreImageCompositingAdapter: CompositingAdapterProtocol {
             subLine.draw(at: CGPoint(x: subX, y: subY), withAttributes: subAttrs)
         }
     }
+
+    private static func stripLayout(for shape: L4CPhotoShape) -> BoothStripLayout {
+        let slotWidth = kW - 2 * kBorder
+        let slotHeight = slotWidth / shape.widthToHeightAspect
+        let slotRects = (0..<4).map { index in
+            CGRect(
+                x: kBorder,
+                y: kBorder + CGFloat(index) * (slotHeight + kGap),
+                width: slotWidth,
+                height: slotHeight
+            )
+        }
+        let stampOriginY = (slotRects.last?.maxY ?? kBorder) + kGap
+        let canvasHeight = stampOriginY + kStampH + kBorder
+        return BoothStripLayout(
+            canvasSize: CGSize(width: kW, height: canvasHeight),
+            slotRects: slotRects,
+            stampOriginY: stampOriginY
+        )
+    }
 }
 
 // MARK: - L4CBorderColor → CGColor
@@ -195,4 +207,33 @@ public enum CompositingError: Error {
     case contextCreationFailed
     case renderFailed
     case encodingFailed
+}
+
+private extension L4CPhotoShape {
+    var widthToHeightAspect: CGFloat {
+        switch self {
+        case .fourByThree:
+            return 4.0 / 3.0
+        case .threeByFour:
+            return 3.0 / 4.0
+        }
+    }
+}
+
+private struct BoothStripLayout {
+    let canvasSize: CGSize
+    let slotRects: [CGRect]
+    let stampOriginY: CGFloat
+}
+
+private extension UIImage {
+    func normalizedOrientationImage() -> UIImage {
+        if imageOrientation == .up { return self }
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = scale
+        format.opaque = false
+        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            draw(in: CGRect(origin: .zero, size: size))
+        }
+    }
 }

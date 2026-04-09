@@ -4,6 +4,86 @@ _Drafted: 2026-04-08_
 
 ---
 
+## 0. Current Implementation Status
+
+As of `2026-04-08`, BOOTH has a working first-pass implementation inside `CaptureHub`, but it is not yet at the desired product quality.
+
+### What is implemented
+
+- `BOOTH` lives inside the same `CaptureHub` shell as other capture modes
+- tap `START` runs an automatic 4-shot sequence
+- each shot uses a `3 → 2 → 1` countdown, white flash, and slot-by-slot progression
+- `More` exposes BOOTH controls for:
+  - `Photo Shape`
+  - `Template`
+  - `Border Colour`
+- `StripPreviewSheet` appears after shot 4
+- live re-compositing works in the preview sheet when border or template changes
+- final strip export path is wired through `LifeFourCutsUseCase` and `CoreImageCompositingAdapter`
+- BOOTH now supports two slot-shape options:
+  - `4:3`
+  - `3:4`
+
+### What has been attempted recently
+
+- the BOOTH capture overlay was moved away from the old standalone booth screen and into `CaptureHub`
+- the strip compositor was updated to use dynamic slot geometry based on `Photo Shape`
+- the final strip renderer was changed from a flipped Core Graphics path to `UIGraphicsImageRenderer` to address upside-down strip output
+- booth stills are now normalized upright before compositing, rather than force-rotated
+
+### Current known gaps
+
+1. **Preview guide and final crop still do not match perfectly**
+- the active camera preview now has a more visible guide area, but it is still not a true WYSIWYG framing contract
+- the captured booth photo can still differ from what the user thought the slot crop would be
+- this is expected for now because the live camera preview and the saved still are still coming from different framing assumptions
+
+2. **BOOTH needs a stronger preview-first framing model**
+- the user wants the active slot to be the real guide for what will be taken
+- for `4:3`, the preview should clearly show a wide landscape capture window
+- for `3:4`, the preview should clearly show a tall portrait capture window
+- the current overlay is better than before, but still not product-final
+
+3. **Cropping rules need to be made explicit**
+- booth stills are currently normalized and cropped in the app layer
+- however, the exact crop contract between:
+  - live camera preview
+  - captured JPEG
+  - final strip compositing
+  still needs one unified rule
+
+4. **Template system is still MVP-level**
+- `Template` currently behaves more like a frame/border choice than a full layout system
+- true template families, user-uploaded templates, and downloadable template packs are future work
+
+### Current product conclusion
+
+The BOOTH flow is now good enough to prove the overall interaction pattern:
+
+1. BOOTH should stay in `CaptureHub`
+2. BOOTH should use a review sheet after shot 4
+3. BOOTH should support slot shape selection
+4. BOOTH should evolve toward a template-first system
+
+But the **preview-to-capture matching problem is still unresolved** and should be treated as the next quality milestone.
+
+### Immediate next engineering milestone
+
+The next BOOTH implementation milestone should focus on one thing:
+
+- make the active preview guide and the final slot crop obey the same geometry
+
+That means:
+
+1. define a single source of truth for BOOTH slot geometry
+2. use that geometry for the live guide
+3. use that same geometry when normalizing/cropping captured stills
+4. use that same geometry again in the final strip compositor
+
+Until that is complete, BOOTH should be considered **functionally present but visually not yet trustworthy for framing**.
+
+---
+
 ## 1. Product Position
 
 Life Four Cuts (L4C) should not be treated only as a booth-strip feature.
