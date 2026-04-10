@@ -17,13 +17,17 @@ struct L4CMomentCardView: View {
     @State private var heroImage: UIImage? = nil
 
     var body: some View {
-        Button(action: onTap) {
+        Button(action: {
+            log.debug("L4CMomentCardView: Internal button action triggered for \(record.id.uuidString)")
+            onTap()
+        }) {
             VStack(alignment: .leading, spacing: 0) {
                 heroSection
                 infoSection
             }
         }
         .buttonStyle(.plain)
+        .contentShape(RoundedRectangle(cornerRadius: 18))
         .background(
             RoundedRectangle(cornerRadius: 18)
                 .fill(Color.white.opacity(0.04))

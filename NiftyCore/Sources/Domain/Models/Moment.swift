@@ -14,6 +14,7 @@ public struct Moment: Identifiable, Equatable, Sendable {
     public var moodPoint: MoodPoint?
     public var isStarred: Bool
     public var heroAssetID: UUID?
+    public var selectedPresetName: String? // v0.4: user-chosen preset at capture time
 
     public init(
         id: UUID = UUID(),
@@ -25,7 +26,8 @@ public struct Moment: Identifiable, Equatable, Sendable {
         dominantVibes: [VibeTag] = [],
         moodPoint: MoodPoint? = nil,
         isStarred: Bool = false,
-        heroAssetID: UUID? = nil
+        heroAssetID: UUID? = nil,
+        selectedPresetName: String? = nil
     ) {
         self.id = id
         self.label = label
@@ -37,5 +39,6 @@ public struct Moment: Identifiable, Equatable, Sendable {
         self.moodPoint = moodPoint
         self.isStarred = isStarred
         self.heroAssetID = heroAssetID
+        self.selectedPresetName = selectedPresetName
     }
 }

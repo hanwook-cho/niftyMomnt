@@ -60,7 +60,8 @@ public final class CaptureMomentUseCase {
 
     /// Captures a still photo, classifies it, persists to vault + graph, posts notification.
     /// Full v0.2 pipeline: camera → classify + palette + ambient (concurrent) → geocode → vault → graph → notify.
-    public func captureAsset() async throws -> Asset {
+    /// - Parameter preset: v0.4 — user-selected preset name to persist with the asset.
+    public func captureAsset(preset: String? = nil) async throws -> Asset {
         log.debug("── captureAsset pipeline start ──")
 
         // 1. Capture from camera → writes JPEG to temp dir, returns Asset with id
@@ -88,7 +89,8 @@ public final class CaptureMomentUseCase {
         asset.vibeTags = tags
         asset.palette = pal
         asset.ambient = amb
-        log.debug("[3/8] classify=[\(tags.map(\.rawValue).joined(separator: ","))] palette=\(pal?.colors.count ?? 0)colors sun=\(amb.sunPosition?.rawValue ?? "nil")")
+        asset.selectedPresetName = preset
+        log.debug("[3/8] classify=[\(tags.map(\.rawValue).joined(separator: ","))] palette=\(pal?.colors.count ?? 0)colors sun=\(amb.sunPosition?.rawValue ?? "nil") preset=\(preset ?? "nil")")
 
         // 4. Reverse-geocode (network, may be nil if no location or geocoder unavailable)
         log.debug("[4/8] reverse-geocode…")
@@ -129,13 +131,15 @@ public final class CaptureMomentUseCase {
             centroid: asset.location ?? GPSCoordinate(latitude: 0, longitude: 0),
             startTime: asset.capturedAt,
             endTime: asset.capturedAt,
-            dominantVibes: tags
+            dominantVibes: tags,
+            selectedPresetName: preset
         )
         log.debug("[6/8] moment built id=\(moment.id.uuidString) label='\(moment.label)'")
 
         // 7. Save to intelligence graph (moment + optional place record)
         log.debug("[7/8] saving to graph…")
         try await graph.saveMoment(moment)
+        if let preset { try? await graph.updatePreset(preset, for: asset.id) }
         if let placeRecord {
             try? await graph.updatePlaceRecord(placeRecord)
         }
@@ -164,14 +168,15 @@ public final class CaptureMomentUseCase {
         try await engine.switchMode(to: mode, gestureTime: gestureTime > 0 ? gestureTime : t)
     }
 
-    /// Starts video recording (Clip / Echo / Atmosphere). Call stopVideoRecording() to finalise.
+    /// Starts media recording for Clip / Echo / Atmosphere. Call stopVideoRecording() to finalise.
     public func startVideoRecording(mode: CaptureMode, config: AppConfig) async throws {
         log.debug("startVideoRecording mode=\(mode.rawValue)")
         try await engine.startRecording(mode: mode)
     }
 
-    /// Stops video recording, runs the save pipeline, returns the saved Asset.
-    public func stopVideoRecording(config: AppConfig) async throws -> Asset {
+    /// Stops Clip / Echo / Atmosphere capture, runs the save pipeline, returns the saved Asset.
+    /// - Parameter preset: v0.4 — user-selected preset name to persist with the asset.
+    public func stopVideoRecording(config: AppConfig, preset: String? = nil) async throws -> Asset {
         log.debug("── stopVideoRecording pipeline start ──")
 
         // 1. Stop engine → asset with duration; temp file at tmpdir/{id}.mov
@@ -183,6 +188,7 @@ public final class CaptureMomentUseCase {
         let assetLocation = asset.location
         let assetCapturedAt = asset.capturedAt
         var enrichedAsset = asset
+        enrichedAsset.selectedPresetName = preset
         log.debug("[2] harvesting ambient…")
         let amb = await indexing.harvestAmbientImmediate(location: assetLocation, time: assetCapturedAt)
         enrichedAsset.ambient = amb
@@ -196,12 +202,26 @@ public final class CaptureMomentUseCase {
             log.debug("[3] geocode → '\(placeRecord?.placeName ?? "nil")'")
         }
 
-        // 4. Move video file from temp → vault
-        let tempURL = FileManager.default.temporaryDirectory
+        // 4. Move media file from temp → vault
+        let tempMediaURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(assetID.uuidString)
-            .appendingPathExtension("mov")
-        log.debug("[4] saving video to vault…")
-        try await vault.saveVideoFile(enrichedAsset, sourceURL: tempURL)
+            .appendingPathExtension(enrichedAsset.type == .echo ? "m4a" : "mov")
+        log.debug("[4] saving \(enrichedAsset.type.rawValue) to vault…")
+        if enrichedAsset.type == .echo || enrichedAsset.type == .atmosphere {
+            // Atmosphere also has a JPEG frame generated at stopRecording
+            if enrichedAsset.type == .atmosphere {
+                let tempJpegURL = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("\(assetID.uuidString).jpg")
+                if let data = try? Data(contentsOf: tempJpegURL) {
+                    try await vault.save(enrichedAsset, data: data)
+                    log.debug("[4] atmosphere JPEG save OK")
+                    try? FileManager.default.removeItem(at: tempJpegURL)
+                }
+            }
+            try await vault.saveAudioFile(enrichedAsset, sourceURL: tempMediaURL)
+        } else {
+            try await vault.saveVideoFile(enrichedAsset, sourceURL: tempMediaURL)
+        }
         log.debug("[4] vault save OK")
 
         // 5. Build Moment
@@ -213,14 +233,17 @@ public final class CaptureMomentUseCase {
             centroid: enrichedAsset.location ?? GPSCoordinate(latitude: 0, longitude: 0),
             startTime: enrichedAsset.capturedAt,
             endTime: enrichedAsset.capturedAt,
-            dominantVibes: enrichedAsset.vibeTags
+            dominantVibes: enrichedAsset.vibeTags,
+            selectedPresetName: preset
         )
         log.debug("[5] moment id=\(moment.id.uuidString) label='\(moment.label)'")
 
         // 6. Save to graph
         log.debug("[6] saving to graph…")
         try await graph.saveMoment(moment)
+        if let preset { try? await graph.updatePreset(preset, for: enrichedAsset.id) }
         if let placeRecord { try? await graph.updatePlaceRecord(placeRecord) }
+        log.debug("[6] Asset duration before graph save: \(enrichedAsset.duration ?? 0)s")
         log.debug("[6] graph save OK")
 
         // 7. Notify feed

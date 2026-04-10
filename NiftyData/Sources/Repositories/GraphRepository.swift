@@ -34,14 +34,15 @@ public actor GraphRepository: GraphProtocol {
                 try db.execute(sql: """
                     INSERT INTO assets (id, type, captured_at, location_lat, location_lon,
                                         vibe_tags, ambient_weather, ambient_temp_c,
-                                        ambient_sun_pos, palette_json)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                        ambient_sun_pos, palette_json, preset_name)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(id) DO UPDATE SET
                         vibe_tags       = excluded.vibe_tags,
                         ambient_weather = excluded.ambient_weather,
                         ambient_temp_c  = excluded.ambient_temp_c,
                         ambient_sun_pos = excluded.ambient_sun_pos,
-                        palette_json    = excluded.palette_json
+                        palette_json    = excluded.palette_json,
+                        preset_name     = excluded.preset_name
                     """,
                     arguments: [
                         asset.id.uuidString,
@@ -53,7 +54,8 @@ public actor GraphRepository: GraphProtocol {
                         asset.ambient.weather?.rawValue,
                         asset.ambient.temperatureC,
                         asset.ambient.sunPosition?.rawValue,
-                        paletteJSON
+                        paletteJSON,
+                        asset.selectedPresetName
                     ]
                 )
             }
@@ -111,6 +113,25 @@ public actor GraphRepository: GraphProtocol {
                 try db.execute(sql: "UPDATE assets SET vibe_tags = ? WHERE id = ?",
                                arguments: [updated, assetID.uuidString])
             }
+        }
+    }
+
+    public func updatePreset(_ name: String, for assetID: UUID) async throws {
+        try await db.write { db in
+            try db.execute(sql: "UPDATE assets SET preset_name = ? WHERE id = ?",
+                           arguments: [name, assetID.uuidString])
+        }
+    }
+
+    public func fetchTodayMomentCount() async throws -> Int {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: Date())
+        let startTS = startOfDay.timeIntervalSince1970
+        return try await db.read { db in
+            let row = try Row.fetchOne(db,
+                sql: "SELECT COUNT(*) AS cnt FROM moments WHERE start_time >= ?",
+                arguments: [startTS])
+            return (row?["cnt"] as? Int) ?? 0
         }
     }
 
@@ -242,7 +263,7 @@ public actor GraphRepository: GraphProtocol {
                 let assetRows = try Row.fetchAll(db, sql: """
                     SELECT a.id, a.type, a.captured_at, a.location_lat, a.location_lon,
                            a.vibe_tags, a.ambient_weather, a.ambient_temp_c,
-                           a.ambient_sun_pos, a.palette_json
+                           a.ambient_sun_pos, a.palette_json, a.preset_name
                     FROM assets a
                     JOIN moment_assets ma ON ma.asset_id = a.id
                     WHERE ma.moment_id = ?
@@ -288,7 +309,8 @@ public actor GraphRepository: GraphProtocol {
                         location: location,
                         vibeTags: vibeTags,
                         palette: palette,
-                        ambient: ambient
+                        ambient: ambient,
+                        selectedPresetName: aRow["preset_name"] as? String
                     )
                 }
 
@@ -317,7 +339,8 @@ public actor GraphRepository: GraphProtocol {
                     startTime: Date(timeIntervalSince1970: (row["start_time"] as? Double) ?? 0),
                     endTime: Date(timeIntervalSince1970: (row["end_time"] as? Double) ?? 0),
                     dominantVibes: dominantVibes,
-                    isStarred: ((row["is_starred"] as? Int64) ?? 0) != 0
+                    isStarred: ((row["is_starred"] as? Int64) ?? 0) != 0,
+                    selectedPresetName: assets.first?.selectedPresetName
                 )
                 moments.append(moment)
             }
@@ -596,6 +619,8 @@ extension GraphRepository {
             "ALTER TABLE assets ADD COLUMN ambient_temp_c  REAL",
             "ALTER TABLE assets ADD COLUMN ambient_sun_pos TEXT",
             "ALTER TABLE assets ADD COLUMN palette_json    TEXT",
+            // v0.4: user-selected preset name
+            "ALTER TABLE assets ADD COLUMN preset_name TEXT",
         ]
         for sql in migrations {
             try? db.execute(sql: sql) // swallows "duplicate column" on existing DBs

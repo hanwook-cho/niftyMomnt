@@ -4,7 +4,8 @@
 //
 // Mode classes:
 //   Photo class (.still, .live)  — AVCapturePhotoOutput, .photo preset
-//   Video class (.clip, .echo, .atmosphere) — AVCaptureMovieFileOutput, .high preset + audio input
+//   Video class (.clip, .atmosphere placeholder) — AVCaptureMovieFileOutput
+//   Audio class (.echo) — AVAudioRecorder (.m4a)
 
 import AVFoundation
 import Combine
@@ -45,6 +46,8 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
     private var activePhotoDelegate: PhotoDelegate?
     /// Retained until the movie file is fully written.
     private var activeMovieDelegate: MovieDelegate?
+    /// Retained while Echo is recording audio-only media.
+    private var activeEchoRecording: EchoRecordingSession?
 
     /// Provides GPS coordinate at capture time.
     private let locationProvider = LocationProvider()
@@ -66,13 +69,13 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
     // MARK: - Session lifecycle
 
     public func startSession(mode: CaptureMode, config: AppConfig) async throws {
-        locationProvider.start()
+        await MainActor.run { locationProvider.start() }
 
         let authStatus = AVCaptureDevice.authorizationStatus(for: .video)
         log.debug("startSession mode=\(mode.rawValue) authStatus=\(String(describing: authStatus.rawValue))")
         guard authStatus == .authorized else {
             log.error("startSession denied — camera not authorized (status \(authStatus.rawValue))")
-            stateSubject.send(.error(.unauthorized))
+            await MainActor.run { stateSubject.send(.error(.unauthorized)) }
             throw CaptureError.unauthorized
         }
         try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
@@ -81,15 +84,17 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
                     log.debug("configuring AVCaptureSession for mode=\(mode.rawValue)")
                     do {
                         try configureSession(for: mode)
+                        self.isSessionConfigured = true
+                        self.currentMode = mode
                     } catch {
                         cont.resume(throwing: error)
                         return
                     }
-                    isSessionConfigured = true
-                    currentMode = mode
                     log.debug("AVCaptureSession configured — inputs: \(self.session.inputs.count) outputs: \(self.session.outputs.count)")
                 }
-                session.startRunning()
+                if !session.isRunning {
+                    session.startRunning()
+                }
                 if session.isRunning {
                     log.debug("AVCaptureSession running")
                     cont.resume()
@@ -98,8 +103,8 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
                     do {
                         resetSessionStateOnQueue()
                         try configureSession(for: mode)
-                        isSessionConfigured = true
-                        currentMode = mode
+                        self.isSessionConfigured = true
+                        self.currentMode = mode
                         session.startRunning()
                         if session.isRunning {
                             log.debug("AVCaptureSession running after rebuild")
@@ -115,21 +120,25 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
                 }
             }
         }
-        stateSubject.send(.ready(mode: mode))
+        await MainActor.run { stateSubject.send(.ready(mode: mode)) }
     }
 
     public func stopSession() async {
-        isSessionConfigured = false
-        currentMode = .still
-        locationProvider.stop()
+        await MainActor.run { locationProvider.stop() }
+        activeEchoRecording?.cancelAndDelete()
+        activeEchoRecording = nil
         await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
             sessionQueue.async { [self] in
-                if session.isRunning { session.stopRunning() }
+                if session.isRunning {
+                    session.stopRunning()
+                }
                 resetSessionStateOnQueue()
+                self.isSessionConfigured = false
+                self.currentMode = .still
                 cont.resume()
             }
         }
-        stateSubject.send(.idle)
+        await MainActor.run { stateSubject.send(.idle) }
     }
 
     // MARK: - Still / Live Photo Capture
@@ -191,9 +200,27 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
         return Asset(id: assetID, type: assetType, capturedAt: Date(), location: gps)
     }
 
-    // MARK: - Video Recording (Clip / Echo / Atmosphere)
+    // MARK: - Clip / Echo / Atmosphere Recording
 
     public func startRecording(mode: CaptureMode) async throws {
+        if mode == .echo || mode == .atmosphere {
+            guard activeEchoRecording == nil else {
+                log.warning("startRecording — echo already recording, ignoring")
+                return
+            }
+            let assetID = UUID()
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(assetID.uuidString)
+                .appendingPathExtension("m4a")
+            let session = try EchoRecordingSession(assetID: assetID, fileURL: tempURL)
+            try session.start()
+            activeEchoRecording = session
+            currentMode = mode
+            stateSubject.send(.capturing(mode: mode))
+            log.debug("startRecording — echo tempURL=\(tempURL.lastPathComponent)")
+            return
+        }
+
         guard let movieOutput else {
             log.error("startRecording — movieOutput is nil (not a video-mode session?)")
             throw CaptureError.sessionFailed
@@ -233,6 +260,35 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
     }
 
     public func stopRecording() async throws -> Asset {
+        if (currentMode == .echo || currentMode == .atmosphere), let session = activeEchoRecording {
+            let (assetID, duration) = try session.stop()
+            activeEchoRecording = nil
+            let gps = locationProvider.currentCoordinate
+            
+            if currentMode == .atmosphere {
+                log.debug("stopRecording — atmosphere capturing final high-res frame")
+                // Trigger a photo capture for the Atmosphere hero image
+                let photoOutput = self.photoOutput
+                let jpegData = try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Data, Error>) in
+                    let delegate = PhotoDelegate(continuation: cont, isLiveCapture: false)
+                    self.activePhotoDelegate = delegate
+                    let settings = AVCapturePhotoSettings()
+                    photoOutput?.capturePhoto(with: settings, delegate: delegate)
+                }
+                self.activePhotoDelegate = nil
+                let tempJpegURL = FileManager.default.temporaryDirectory
+                    .appendingPathComponent(assetID.uuidString)
+                    .appendingPathExtension("jpg")
+                try jpegData.write(to: tempJpegURL)
+            }
+
+            stateSubject.send(.processing)
+            let mLabel = self.currentMode.rawValue
+            let dLabel = String(format: "%.1f", duration)
+            log.debug("stopRecording — \(mLabel) done id=\(assetID.uuidString) duration=\(dLabel)s")
+            return Asset(id: assetID, type: assetType(for: self.currentMode), capturedAt: Date(), location: gps, duration: duration)
+        }
+
         guard let movieOutput, let delegate = activeMovieDelegate else {
             log.error("stopRecording — no active recording")
             throw CaptureError.sessionFailed
@@ -282,10 +338,20 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
                     session.beginConfiguration()
                     let tBegin = CACurrentMediaTime()
 
-                    session.outputs.forEach { session.removeOutput($0) }
-                    if wasVideoMode, let audio = audioDeviceInput {
+                        // Surgical cleanup: remove only outputs. 
+                        // Do NOT remove videoDeviceInput here as it breaks the preview layer connection (Fig error -17281).
+                        if let photoOut = self.photoOutput {
+                            session.removeOutput(photoOut)
+                            self.photoOutput = nil
+                        }
+                        if let movieOut = self.movieOutput {
+                            session.removeOutput(movieOut)
+                            self.movieOutput = nil
+                        }
+
+                        if wasVideoMode, let audio = self.audioDeviceInput {
                         session.removeInput(audio)
-                        audioDeviceInput = nil
+                            self.audioDeviceInput = nil
                         log.debug("switchMode — audio input removed")
                     }
                     session.sessionPreset = wasVideoMode ? .photo : resolvedPreset(for: mode)
@@ -310,6 +376,7 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
                         movieOutput = nil
                     }
                     session.commitConfiguration()
+                    self.currentMode = mode
                     let now = CACurrentMediaTime()
                     log.debug("switchMode — commitConfiguration: \(String(format: "%.3f", now - tBegin))s  total from gesture: \(String(format: "%.3f", now - gestureTime))s")
                 } else {
@@ -318,6 +385,7 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
                     session.beginConfiguration()
                     session.sessionPreset = resolvedPreset(for: mode)
                     session.commitConfiguration()
+                    self.currentMode = mode
                     let now = CACurrentMediaTime()
                     log.debug("switchMode — same-class preset update: \(String(format: "%.3f", now - tBegin))s  total from gesture: \(String(format: "%.3f", now - gestureTime))s")
                 }
@@ -440,9 +508,14 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
     // MARK: - Private helpers
 
     private func configureSession(for mode: CaptureMode) throws {
+        log.debug("configureSession — starting for mode=\(mode.rawValue)")
         session.beginConfiguration()
+        defer { 
+            session.commitConfiguration()
+            log.debug("configureSession — committed")
+        }
 
-        resetSessionStateOnQueue()
+        //resetSessionStateOnQueue()
 
         session.sessionPreset = resolvedPreset(for: mode)
 
@@ -452,7 +525,6 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
             let input = try? AVCaptureDeviceInput(device: device),
             session.canAddInput(input)
         else {
-            session.commitConfiguration()
             throw CaptureError.sessionFailed
         }
         session.addInput(input)
@@ -477,11 +549,12 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
                 }
             }
         }
-
-        session.commitConfiguration()
     }
 
     private func resetSessionStateOnQueue() {
+        session.beginConfiguration()
+        defer { session.commitConfiguration() }
+
         if let videoInput = videoDeviceInput {
             session.removeInput(videoInput)
             videoDeviceInput = nil
@@ -519,7 +592,11 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
     }
 
     private func isVideoMode(_ mode: CaptureMode) -> Bool {
-        mode == .clip || mode == .echo || mode == .atmosphere
+        // Echo uses AVAudioRecorder independently of AVCaptureSession.
+        // Keeping it in photo-output class avoids the AVAudioSession conflict that arises
+        // when AVCaptureSession adds audio input and EchoRecordingSession tries to reconfigure
+        // the same shared audio session.
+        mode == .clip
     }
 
     private func resolvedPreset(for mode: CaptureMode) -> AVCaptureSession.Preset {
@@ -543,7 +620,7 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
             case "hd": return .hd1920x1080
             default: return .hd1920x1080
             }
-        case .echo, .atmosphere:
+        case .atmosphere:
             return .high
         default: return .photo
         }
@@ -784,5 +861,53 @@ private final class MovieDelegate: NSObject, AVCaptureFileOutputRecordingDelegat
         } else {
             pendingResult = result
         }
+    }
+}
+
+// MARK: - Echo audio recording
+
+private final class EchoRecordingSession: @unchecked Sendable {
+    let assetID: UUID
+    let fileURL: URL
+
+    private let recorder: AVAudioRecorder
+    private let startTime = Date()
+
+    init(assetID: UUID, fileURL: URL) throws {
+        self.assetID = assetID
+        self.fileURL = fileURL
+
+        let audioSession = AVAudioSession.sharedInstance()
+        try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
+        try audioSession.setActive(true)
+
+        let settings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatMPEG4AAC,
+            AVSampleRateKey: 44_100,
+            AVNumberOfChannelsKey: 1,
+            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+        ]
+        recorder = try AVAudioRecorder(url: fileURL, settings: settings)
+        recorder.isMeteringEnabled = true
+        recorder.prepareToRecord()
+    }
+
+    func start() throws {
+        guard recorder.record() else {
+            throw CaptureError.captureFailed
+        }
+        log.debug("EchoRecordingSession — recording started → \(self.fileURL.lastPathComponent)")
+    }
+
+    func stop() throws -> (UUID, TimeInterval) {
+        recorder.stop()
+        let duration = Date().timeIntervalSince(startTime)
+        log.debug("EchoRecordingSession — stop called. id=\(self.assetID.uuidString) duration=\(duration)s path=\(self.fileURL.lastPathComponent)")
+        return (assetID, duration)
+    }
+
+    func cancelAndDelete() {
+        recorder.stop()
+        try? FileManager.default.removeItem(at: fileURL)
     }
 }

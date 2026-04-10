@@ -27,7 +27,10 @@ struct MomentCardView: View {
 
     @State private var heroImage: UIImage? = nil
     var body: some View {
-        Button(action: onTap) {
+        Button(action: {
+            log.debug("MomentCardView: Internal button action triggered for \(moment.id.uuidString)")
+            onTap()
+        }) {
             VStack(alignment: .leading, spacing: 0) {
                 heroSection
                 infoSection
@@ -155,7 +158,10 @@ struct MomentCardView: View {
 
                 Spacer()
 
-                Button(action: onPlay) {
+                Button(action: {
+                    log.debug("MomentCardView: Internal PLAY button action triggered for \(moment.id.uuidString)")
+                    onPlay()
+                }) {
                     Circle()
                         .fill(presetAccent)
                         .frame(width: 36, height: 36)
@@ -197,8 +203,10 @@ struct MomentCardView: View {
         switch asset.type {
         case .still, .live, .l4c:
             return loadJPEGFromVault(assetID: asset.id)
-        case .clip, .echo, .atmosphere:
+        case .clip, .atmosphere:
             return await extractVideoThumbnail(assetID: asset.id)
+        case .echo:
+            return Self.echoPlaceholderImage()
         }
     }
 
@@ -244,6 +252,34 @@ struct MomentCardView: View {
         } catch {
             log.error("extractVideoThumbnail — failed for \(assetID.uuidString): \(error)")
             return nil
+        }
+    }
+
+    /// Renders a dark-background waveform image used as the hero for Echo cards.
+    /// Produces a real UIImage so heroImage is non-nil and the card is tappable.
+    private static func echoPlaceholderImage() -> UIImage {
+        let size = CGSize(width: 400, height: 260)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { ctx in
+            // Dark amber gradient background
+            let cgCtx = ctx.cgContext
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            let colors = [UIColor(red: 0.07, green: 0.04, blue: 0.01, alpha: 1).cgColor,
+                          UIColor(red: 0.18, green: 0.09, blue: 0.02, alpha: 1).cgColor] as CFArray
+            if let gradient = CGGradient(colorsSpace: colorSpace, colors: colors, locations: [0, 1]) {
+                cgCtx.drawLinearGradient(gradient,
+                                         start: .zero,
+                                         end: CGPoint(x: 0, y: size.height),
+                                         options: [])
+            }
+            // Centered waveform icon
+            let config = UIImage.SymbolConfiguration(pointSize: 64, weight: .regular)
+            if let icon = UIImage(systemName: "waveform.circle.fill", withConfiguration: config)?
+                .withTintColor(UIColor(white: 1, alpha: 0.55), renderingMode: .alwaysOriginal) {
+                let origin = CGPoint(x: (size.width - icon.size.width) / 2,
+                                     y: (size.height - icon.size.height) / 2)
+                icon.draw(at: origin)
+            }
         }
     }
 

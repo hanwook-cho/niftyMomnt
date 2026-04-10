@@ -15,7 +15,7 @@ struct NiftyMomntApp: App {
 
     @MainActor
     init() {
-        let config = AppConfig.v0_3_5
+        let config = AppConfig.v0_4
 
         // Platform adapters (NiftyData)
         let captureAdapter     = AVCaptureAdapter(config: config)

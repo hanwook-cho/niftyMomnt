@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>niftyMomnt — Product Requirements Document v1.7</title>
+<title>niftyMomnt — Product Requirements Document v1.8</title>
 <style>
 :root {
   --purple:  #6B4EFF; --purple-l: #EAE8FC; --purple-d: #3C3489;
@@ -69,8 +69,8 @@ hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
   <div class="app-name">niftyMomnt</div>
   <div class="doc-title">Product Requirements Document (PRD)</div>
   <div class="meta">
-    <span><span class="dot"></span>Version 1.7</span>
-    <span><span class="dot"></span>April 2026 — Updated: includes L4C v0.3.5</span>
+    <span><span class="dot"></span>Version 1.8</span>
+    <span><span class="dot"></span>April 2026 — Updated: Atmosphere Architecture Pivot</span>
     <span><span class="dot"></span>Confidential</span>
     <span><span class="dot"></span>Companion to UI/UX Specification v1.8</span>
     <span><span class="dot"></span>Platform: iOS · Market: US · Builds on MRD v1.5</span>
@@ -79,6 +79,17 @@ hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
 </div>
 
 <!-- CHANGE LOG -->
+<div class="change-log">
+  <h3>v1.7 → v1.8 Change Log — Atmosphere Pivot</h3>
+  <table>
+    <thead><tr><th>Section</th><th>Change</th><th>Driven by</th></tr></thead>
+    <tbody>
+      <tr><td>§2.2 Atmosphere Asset</td><td>Updated format to <strong>JPEG + M4A (Still + Looping Audio)</strong>. Capture moves to photo-class for high-res imagery.</td><td>Architecture pivot for image quality</td></tr>
+      <tr><td>§3.3 Shutter Interactions</td><td>Atmosphere updated to dual-resource stop trigger (High-res JPEG frame + Audio stop).</td><td>Implementation alignment</td></tr>
+    </tbody>
+  </table>
+</div>
+
 <div class="change-log">
   <h3>v1.6 → v1.7 Change Log — Updates from v1.6</h3>
   <table>
@@ -211,7 +222,7 @@ hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
     <tr><td><strong>Live</strong></td><td>HEIF + MOV (Apple Live Photo)</td><td>3s motion loop</td><td>Shutter tap (Live mode active)</td><td>3-second motion loop. Compatible with Apple Live Photo format. Silent secondary camera capture fires simultaneously (§2.5). Fix available post-capture on the Still frame only — MOV component unaffected (§3.8).</td></tr>
     <tr><td><strong>Clip</strong></td><td>MOV / MP4 (H.264)</td><td>Fixed: default 10s</td><td>Shutter hold → auto-stop at ceiling <em>(v0.3 stabilization: tap start / tap stop)</em></td><td>Fixed-duration video. Auto-stops at ceiling. "Slide to Lock" disables hold-release requirement mid-clip. Clockwise fill ring + countdown UI. Fix not available. <em>Current v0.3 implementation temporarily uses tap-to-start / tap-to-stop while the hold interaction is stabilized on device.</em></td></tr>
     <tr><td><strong>Echo</strong></td><td>AAC / M4A</td><td>Variable, default ceiling 60s</td><td>Tap start / Tap stop</td><td>Audio-only ambient sound capture. Radial pulsing waveform UI. Amber warning at 5s before ceiling. Background acoustic analysis feeds vibe tagging. Fix not available.</td></tr>
-    <tr><td><strong>Atmosphere</strong></td><td>HEIF + AAC composite</td><td>Still + audio loop: default 5s</td><td>Shutter tap (Atmosphere mode)</td><td>Still image layered with ambient audio loop. Plays as looping experience in viewer. Fix available post-capture on Still frame only (§3.8).</td></tr>
+    <tr><td><strong>Atmosphere</strong></td><td>JPEG + M4A (Still + Looping Audio)</td><td>Still + audio loop: default 5s</td><td>Shutter tap (Atmosphere mode)</td><td>High-res still image layered with ambient audio loop. Uses photo-output class for capture. Plays as looping "Living Still" in viewer. Fix available post-capture on Still frame only (§3.8).</td></tr>
     <tr class="new-row"><td><strong>Life Four Cuts (L4C)</strong> <span class="new-badge">NEW v1.7</span></td><td>JPEG (composite strip)</td><td>4 frames · 1080×1920px strip</td><td>Photo Booth mode → START button → automatic 4-shot sequence</td><td>4-shot countdown sequence (3-2-1 per shot). Assembled into a vertical 9:16 strip with optional Featured Frame PNG overlay and border colour selection. Shareable as a single JPEG. Source stills stored separately but hidden from Film feed — only the composite strip card appears.</td></tr>
   </tbody>
 </table>
@@ -371,7 +382,7 @@ hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
     <tr><td>Live</td><td>Tap</td><td>Instantaneous</td><td>Captures HEIF + 3s MOV pair. Buffers 1.5s before and after shutter tap for natural loop. Secondary camera fires simultaneously (§2.5). Compatible with Apple Live Photo.</td></tr>
     <tr><td>Clip</td><td>Hold to record / Slide to Lock <em>(v0.3 stabilization: Tap start / Tap stop)</em></td><td>Duration-fixed</td><td>Target UX: Hold initiates recording. Release ends early. Slide to Lock: swipe shutter button upward to lock recording — user can remove finger. Recording auto-stops at ceiling. <em>Current v0.3 build temporarily uses tap-to-start / tap-to-stop while the hold interaction is stabilized on device.</em></td></tr>
     <tr><td>Echo</td><td>Tap start / Tap stop</td><td>Manual start/stop</td><td>First tap begins audio recording. Second tap ends it. Auto-stop at ceiling. Amber warning at ceiling minus 5s.</td></tr>
-    <tr><td>Atmosphere</td><td>Tap (two-phase)</td><td>Sequential</td><td>Phase 1: captures Still frame instantly. Phase 2 (auto-initiated): begins ambient audio recording for configured loop duration. App silently composites Still + Audio.</td></tr>
+    <tr><td><strong>Atmosphere</strong></td><td>Tap start / Tap stop</td><td>Concurrent</td><td>First tap begins background audio recording. Second tap triggers high-resolution photo capture and stops audio. Resulting JPEG and M4A are saved as a paired asset.</td></tr>
     <tr><td>Booth</td><td>Tap `START`</td><td>4-shot automated sequence</td><td>Uses the same CaptureHub shell as other modes. Tapping START begins 4 rounds of 3-2-1 countdown + still capture. The active slot in the booth strip overlay highlights, captured slots fill in place, and a review sheet rises over CaptureHub after shot 4.</td></tr>
   </tbody>
 </table>
@@ -710,6 +721,8 @@ hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
 <p><strong>Navigation:</strong> Swipe left/right to navigate to the previous/next shot within the same roll. A pagination indicator (pill-dot row) at the bottom of the photo zone shows current position within the roll.</p>
 
 <p><strong>Location Vibe Chip:</strong> Displayed at the top of the photo zone, centered. Same glass pill treatment as the post-capture overlay. Auto-hidden after 2 seconds of viewing; reappears on photo tap.</p>
+
+<p><strong>Atmosphere Playback:</strong> For Atmosphere assets, the high-res JPEG is displayed as the static hero while the companion M4A audio loops indefinitely in the background, creating a "Living Still" effect.</p>
 
 <p><strong>Floating Sticker Vibes:</strong> Vibe tags from the post-capture Vibe Tag Prompt are rendered as tilted sticker chips over the photo (same tilt angles and glass treatment as the post-capture prompt). Each chip is positioned at a fixed location per shot (not randomised per view). Tapping a sticker chip opens a tag-edit overlay allowing the user to change or remove the vibe tag. If no vibe tags were assigned, no stickers are shown — the location chip remains.</p>
 

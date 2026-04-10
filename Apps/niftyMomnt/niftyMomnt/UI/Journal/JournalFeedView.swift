@@ -78,6 +78,71 @@ private struct InlineVideoPlayerView: View {
     }
 }
 
+private struct EchoAudioPlayerCardView: View {
+    let player: AVPlayer
+    let duration: TimeInterval?
+
+    @State private var isPlaying = false
+
+    var body: some View {
+        VStack(spacing: 18) {
+            Circle()
+                .fill(Color.niftyAmberVivid.opacity(0.16))
+                .frame(width: 84, height: 84)
+                .overlay(
+                    Image(systemName: "waveform.circle.fill")
+                        .font(.system(size: 38, weight: .medium))
+                        .foregroundStyle(Color.niftyAmberVivid)
+                )
+
+            VStack(spacing: 6) {
+                Text("Echo")
+                    .font(.system(size: 24, weight: .black))
+                    .foregroundStyle(.white.opacity(0.92))
+                Text(duration.map(Self.durationString) ?? "Audio only")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.46))
+            }
+
+            Button {
+                if isPlaying {
+                    player.pause()
+                } else {
+                    player.seek(to: .zero)
+                    player.play()
+                }
+                isPlaying.toggle()
+            } label: {
+                Label(isPlaying ? "Pause Echo" : "Play Echo", systemImage: isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.black.opacity(0.86))
+                    .padding(.horizontal, 22)
+                    .padding(.vertical, 14)
+                    .background(Color.niftyAmberVivid)
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            LinearGradient(
+                colors: [Color(hex: "#130A04"), Color(hex: "#2E1605"), Color(hex: "#130A04")],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .onDisappear {
+            player.pause()
+            isPlaying = false
+        }
+    }
+
+    fileprivate static func durationString(_ duration: TimeInterval) -> String {
+        let total = max(Int(duration.rounded()), 0)
+        return String(format: "%d:%02d", total / 60, total % 60)
+    }
+}
+
 struct FilmFeedView: View {
     let container: AppContainer
     let onScrollTopChanged: (Bool) -> Void
@@ -128,15 +193,23 @@ struct FilmFeedView: View {
                                         moment: moment,
                                         presetName: derivedPresetName(for: moment),
                                         presetAccent: derivedPresetAccent(for: moment),
-                                        onTap: { selectedMoment = moment },
-                                        onPlay: { selectedMoment = moment }
+                                        onTap: {
+                                            log.debug("MomentCardView tapped: \(moment.id.uuidString)")
+                                            selectedMoment = moment
+                                        },
+                                        onPlay: {
+                                            log.debug("MomentCardView play tapped: \(moment.id.uuidString)")
+                                            selectedMoment = moment
+                                        }
                                     )
                                     .padding(.horizontal, NiftySpacing.sm)
                                 case .l4c(let record):
                                     L4CMomentCardView(
-                                        record: record,
-                                        onTap: { selectedL4C = record }
-                                    )
+                                        record: record
+                                    ) { // This is the single onTap closure
+                                        log.debug("L4CMomentCardView tapped: \(record.id.uuidString)")
+                                        selectedL4C = record
+                                    }
                                     .padding(.horizontal, NiftySpacing.sm)
                                 }
                             }
@@ -155,6 +228,7 @@ struct FilmFeedView: View {
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 40)
                         .onEnded { value in
+                            log.debug("FilmFeedView: Pull-down gesture detected (h: \(value.translation.height))")
                             if isAtTop
                                 && value.translation.height > 60
                                 && abs(value.translation.height) > abs(value.translation.width) {
@@ -367,9 +441,15 @@ struct FilmFeedView: View {
         }
     }
 
-    // MARK: - Preset derivation (stub — real integration reads asset preset metadata)
+    // MARK: - Preset derivation (v0.4: prefers stored preset, falls back to AI-classified vibes)
 
     private func derivedPresetName(for moment: Moment) -> String {
+        // v0.4: use stored preset if available
+        if let stored = moment.selectedPresetName,
+           VibePresetUI.defaults.contains(where: { $0.name == stored }) {
+            return stored
+        }
+        // Fallback: derive from AI-classified dominant vibe
         switch moment.dominantVibes.first {
         case .golden: return "AMALFI"
         case .moody:  return "NORDIC"
@@ -381,11 +461,17 @@ struct FilmFeedView: View {
     }
 
     private func derivedPresetAccent(for moment: Moment) -> Color {
+        // v0.4: use stored preset accent if available
+        if let stored = moment.selectedPresetName,
+           let preset = VibePresetUI.defaults.first(where: { $0.name == stored }) {
+            return preset.accentColor
+        }
+        // Fallback: derive from AI-classified dominant vibe
         switch moment.dominantVibes.first {
         case .golden:    return Color(hex: "#E8A020")
         case .moody:     return Color(hex: "#8EB4D4")
         case .nostalgic: return Color(hex: "#C8A882")
-        case .electric:  return Color(hex: "#C4B5FD") // lavender v1.7
+        case .electric:  return Color(hex: "#C4B5FD")
         case .raw, .dreamy: return Color(hex: "#FF6B6B")
         default: return Color(hex: "#E8A020")
         }
@@ -420,6 +506,8 @@ struct MomentDetailView: View {
     @State private var livePhoto: PHLivePhoto? = nil
     @State private var videoPlayer: AVPlayer? = nil
     @State private var videoAspectRatio: CGFloat? = nil
+    @State private var audioPlayer: AVPlayer? = nil
+    @State private var audioDuration: TimeInterval? = nil
     @State private var livePhotoReplayToken: Int = 0
     @State private var heroLoadRequestID: String? = nil
 
@@ -471,8 +559,39 @@ struct MomentDetailView: View {
         livePhoto = nil
         videoPlayer = nil
         videoAspectRatio = nil
+        audioPlayer = nil
+        audioDuration = nil
+        if first.type == .echo || first.type == .atmosphere {
+            let audioURL = assetsDir.appendingPathComponent("\(first.id.uuidString).m4a")
+            guard FileManager.default.fileExists(atPath: audioURL.path) else {
+                detailLog.error("loadHeroImage[\(requestID)] — missing M4A for echo assetID=\(first.id.uuidString)")
+                return
+            }
+            let avAsset = AVURLAsset(url: audioURL)
+            let playerItem = AVPlayerItem(asset: avAsset)
+            let player = AVPlayer(playerItem: playerItem)
+            
+            // Loop Atmosphere audio
+            if first.type == .atmosphere {
+                player.actionAtItemEnd = .none
+                NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: playerItem, queue: .main) { _ in
+                    player.seek(to: .zero)
+                    player.play()
+                }
+            }
+            
+            audioPlayer = player
+            let duration = (try? await avAsset.load(.duration))?.seconds ?? first.duration ?? 0
+            audioDuration = duration
+            let attributes = try? FileManager.default.attributesOfItem(atPath: audioURL.path)
+            let fileSize = attributes?[.size] as? Int64 ?? 0
+            detailLog.debug("loadHeroImage[\(requestID)] — audio player ready for \(audioURL.lastPathComponent) (size: \(fileSize)B, duration: \(String(format: "%.2f", duration))s)")
+            
+            if first.type == .echo { return }
+            // Atmosphere continues to load JPEG below
+        }
         guard let data = try? Data(contentsOf: jpegURL), let img = UIImage(data: data) else {
-            if [.clip, .echo, .atmosphere].contains(first.type) {
+            if first.type == .clip {
                 let movURL = assetsDir.appendingPathComponent("\(first.id.uuidString).mov")
                 guard FileManager.default.fileExists(atPath: movURL.path) else {
                     detailLog.error("loadHeroImage[\(requestID)] — missing MOV for video assetID=\(first.id.uuidString)")
@@ -594,6 +713,10 @@ struct MomentDetailView: View {
         }
 
         let asset = moment.assets[currentAssetIndex]
+        guard asset.type != .echo else {
+            exportAlertMessage = "Echo audio can be shared from niftyMomnt, but it can’t be exported to Photo Library."
+            return
+        }
         isExportingToPhotoLibrary = true
         detailLog.debug("exportToPhotoLibrary — start assetID=\(asset.id.uuidString) type=\(asset.type.rawValue)")
 
@@ -641,6 +764,7 @@ struct MomentDetailView: View {
         let assetsDir = dir.appendingPathComponent("assets")
         let jpegURL = assetsDir.appendingPathComponent("\(asset.id.uuidString).jpg")
         let movURL = assetsDir.appendingPathComponent("\(asset.id.uuidString).mov")
+        let audioURL = assetsDir.appendingPathComponent("\(asset.id.uuidString).m4a")
 
         switch asset.type {
         case .still, .l4c:
@@ -651,14 +775,19 @@ struct MomentDetailView: View {
                 return [jpegURL, movURL]
             }
             return FileManager.default.fileExists(atPath: jpegURL.path) ? [jpegURL] : nil
-        case .clip, .echo, .atmosphere:
+        case .clip, .atmosphere:
             return FileManager.default.fileExists(atPath: movURL.path) ? [movURL] : nil
+        case .echo:
+            return FileManager.default.fileExists(atPath: audioURL.path) ? [audioURL] : nil
         }
     }
 
     private func exportFailureMessage(for error: Error, assetType: AssetType) -> String {
         if String(describing: error).contains("photoLibraryAccessDenied") {
             return "Photo Library access was denied. Please allow Add Photos access in Settings and try again."
+        }
+        if String(describing: error).contains("unsupportedPhotoLibraryExport") {
+            return "This Echo can be shared from niftyMomnt, but it can’t be added to Photo Library."
         }
         return assetType == .live
             ? "Could not save this Live Photo to your Photo Library."
@@ -671,8 +800,10 @@ struct MomentDetailView: View {
             return "Photo saved to your Photo Library."
         case .live:
             return "Live Photo saved to your Photo Library."
-        case .clip, .echo, .atmosphere:
+        case .clip, .atmosphere:
             return "Video saved to your Photo Library."
+        case .echo:
+            return "Echo audio is ready to share."
         }
     }
 
@@ -682,8 +813,10 @@ struct MomentDetailView: View {
             return "Could not save this photo to your Photo Library."
         case .live:
             return "Could not save this Live Photo to your Photo Library."
-        case .clip, .echo, .atmosphere:
+        case .clip, .atmosphere:
             return "Could not save this video to your Photo Library."
+        case .echo:
+            return "This Echo can’t be saved to Photo Library."
         }
     }
 
@@ -752,6 +885,9 @@ struct MomentDetailView: View {
                     .clipped()
                     .contentShape(Rectangle())
                     .onTapGesture { livePhotoReplayToken += 1 }
+            } else if let player = audioPlayer {
+                EchoAudioPlayerCardView(player: player, duration: audioDuration)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let player = videoPlayer {
                 InlineVideoPlayerView(player: player)
                     .aspectRatio(videoAspectRatio ?? (9.0 / 16.0), contentMode: .fit)
@@ -819,10 +955,15 @@ struct MomentDetailView: View {
                 .padding(.top, NiftySpacing.md)
 
             // Shot info row
-            HStack {
+            HStack(spacing: 4) {
                 Text("Shot \(currentAssetIndex + 1) of \(moment.assets.count)")
-                    .font(.system(size: 14, weight: .black))
-                    .foregroundStyle(.white.opacity(0.88))
+                if currentAssetType == .echo, let duration = audioDuration {
+                    Text("· \(EchoAudioPlayerCardView.durationString(duration))")
+                }
+            }
+            .font(.system(size: 14, weight: .black))
+            .foregroundStyle(.white.opacity(0.88))
+            HStack {
                 Spacer()
                 Text(dateTimeString)
                     .font(.system(size: 11, weight: .regular))
@@ -844,14 +985,18 @@ struct MomentDetailView: View {
 
             // Actions row
             HStack(spacing: NiftySpacing.sm) {
-                actionButton(title: "Fix this shot", icon: "checkmark.circle", isGlass: true)
-                actionButton(
-                    title: isExportingToPhotoLibrary ? "Exporting..." : "Export to Photo Library",
-                    icon: isExportingToPhotoLibrary ? nil : "square.and.arrow.down",
-                    isGlass: false,
-                    tinted: true
-                ) {
-                    exportCurrentAssetToPhotoLibrary()
+                if currentAssetSupportsFix {
+                    actionButton(title: "Fix this shot", icon: "checkmark.circle", isGlass: true)
+                }
+                if currentAssetType != .echo {
+                    actionButton(
+                        title: isExportingToPhotoLibrary ? "Exporting..." : "Export to Photo Library",
+                        icon: isExportingToPhotoLibrary ? nil : "square.and.arrow.down",
+                        isGlass: false,
+                        tinted: true
+                    ) {
+                        exportCurrentAssetToPhotoLibrary()
+                    }
                 }
                 Spacer()
                 // Delete button
@@ -956,6 +1101,20 @@ struct MomentDetailView: View {
         let t = DateFormatter()
         t.dateFormat = "h:mm a"
         return "\(fmt.string(from: moment.startTime)) · \(t.string(from: moment.startTime))"
+    }
+
+    private var currentAssetType: AssetType {
+        guard moment.assets.indices.contains(currentAssetIndex) else { return .still }
+        return moment.assets[currentAssetIndex].type
+    }
+
+    private var currentAssetSupportsFix: Bool {
+        switch currentAssetType {
+        case .still, .live:
+            return true
+        case .clip, .echo, .atmosphere, .l4c:
+            return false
+        }
     }
 }
 

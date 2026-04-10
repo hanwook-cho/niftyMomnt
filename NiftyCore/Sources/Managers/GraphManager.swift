@@ -26,6 +26,14 @@ public actor GraphManager {
         try await graph.fetchMoments(query: query)
     }
 
+    public func updatePreset(_ name: String, for assetID: UUID) async throws {
+        try await graph.updatePreset(name, for: assetID)
+    }
+
+    public func fetchTodayMomentCount() async throws -> Int {
+        try await graph.fetchTodayMomentCount()
+    }
+
     public func saveDerivativeRecord(_ derivative: DerivativeAsset) async throws {
         try await graph.saveDerivativeRecord(derivative)
     }

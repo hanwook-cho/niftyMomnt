@@ -67,6 +67,7 @@ struct CaptureHubView: View {
     @State private var lastCapturedImage: UIImage? = nil
     @State private var lastCapturedThumbnailUsesFit: Bool = false
     @State private var isPreviewRunning: Bool = false
+    @State private var previewControlTask: Task<Void, Never>? = nil
     @State private var clipTimerTask: Task<Void, Never>? = nil
     @State private var boothCaptureState: BoothCaptureState = .idle
     @State private var boothCapturedShots: [(Asset, Data)] = []
@@ -77,8 +78,9 @@ struct CaptureHubView: View {
     @State private var showBoothReviewSheet: Bool = false
     @State private var boothFlashOpacity: Double = 0
 
-    // Roll mode
-    @State private var rollShotsRemaining: Int = 17
+    // Roll mode (v0.4: 36-shot soft limit, wired to GRDB via fetchTodayMomentCount)
+    private let rollModeMax = 36
+    @State private var rollShotsRemaining: Int = 36
 
     // One-time flip hint
     @AppStorage("nifty.flipHintShown") private var flipHintShown: Bool = false
@@ -204,19 +206,14 @@ struct CaptureHubView: View {
         .ignoresSafeArea()
         .preferredColorScheme(.dark)
         .onAppear { readWindowSafeArea() }
-        .task { await startCameraPreview() }
-        .onDisappear { Task { await stopCameraPreview() } }
+        .onAppear { performPreviewControl(active: true) }
+        .task { await refreshRollCounter() }
+        .onDisappear { performPreviewControl(active: false) }
         .onChange(of: scenePhase) { _, newPhase in
-            Task { await handleScenePhaseChange(newPhase) }
+            handleScenePhaseChange(newPhase)
         }
         .onChange(of: isCaptureActive) { _, isActive in
-            Task {
-                if isActive {
-                    await startCameraPreview()
-                } else {
-                    await stopCameraPreview()
-                }
-            }
+            performPreviewControl(active: isActive)
         }
         .sheet(isPresented: $showBoothReviewSheet, onDismiss: handleBoothReviewDismiss) {
             StripPreviewSheet(
@@ -247,20 +244,43 @@ struct CaptureHubView: View {
         bottomSafeArea = window.safeAreaInsets.bottom
     }
 
+    /// v0.4: Fetches today's moment count from GRDB and updates the Roll Mode counter.
+    private func refreshRollCounter() async {
+        let count = (try? await container.graphManager.fetchTodayMomentCount()) ?? 0
+        rollShotsRemaining = max(0, rollModeMax - count)
+    }
+
+    private func handleScenePhaseChange(_ newPhase: ScenePhase) {
+        switch newPhase {
+        case .active:
+            performPreviewControl(active: true)
+        case .inactive, .background:
+            performPreviewControl(active: false)
+        @unknown default:
+            performPreviewControl(active: false)
+        }
+    }
+
+    private func performPreviewControl(active: Bool) {
+        previewControlTask?.cancel()
+        previewControlTask = Task {
+            if active {
+                await startCameraPreview()
+            } else {
+                await stopCameraPreview()
+            }
+        }
+    }
+
     /// Requests camera permission (first launch only) then starts the live preview session.
     private func startCameraPreview() async {
-        guard !isPreviewRunning else { return }
+        if isPreviewRunning { return }
         guard isCaptureActive else { return }
         guard scenePhase == .active else { return }
-        let status = AVCaptureDevice.authorizationStatus(for: .video)
-        if status == .notDetermined {
-            guard await AVCaptureDevice.requestAccess(for: .video) else { return }
-        } else {
-            guard status == .authorized else { return }
-        }
+        // Permission check is handled by UseCase -> Adapter
         do {
             try await container.captureUseCase.startPreview(mode: currentMode, config: container.config)
-            isPreviewRunning = true
+            await MainActor.run { isPreviewRunning = true }
         } catch {
             #if DEBUG
             print("[CaptureHub] startPreview failed: \(error)")
@@ -269,9 +289,9 @@ struct CaptureHubView: View {
     }
 
     private func stopCameraPreview() async {
-        guard isPreviewRunning else { return }
+        if !isPreviewRunning { return }
         await container.captureUseCase.stopPreview()
-        isPreviewRunning = false
+        await MainActor.run { isPreviewRunning = false }
     }
 
     private func handleScenePhaseChange(_ newPhase: ScenePhase) async {
@@ -447,7 +467,7 @@ struct CaptureHubView: View {
         HStack(spacing: NiftySpacing.sm) {
             HStack(spacing: 2) {
                 ForEach(0..<9, id: \.self) { i in
-                    let used = i < (17 - rollShotsRemaining)
+                    let used = i < Int(Double(rollModeMax - rollShotsRemaining) / Double(rollModeMax) * 9.0)
                     RoundedRectangle(cornerRadius: 1.5)
                         .fill(used ? Color(hex: "#E8A020") : Color.white.opacity(0.09))
                         .overlay(
@@ -668,43 +688,27 @@ struct CaptureHubView: View {
         .overlay(Capsule().strokeBorder(Color.niftyBrand.opacity(0.48), lineWidth: 1))
     }
 
-    // MARK: - Zone C: Preset Bar with Peek Swatches (v1.7)
+    // MARK: - Zone C: Preset Bar
 
     private var presetBar: some View {
         ZStack(alignment: .top) {
             Rectangle()
-                .fill(Color(red: 0, green: 0, blue: 0).opacity(0.26))
+                .fill(activePreset.accentColor.opacity(0.82))
                 .background(.ultraThinMaterial)
-                .overlay(alignment: .top) {
-                    activePreset.accentColor
-                        .opacity(0.88)
-                        .frame(height: 2)
-                }
+                .animation(reduceMotion ? nil : .niftyPresetSwitch, value: activePresetIndex)
 
-            if presetBarCollapsed {
-                Color.clear.frame(height: 4)
-            } else {
+            if !presetBarCollapsed {
                 HStack(spacing: 0) {
-                    // Accent dot + preset name (17pt/900 per spec wireframe)
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(activePreset.accentColor)
-                            .frame(width: 9, height: 9)
-                        Text(activePreset.name)
-                            .font(.system(size: 17, weight: .black))
-                            .foregroundStyle(.white.opacity(0.95))
-                    }
-                    .padding(.leading, NiftySpacing.lg)
-
-                    // Peek swatches — 5 dots representing all presets (v1.7)
-                    peekSwatches
-                        .padding(.leading, NiftySpacing.md)
+                    Text(activePreset.name)
+                        .font(.system(size: 17, weight: .black))
+                        .foregroundStyle(.black.opacity(0.78))
+                        .padding(.leading, NiftySpacing.lg)
 
                     Spacer()
 
-                    Text("hold")
+                    Text("tap · hold")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.46))
+                        .foregroundStyle(.black.opacity(0.38))
                         .padding(.trailing, NiftySpacing.lg)
                 }
                 .frame(height: 46)
@@ -712,40 +716,14 @@ struct CaptureHubView: View {
         }
         .frame(height: presetBarCollapsed ? 4 : 46)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: presetBarCollapsed)
-        .gesture(
-            DragGesture(minimumDistance: 20)
-                .onEnded { value in
-                    if abs(value.translation.width) > abs(value.translation.height) {
-                        cyclePreset(by: value.translation.width < 0 ? 1 : -1)
-                    }
-                }
-        )
         .onLongPressGesture(minimumDuration: 0.4) {
             withAnimation(.niftySpring) { showPresetPicker = true }
         }
         .onTapGesture {
             if presetBarCollapsed {
                 withAnimation(.easeOut(duration: 0.2)) { presetBarCollapsed = false }
-            }
-        }
-    }
-
-    private var peekSwatches: some View {
-        HStack(spacing: 12) {
-            ForEach(VibePresetUI.defaults) { preset in
-                let isActive = preset.id == activePresetIndex
-                Circle()
-                    .fill(preset.accentColor)
-                    .frame(width: isActive ? 12 : 9, height: isActive ? 12 : 9)
-                    .opacity(isActive ? 1.0 : 0.50)
-                    .overlay(
-                        Circle().strokeBorder(
-                            .white.opacity(isActive ? 0.38 : 0.14),
-                            lineWidth: 0.5
-                        )
-                    )
-                    .animation(.niftyPresetSwitch, value: activePresetIndex)
-                    .onTapGesture { selectPreset(preset) }
+            } else {
+                cyclePreset(by: 1)
             }
         }
     }
@@ -1900,8 +1878,10 @@ struct CaptureHubView: View {
         case .echo:
             // Echo: tap toggles recording (audio-focused, no hold needed)
             if isRecording {
+                print("[CaptureHub] Echo: Tapping shutter to STOP recording")
                 stopVideoCapture()
             } else {
+                print("[CaptureHub] Echo: Tapping shutter to START recording")
                 startVideoCapture(mode: .echo)
             }
         case .atmosphere:
@@ -1934,7 +1914,8 @@ struct CaptureHubView: View {
         }
         Task {
             do {
-                let asset = try await container.captureUseCase.captureAsset()
+                let asset = try await container.captureUseCase.captureAsset(preset: activePreset.name)
+                rollShotsRemaining = max(0, rollShotsRemaining - 1)
                 // Load thumbnail from vault to display left of shutter
                 if let (_, data) = try? await container.vaultManager.loadPrimary(asset.id) {
                     lastCapturedImage = UIImage(data: data)
@@ -1977,10 +1958,12 @@ struct CaptureHubView: View {
             clipCountdown = clipDurationSeconds
             startClipCountdown()
         }
+        print("[CaptureHub] startVideoCapture(mode: \(mode.rawValue)) — triggering Task...")
         withAnimation(.niftySpring) { isRecording = true }
         Task {
             do {
                 try await container.captureUseCase.startVideoRecording(mode: mode, config: container.config)
+                print("[CaptureHub] startVideoCapture — Task success for \(mode.rawValue)")
             } catch {
                 clipTimerTask?.cancel()
                 withAnimation { isRecording = false }
@@ -1992,14 +1975,30 @@ struct CaptureHubView: View {
     }
 
     private func stopVideoCapture() {
-        guard isRecording else { return }
+        print("[CaptureHub] stopVideoCapture attempt — isRecording: \(isRecording), currentMode: \(currentMode.rawValue) (Task starting)")
+        guard isRecording else {
+            print("[CaptureHub] stopVideoCapture — SKIPPED: isRecording was already false")
+            return
+        }
         clipTimerTask?.cancel()
         clipTimerTask = nil
         withAnimation(.niftySpring) { isRecording = false }
         Task {
             do {
-                let asset = try await container.captureUseCase.stopVideoRecording(config: container.config)
-                if let thumb = await loadVideoThumbnail(assetID: asset.id) {
+                print("[CaptureHub] stopVideoCapture — calling useCase.stopVideoRecording...")
+                let asset = try await container.captureUseCase.stopVideoRecording(config: container.config, preset: activePreset.name)
+                rollShotsRemaining = max(0, rollShotsRemaining - 1)
+                print("[CaptureHub] stopVideoCapture — success! assetID: \(asset.id.uuidString) type: \(asset.type.rawValue) duration: \(asset.duration ?? 0)")
+                if asset.type == .echo {
+                    await MainActor.run {
+                        lastCapturedImage = UIImage(
+                            systemName: "waveform.circle.fill",
+                            withConfiguration: UIImage.SymbolConfiguration(pointSize: 42, weight: .regular)
+                        )?
+                        .withTintColor(UIColor(Color.niftyAmberVivid), renderingMode: .alwaysOriginal)
+                        lastCapturedThumbnailUsesFit = true
+                    }
+                } else if let thumb = await loadVideoThumbnail(assetID: asset.id) {
                     await MainActor.run {
                         lastCapturedImage = thumb
                         lastCapturedThumbnailUsesFit = true

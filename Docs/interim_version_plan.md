@@ -2,7 +2,7 @@
 # v0.1 → v1.0 Feature Ladder
 
 _Reference: PRD v1.6 · UI/UX Spec v1.7 · SRS v1.2_
-_Last updated: 2026-04-08 · v0.2 + v0.3 signed off; v0.3.5 mode-switching performance resolved_
+_Last updated: 2026-04-09 · v0.2 + v0.3 signed off; v0.3.5 mode-switching performance resolved; v0.4 implementation complete — pending device verification; v0.5 planned_
 
 ---
 
@@ -24,8 +24,8 @@ _Last updated: 2026-04-08 · v0.2 + v0.3 signed off; v0.3.5 mode-switching perfo
 | [v0.2](#v02--persistent-metadata--feed-quality) | Real moment metadata: location, time, palette, vibe tags in feed | ✅ |
 | [v0.3](#v03--multi-mode-capture) | All 5 asset types captured and stored correctly | ✅ |
 | [v0.3.5](#v035--life-four-cuts-photo-booth-mode) | Photo booth flow: 4-shot countdown, strip compose, Featured Frame overlay, share-ready 9:16 image | 🔄 |
-| [v0.4](#v04--vibe-preset-system) | Preset selection maps to stored tags; accent theming in feed | ⬜ |
-| [v0.5](#v05--sound-stamp--acoustic-pipeline) | SoundStamp captures PCM at shutter; acoustic tags in feed | ⬜ |
+| [v0.4](#v04--vibe-preset-system) | Preset selection maps to stored tags; accent theming in feed | 🔄 |
+| [v0.5](#v05--sound-stamp--acoustic-pipeline) | SoundStamp captures PCM at shutter; acoustic tags in feed | 🔄 |
 | [v0.6](#v06--ai-nudge-engine) | Post-capture nudge card fires; response stored in graph | ⬜ |
 | [v0.7](#v07--private-vault--face-id) | Assets marked private locked behind Face ID; vault tab functional | ⬜ |
 | [v0.8](#v08--story-engine--reel-assembler) | Moment cluster produced; reel assembled with voice overlay | ⬜ |
@@ -251,8 +251,8 @@ _Last updated: 2026-04-08 · v0.2 + v0.3 signed off; v0.3.5 mode-switching perfo
 ### Features In Scope
 
 - `AVCaptureAdapter`: Live Photo via `AVCapturePhotoOutput` with `livePhotoMovieFileURL`
-- `AVCaptureAdapter`: Clip/Echo via `AVAssetWriter` pipeline (H.264, configurable duration)
-- `AVCaptureAdapter`: Atmosphere (ambient video, no time limit, background-safe)
+- `AVCaptureAdapter`: Clip via video recording path; Echo via audio-only AAC / M4A path
+- `AVCaptureAdapter`: Atmosphere placeholder path pending replacement with still + audio loop flow
 - `CaptureMode` navigation in `CaptureHubView` — mode rail scroll, preset bar visibility per mode
 - `VaultRepository`: store `.mov`/`.mp4` alongside JPEG; `asset_files` type column
 - `MomentCardView`: video thumbnail, Live badge, type-appropriate overlay
@@ -260,7 +260,9 @@ _Last updated: 2026-04-08 · v0.2 + v0.3 signed off; v0.3.5 mode-switching perfo
 ### Implementation Notes
 
 - Live Photo in v0.3: captures a still JPEG with `.live` type — shows LIVE badge in feed. Live motion companion file (`.mov`) deferred to v0.4+.
-- Clip/Echo/Atmosphere: `AVCaptureMovieFileOutput` (not `AVAssetWriter`) — simpler, sufficient for v0.3.
+- Clip currently uses `AVCaptureMovieFileOutput` for `.mov` recording.
+- Echo now uses an audio-only `.m4a` capture path and should be verified as an audio asset, not a video asset.
+- Atmosphere has been pivoted to a **Still + Looping Audio (JPEG + M4A)** hybrid. High-res capture is triggered at the stop of an audio recording session.
 - `saveVideoFile(_:sourceURL:)` moves the `.mov` file rather than loading it into memory.
 - Video classification (vibe tags from video frame) deferred to v0.5.
 
@@ -321,16 +323,27 @@ _Last updated: 2026-04-08 · v0.2 + v0.3 signed off; v0.3.5 mode-switching perfo
 | # | Step | Expected result | Result |
 |---|------|-----------------|--------|
 | 4.1 | Swipe to ECHO mode | Ghost label "ECHO" flashes | |
-| 4.2 | Tap shutter to start, tap again to stop (~3s) | Recording starts and stops; moment in feed with ECHO badge | |
-| 4.3 | Kill and relaunch | ECHO moment persists | |
+| 4.2 | Tap More while in ECHO mode | Capture Controls deck shows `Echo Limit` only; no Clip / Still / Live rows shown | |
+| 4.3 | Tap shutter to start, tap again to stop (~3s) | Recording starts and stops; REC overlay remains visible while recording; moment appears in feed with ECHO badge | |
+| 4.4 | Open the captured ECHO in Film / Detail | Detail shows an audio-only Echo player card, not a video player or broken image state | |
+| 4.5 | Tap Share on the Echo detail | Standard share sheet opens with the `.m4a` file prepared successfully | |
+| 4.6 | In Echo detail, inspect bottom actions | `Fix this shot` and `Export to Photo Library` are not shown for Echo | |
+| 4.7 | Kill and relaunch | ECHO moment persists; audio file exists as `.m4a` in `Documents/assets/` | |
 
 #### 5 — Atmosphere Mode
 
 | # | Step | Expected result | Result |
 |---|------|-----------------|--------|
 | 5.1 | Swipe to ATMOS mode | Ghost label "ATMOS" flashes | |
-| 5.2 | Tap shutter to start, wait ~5s, tap to stop | Recording starts and stops; moment in feed with ATMOS badge | |
-| 5.3 | Kill and relaunch | ATMOS moment persists | |
+| 5.2 | Tap shutter to START | Recording starts; REC overlay visible; status reads "ATMOS" | |
+| 5.3 | Tap shutter to STOP | White flash indicates high-res capture; audio recording stops; thumbnail updates to the high-res frame | |
+| 5.4 | Check Xcode Device File Browser → `Documents/assets/` | Verify two files exist for the asset ID: `{id}.jpg` and `{id}.m4a` | |
+| 5.5 | Open ATMOS moment in Detail View | High-res static image is displayed; background audio begins playing automatically | |
+| 5.6 | Observe audio for > 10s | Audio loops seamlessly from the end back to the start | |
+| 5.7 | Kill and relaunch | ATMOS moment persists in feed with ATMOS badge and high-res thumbnail | |
+
+> **Echo note.** Echo is treated as an audio-only asset for capture, persistence, and share.
+> **Atmosphere note.** Atmosphere capture leverages the high-resolution photo output while maintaining a background audio recording session.
 
 #### 6 — Mode Switching (session reconfigure)
 
@@ -719,54 +732,288 @@ Before implementation begins, please confirm your intent on these:
 
 ## v0.4 — Vibe Preset System
 
-**Verification goal:** Selecting a preset in the Capture Hub stores a `VibePreset` tag on the asset; preset-derived accent color appears in `MomentCardView`; 5 preset packs functional.
+**Verification goal:** Selecting a preset in Capture Hub stores the name on the asset; `MomentCardView` accent reflects the stored preset; Roll Mode shot counter reads real daily count from GRDB; 5 preset packs fully wired end-to-end.
 
-**AppConfig:** adds `features: .rollMode` (optional), preset system active
+**AppConfig:** `AppConfig.v0_4` — same as v0.3 + `features: .rollMode`. Switch `niftyMomntApp.swift` from `v0_3_5` → `v0_4`.
+
+**Note:** Atmosphere Asset capture support is deferred past v0.4. v0.3 §5 Atmosphere checklist will be covered in a dedicated verification pass before v0.5.
+
+### Pre-existing scaffold (no changes needed)
+
+| Item | Location | Notes |
+|------|----------|-------|
+| `VibePresetUI.defaults` — 5 named packs + accent colors | `DesignSystem.swift` | ✅ |
+| Preset bar renders, swipe-cycle, long-press picker | `CaptureHubView.swift` | ✅ UI only |
+| `derivedPresetAccent(for:)` + `derivedPresetName(for:)` | `JournalFeedView.swift` | ✅ reads AI vibes; needs fallback to stored preset |
+| `MomentCardView.presetAccent` displayed as left border + chip fill | `MomentCardView.swift` | ✅ |
+| `filmStripCounter` view in Zone A | `CaptureHubView.swift` | ✅ UI only; `rollShotsRemaining` was hardcoded `@State = 17` → wired to GRDB in task 4c (max = 36) |
+| `AppConfig.v0_4` defined | `AppConfig+Interim.swift` | ✅ |
+| `FeatureSet.rollMode` defined | `AppConfig.swift` | ✅ |
+| `CaptureEngine.applyPreset(_:)` stub | `CaptureEngine.swift` + `AVCaptureAdapter.swift` | ✅ (passthrough, not needed for v0.4) |
 
 ### Features In Scope
 
-- `VibePreset` domain model → `VibeTag` mapping stored at capture time
-- Preset bar in `CaptureHubView`: 5 packs, swipe to cycle, long-press picker (per UI/UX Spec §4.1)
-- `DesignSystem.VibePresetUI.defaults`: real accent colors, 5 named packs
-- Feed: `derivedPresetAccent(for:)` mapping `VibeTag` → accent color
-- Roll Mode: `FeatureSet.rollMode` — daily shot cap counter in Zone A
+- Store selected preset name on the `Asset` and `Moment` at capture time
+- Feed accent color reads stored preset name first; falls back to AI-classified vibe tags
+- Roll Mode counter reads real daily count from GRDB; enforces 36-shot soft cap
 
 ### Implementation Tasks
 
 | # | Task | File(s) | Status |
 |---|------|---------|--------|
-| 1 | `VibePreset` → `VibeTag` write at capture time | `NiftyCore/Sources/Domain/UseCases/CaptureMomentUseCase.swift` | ⬜ |
-| 2 | Preset bar: swipe cycle + long-press picker | `Apps/niftyMomnt/niftyMomnt/UI/CaptureHub/CaptureHubView.swift` | ⬜ |
-| 3 | `DesignSystem`: 5 real preset packs with accent colors | `Apps/niftyMomnt/niftyMomnt/DesignSystem.swift` | ⬜ |
-| 4 | `FilmFeedView`: `derivedPresetAccent(for:)` using real vibe tags | `Apps/niftyMomnt/niftyMomnt/UI/Journal/` | ⬜ |
-| 5 | Roll Mode counter: `GraphManager` daily count query | `NiftyCore/Sources/Managers/GraphManager.swift` | ⬜ |
+| 1a | Add `selectedPresetName: String?` to `Asset` and `Moment` domain models | `NiftyCore/Sources/Domain/Models/Asset.swift`, `Moment.swift` | ✅ |
+| 1b | Add `func updatePreset(_ name: String, for assetID: UUID) async throws` + `fetchTodayMomentCount` to `GraphProtocol` | `NiftyCore/Sources/Domain/Protocols/GraphProtocol.swift` | ✅ |
+| 1c | Implement `GraphRepository.updatePreset()` — `UPDATE assets SET preset_name = ? WHERE id = ?`; add `preset_name TEXT` column via `ALTER TABLE` migration; update `fetchMoments` to SELECT + populate `preset_name` on `Asset` and `Moment` | `NiftyData/Sources/Repositories/GraphRepository.swift` | ✅ |
+| 1d | Add `GraphManager.updatePreset()` and `fetchTodayMomentCount()` pass-throughs | `NiftyCore/Sources/Managers/GraphManager.swift` | ✅ |
+| 2a | `CaptureMomentUseCase.captureAsset(preset: String?)` and `stopVideoRecording(config:preset:)` — add optional param; set `asset.selectedPresetName`; after `graph.saveMoment`, call `graph.updatePreset` when non-nil | `NiftyCore/Sources/Domain/UseCases/CaptureMomentUseCase.swift` | ✅ |
+| 2b | `CaptureHubView`: pass `activePreset.name` into `captureAsset(preset:)` (still) and `stopVideoRecording(config:preset:)` (clip/echo/atmosphere). Note: booth uses `lifeFourCutsUseCase.captureOneShot()` — preset not applicable | `Apps/niftyMomnt/niftyMomnt/UI/CaptureHub/CaptureHubView.swift` | ✅ |
+| 3a | `JournalFeedView.derivedPresetAccent(for:)` — check `moment.selectedPresetName` first → map via `VibePresetUI.defaults`; fall back to AI vibe mapping | `Apps/niftyMomnt/niftyMomnt/UI/Journal/JournalFeedView.swift` | ✅ |
+| 3b | `JournalFeedView.derivedPresetName(for:)` — same priority: stored name → AI vibe fallback | `Apps/niftyMomnt/niftyMomnt/UI/Journal/JournalFeedView.swift` | ✅ |
+| 4a | Add `GraphRepository.fetchTodayMomentCount()` — SQL `COUNT(*)` WHERE `start_time >= startOfDay` | `NiftyData/Sources/Repositories/GraphRepository.swift` | ✅ |
+| 4b | `GraphManager.fetchTodayMomentCount()` pass-through; `GraphProtocol` requirement | `NiftyCore/Sources/Managers/GraphManager.swift`, `GraphProtocol.swift` | ✅ |
+| 4c | `CaptureHubView`: `rollModeMax = 36`; `.task` calls `refreshRollCounter()` → `fetchTodayMomentCount()`; decrement on each successful still and video capture; film-strip formula scaled to 36-shot range | `Apps/niftyMomnt/niftyMomnt/UI/CaptureHub/CaptureHubView.swift` | ✅ |
+| 5 | Switch `niftyMomntApp.swift` config from `AppConfig.v0_3_5` → `AppConfig.v0_4` | `Apps/niftyMomnt/niftyMomnt/niftyMomntApp.swift` | ✅ |
+
+> **DB migration note (task 1c):** GRDB allows `ALTER TABLE assets ADD COLUMN preset_name TEXT` when run inside `prepareDatabase` (outside a transaction). Use `try db.execute(sql: "ALTER TABLE assets ADD COLUMN preset_name TEXT")` guarded by checking if the column already exists via `try db.tableExists("assets") && !db.columns(in: "assets").contains { $0.name == "preset_name" }`.
+
+> **Roll Mode cap note (task 4c):** The 36-shot cap is a soft limit (UI shows 0, shutter is not disabled). This matches the PRD "film roll" metaphor. No enforcement at the use case layer for v0.4.
+
+### Verification Checklist
+
+> Run on a real device with `AppConfig.v0_4`. Record Pass / Fail / Note per row. All rows must pass before starting v0.5.
+
+#### 1 — Config & Boot
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 1.1 | Build and launch with `AppConfig.v0_4` | No crash; camera preview visible; Roll Mode counter visible in Zone A | |
+| 1.2 | Open Settings | Roll Mode toggle visible under Capture section | |
+
+#### 2 — Preset Bar UI
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 2.1 | Observe Zone C preset bar on launch | AMALFI shown as default (amber accent, name label) | |
+| 2.2 | Swipe left/right on preset bar | Preset cycles through FILM ROLL → AMALFI → TOKYO NEON → NORDIC → DISPOSABLE; accent color updates in Zone C, Zone D shutter ring, and Zone A border | |
+| 2.3 | Long-press preset bar | Full preset picker sheet rises; 5 named presets visible | |
+| 2.4 | Tap a preset in the picker | Picker dismisses; selected preset active in Zone C | |
+
+#### 3 — Preset Stored at Capture
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 3.1 | Select TOKYO NEON preset → capture a Still | Card appears in feed with lavender (`#C4B5FD`) left accent border | |
+| 3.2 | Select NORDIC preset → capture a Still | Card appears in feed with blue-grey (`#8EB4D4`) left accent border | |
+| 3.3 | Select DISPOSABLE preset → capture a Still | Card appears in feed with red-coral (`#FF6B6B`) left accent border | |
+| 3.4 | Kill and relaunch app → open Film | Preset accent colors persist on previously captured cards (stored in `preset_name` column, not in-memory) | |
+| 3.5 | Capture with preset X → verify Xcode console | No `updatePreset failed:` errors; `preset_name` column row visible in GRDB file (optional: Device File Browser) | |
+
+#### 4 — Preset Accent in Feed (fallback)
+
+The accent color appears in two places on each card: the **3pt vertical strip** on the left edge of the hero photo, and the **round play button** at the bottom-right. The **preset name** appears as readable text in the card title, formatted `"PRESET · Location"` (e.g. `"AMALFI · Apr 9"`).
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 4.1 | *(Upgrade path only — skip on fresh installs)* If you have moments captured before v0.4 (i.e. rows where `preset_name IS NULL` in the DB), open Film | No crash; card title still shows a preset name derived from AI vibes — not blank or "null". To force this on a fresh device: pull app container via Xcode Device Manager → edit `Documents/graph.sqlite` → `UPDATE assets SET preset_name = NULL` → push back → relaunch | |
+| 4.2 | Select FILM ROLL in the preset bar → capture a Still → open Film | Card title prefix reads **"FILM ROLL"**; left strip and play button are warm tan (compare to the FILM ROLL dot colour in the preset bar — same swatch) | |
+
+#### 5 — Roll Mode Counter
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 5.1 | Launch app; note today's prior capture count from feed | Zone A shows `36 - priorCount left` (e.g. 3 captures → "33 left") | |
+| 5.2 | Capture 3 more photos | Counter decrements by 1 each time; film-strip tiles fill from left | |
+| 5.3 | Kill and relaunch | Counter resets to the correct remaining value (reads today's GRDB count on launch) | |
+| 5.4 | Advance device clock past midnight (or test on a day with 0 captures) | Counter shows "36 left" | |
+| 5.5 | Reach 0 remaining | Counter shows "0 left" in amber; shutter still tappable (soft limit) | |
+
+#### 6 — Edge Cases
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 6.1 | Capture Echo with TOKYO NEON selected | Echo card shows lavender accent (stored preset, not AI vibe) | |
+| 6.2 | Capture Clip with NORDIC selected | Clip card shows blue-grey accent | |
+| 6.3 | Rapid preset switch → immediate capture | Correct (latest) preset stored on asset — no stale preset from previous selection | |
+| 6.4 | Delete a moment from MomentDetailView | Roll Mode counter does NOT decrement (deletes do not subtract from today's capture count) | |
+
+### v0.4 Sign-off
+
+| Item | Status |
+|------|--------|
+| All verification rows passing | ⬜ |
+| Preset name visible in GRDB `assets.preset_name` for newly captured moments | ⬜ |
+| Feed accent reads stored preset, not only AI vibes | ⬜ |
+| Roll counter initializes from real daily GRDB count on launch | ⬜ |
+| **v0.4 complete — ready for v0.5** | ⬜ |
 
 ---
 
 ## v0.5 — Sound Stamp & Acoustic Pipeline
 
-**Verification goal:** At Still capture shutter, PCM ambient audio is captured and analyzed; acoustic tags (beat, tempo, genre proxy) appear on `MomentDetailView`.
+**Verification goal:** In Still mode, ambient PCM audio is captured around the shutter moment; `SNAudioStreamAnalyzer` classifies it against a 17-label allowlist mapped from Apple's AudioSet classifier; acoustic tags (wind / rain / thunder / fire / beach / river / water / speech / crowd / laughter / music / singing / bird / dog / insect / car / train / airplane / alarm) appear in `MomentDetailView`; tags survive kill-and-relaunch; no audio file is ever written to disk.
 
-**AppConfig:** adds `features: .soundStamp`
+**AppConfig:** `AppConfig.v0_5` — same as v0.4 + `features: [.rollMode, .soundStamp]`. Already defined in `AppConfig+Interim.swift`. Switch `niftyMomntApp.swift` config from `v0_4` → `v0_5`.
+
+### Pre-existing scaffold (no changes needed)
+
+| Item | Location | Notes |
+|------|----------|-------|
+| `SoundStampPipelineProtocol` — `activatePreRoll`, `deactivatePreRoll`, `analyzeAndTag`, `isActive` | `NiftyCore/…/SoundStampPipelineProtocol.swift` | ✅ full protocol |
+| `AcousticTag`, `AcousticTagType`, `AcousticSource` | `NiftyCore/…/SupportingTypes.swift` | ✅ |
+| `Asset.acousticTags: [AcousticTag]` | `NiftyCore/…/Asset.swift` | ✅ |
+| `IndexingProtocol.analyzePCMBuffer()` | `NiftyCore/…/IndexingProtocol.swift` | ✅ |
+| `GraphProtocol.updateAcousticTag()` | `NiftyCore/…/GraphProtocol.swift` | ✅ |
+| `CaptureEngine` — full soundStamp feature-flag wiring: `activatePreRoll` on Still entry, fire-and-forget `analyzeAndTag` after shutter, `deactivatePreRoll` on mode switch / stop | `NiftyCore/…/CaptureEngine.swift` | ✅ |
+| `AppConfig.v0_5` defined | `AppConfig+Interim.swift` | ✅ |
+| `FeatureSet.soundStamp` | `AppConfig.swift` | ✅ |
+| `MockSoundStampPipeline` | `NiftyCore/Tests/Mocks/` | ✅ |
+| `SoundStampAdapter` actor (stubs) | `NiftyData/…/SoundStampAdapter.swift` | 🔲 implement |
+| `CoreMLIndexingAdapter.analyzePCMBuffer()` (stub) | `NiftyData/…/CoreMLIndexingAdapter.swift` | 🔲 implement |
+| `GraphRepository.updateAcousticTag()` (stub, no table) | `NiftyData/…/GraphRepository.swift` | 🔲 implement |
+| `SoundStampAdapter(config:)` instantiated + wired to `CaptureEngine` | `niftyMomntApp.swift` | ✅ wired — needs `graph:` param added |
 
 ### Features In Scope
 
-- `SoundStampAdapter`: `AVAudioEngine` tap → PCM buffer at shutter moment (never a file, per `IndexingProtocol`)
-- `CoreMLIndexingAdapter.analyzePCMBuffer()`: frequency/energy analysis → `AcousticTag[]`
-- `CaptureMomentUseCase`: call `indexing.analyzePCMBuffer()` inline for Still captures
-- `GraphRepository`: `updateAcousticTag()` implementation
-- `MomentDetailView`: acoustic tag chips (beat / mood / ambient)
+- `SoundStampAdapter`: `AVAudioEngine` input tap → 44.1kHz PCM ring buffer (0.5s pre-roll); 1.0s post-shutter capture; combined buffer passed to `CoreMLIndexingAdapter.analyzePCMBuffer()`; results persisted to graph; buffer discarded immediately — **never written to disk**
+- `CoreMLIndexingAdapter.analyzePCMBuffer()`: `SNAudioStreamAnalyzer` on in-memory `AVAudioPCMBuffer` → map `SNClassificationResult` → `[AcousticTag]` (confidence threshold ≥ 0.35)
+- `GraphRepository`: create `acoustic_tags` table; implement `updateAcousticTag()`; load tags in `fetchMoments()`
+- `MomentDetailView`: acoustic tag chip row (amber pill chips, sound wave icon prefix), shown only when `acousticTags` non-empty
+- `CaptureHubView`: mic activity indicator in Zone A (small amber waveform icon, visible when pre-roll is active in Still mode)
 - `SettingsView`: Sound Stamp toggle gated on `config.features.contains(.soundStamp)`
+
+### Architecture Notes
+
+**V — `SoundStampAdapter` owns graph persistence**
+`CaptureEngine` does `_ = try? await soundStampPipeline.analyzeAndTag(assetID:)` — the return value is dropped. Persistence (calling `graph.updateAcousticTag`) must happen inside `SoundStampAdapter.analyzeAndTag`. Add `graph: any GraphProtocol` to `SoundStampAdapter.init`; update composition root accordingly.
+
+**W — `AVAudioSession` category for Sound Stamp**
+Use `.measurement` with `.mixWithOthers` option. This avoids interrupting `AVCaptureSession`'s photo-output class (same principle as Architecture Decision Q for Echo). Do **not** use `.record` — it conflicts with the active `AVCaptureSession` audio input and causes silent failures.
+
+**X — `SNAudioStreamAnalyzer` for in-memory PCM**
+`SNClassifySoundRequest` requires a URL or `AVAudioFile`. For in-memory PCM, use `SNAudioStreamAnalyzer(format:)` initialized with the `AVAudioFormat` of the tap, then call `analyze(_:atAudioFramePosition:)` with the `AVAudioPCMBuffer` chunks. No temp file needed.
+
+**Y — DB migration: `acoustic_tags` table**
+Run `CREATE TABLE IF NOT EXISTS acoustic_tags (asset_id TEXT NOT NULL, tag TEXT NOT NULL, source TEXT NOT NULL, confidence REAL NOT NULL, PRIMARY KEY (asset_id, tag))` via `Configuration.prepareDatabase` (outside a transaction, matching the WAL pattern from Architecture Decision F).
+
+**Z — `fetchMoments` acoustic tag hydration**
+After loading assets from GRDB, run a second query: `SELECT * FROM acoustic_tags WHERE asset_id IN (...)` and populate `Asset.acousticTags` on each asset. Avoid N+1 by using a single `IN` clause.
 
 ### Implementation Tasks
 
 | # | Task | File(s) | Status |
 |---|------|---------|--------|
-| 1 | `SoundStampAdapter`: `AVAudioEngine` PCM tap | `NiftyData/Sources/Platform/SoundStampAdapter.swift` | ⬜ |
-| 2 | `CoreMLIndexingAdapter.analyzePCMBuffer()` | `NiftyData/Sources/Platform/CoreMLIndexingAdapter.swift` | ⬜ |
-| 3 | `CaptureMomentUseCase`: inline acoustic analysis for Still | `NiftyCore/Sources/Domain/UseCases/CaptureMomentUseCase.swift` | ⬜ |
-| 4 | `GraphRepository.updateAcousticTag()` | `NiftyData/Sources/Repositories/GraphRepository.swift` | ⬜ |
-| 5 | `MomentDetailView`: acoustic tag chips | `Apps/niftyMomnt/niftyMomnt/UI/Journal/` | ⬜ |
+| 1a | Add `graph: any GraphProtocol` param to `SoundStampAdapter.init`; store as `private let graph` | `NiftyData/Sources/Platform/SoundStampAdapter.swift` | ⬜ |
+| 1b | `SoundStampAdapter.activatePreRoll()`: activate `AVAudioSession` (`.measurement` + `.mixWithOthers`); start `AVAudioEngine`; install `inputNode` tap at 44.1kHz mono; write to a 0.5s ring buffer (`[AVAudioPCMBuffer]`); set `isActiveSubject.send(true)` | `NiftyData/Sources/Platform/SoundStampAdapter.swift` | ⬜ |
+| 1c | `SoundStampAdapter.deactivatePreRoll()`: remove input tap; stop engine; deactivate `AVAudioSession`; clear ring buffer; `isActiveSubject.send(false)` | `NiftyData/Sources/Platform/SoundStampAdapter.swift` | ⬜ |
+| 1d | `SoundStampAdapter.analyzeAndTag(assetID:)`: capture 1.0s post-shutter via the running engine; concatenate pre-roll + post-shutter buffers; call `CoreMLIndexingAdapter.analyzePCMBuffer(assetID:buffer:sampleRate:)`; for each result call `graph.updateAcousticTag(_:for:)`; discard buffers; return tags | `NiftyData/Sources/Platform/SoundStampAdapter.swift` | ⬜ |
+| 2 | `CoreMLIndexingAdapter.analyzePCMBuffer(_:buffer:sampleRate:)`: construct `AVAudioFormat` (mono, 44100); build `AVAudioPCMBuffer` from `UnsafeBufferPointer<Float>`; feed into `SNAudioStreamAnalyzer`; collect `SNClassificationResult` observations; filter by allowlist (see AudioSet mapping below) with `confidence >= 0.35`; map to `[AcousticTag]`; return | `NiftyData/Sources/Platform/CoreMLIndexingAdapter.swift` | ⬜ |
+| 3a | `GraphRepository` DB migration: add `acoustic_tags` table in `prepareDatabase` (`CREATE TABLE IF NOT EXISTS`) | `NiftyData/Sources/Repositories/GraphRepository.swift` | ⬜ |
+| 3b | `GraphRepository.updateAcousticTag(_:for:)`: `INSERT OR REPLACE INTO acoustic_tags` | `NiftyData/Sources/Repositories/GraphRepository.swift` | ⬜ |
+| 3c | `GraphRepository.fetchMoments()`: after loading assets, batch-fetch `acoustic_tags WHERE asset_id IN (...)` and hydrate `Asset.acousticTags` | `NiftyData/Sources/Repositories/GraphRepository.swift` | ⬜ |
+| 4 | `niftyMomntApp.swift`: pass `graph: graphRepo` to `SoundStampAdapter(config:graph:)`; switch active config from `AppConfig.v0_4` → `AppConfig.v0_5` | `Apps/niftyMomnt/niftyMomnt/niftyMomntApp.swift` | ⬜ |
+| 5 | `MomentDetailView`: add acoustic tag chip row in glass bottom sheet — amber pills with a waveform SF Symbol prefix; visible only when `moment.assets.first?.acousticTags.isEmpty == false`; display `tag.tag.rawValue` capitalized + confidence bar optional | `Apps/niftyMomnt/niftyMomnt/UI/Journal/JournalFeedView.swift` | ⬜ |
+| 6 | `CaptureHubView`: bind mic activity indicator to `soundStampAdapter.isActive` publisher exposed via `AppContainer`; show a small amber waveform icon in Zone A top bar when active | `Apps/niftyMomnt/niftyMomnt/UI/CaptureHub/CaptureHubView.swift` | ⬜ |
+| 7 | `SettingsView`: Sound Stamp toggle — `config.features.contains(.soundStamp)` gate | `Apps/niftyMomnt/niftyMomnt/UI/` | ⬜ |
+
+> **AudioSet allowlist mapping (task 2):** `SNClassificationResult.identifier` strings to `AcousticTagType` — implement as a `static let` dictionary in `CoreMLIndexingAdapter`:
+>
+> | `AcousticTagType` case | AudioSet identifiers to match (prefix or exact) |
+> |------------------------|--------------------------------------------------|
+> | `.wind` | `"wind"`, `"wind_noise"` |
+> | `.rain` | `"rain"`, `"rain_on_surface"` |
+> | `.thunder` | `"thunder"`, `"thunderstorm"` |
+> | `.beach` | `"beach"`, `"surf"`, `"ocean"`, `"waves"` |
+> | `.river` | `"stream"`, `"river"`, `"babbling_brook"`, `"creek"` |
+> | `.water` | `"water"`, `"waterfall"`, `"dripping"` (generic fallback) |
+> | `.fire` | `"fire"`, `"crackling_fire"` |
+> | `.speech` | `"speech"`, `"male_speech"`, `"female_speech"`, `"child_speech"` |
+> | `.crowd` | `"crowd"`, `"chatter"`, `"hubbub"` |
+> | `.laughter` | `"laughter"` |
+> | `.music` | `"music"`, `"musical_instrument"` |
+> | `.singing` | `"singing"`, `"choir"`, `"vocal_music"` |
+> | `.bird` | `"bird"`, `"bird_song"`, `"bird_vocalization"`, `"chirping_birds"` |
+> | `.dog` | `"dog"`, `"bark"`, `"bow-wow"` |
+> | `.insect` | `"insect"`, `"cricket"`, `"bee_wasp"` |
+> | `.car` | `"car"`, `"vehicle"`, `"engine"`, `"traffic_noise"` |
+> | `.train` | `"train"`, `"railroad_car"`, `"rail_transport"` |
+> | `.airplane` | `"airplane"`, `"aircraft"`, `"jet_engine"` |
+> | `.alarm` | `"alarm"`, `"siren"`, `"smoke_detector"` |
+>
+> Use a prefix match (`identifier.hasPrefix(...)`) to handle classifier version differences across iOS versions. When multiple identifiers map to the same case, take the highest confidence score.
+
+> **Privacy note (tasks 1b–1d):** The PCM ring buffer is an in-memory `[AVAudioPCMBuffer]`. It must be cleared in `deactivatePreRoll` and immediately after `analyzeAndTag` returns. No file I/O. No call to `AVAudioFile`. Verify in Instruments (File Activity) that no `.m4a` / `.caf` / `.wav` file is written during Sound Stamp operation.
+
+> **`AppContainer` note (task 6):** Expose `soundStampAdapter.isActive` as a published property or pass through via a dedicated `@Published var isSoundStampActive: Bool`. `SoundStampAdapter.isActive` is an `AnyPublisher<Bool, Never>` — subscribe in `AppContainer.init` and forward to a `@Published` var so `CaptureHubView` can bind without importing `NiftyData`.
+
+### Verification Checklist
+
+> Run on a real device with `AppConfig.v0_5`. Record Pass / Fail / Note per row. All rows must pass before starting v0.6.
+
+#### 1 — Config & Boot
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 1.1 | Build and launch with `AppConfig.v0_5` | No crash; camera preview visible; no mic indicator visible on boot (camera starts in Still mode but pre-roll not yet active) | |
+| 1.2 | Open Settings | Sound Stamp toggle visible and ON | |
+
+#### 2 — Pre-Roll Activation
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 2.1 | With Sound Stamp ON, ensure Still mode is active | Amber waveform icon appears in Zone A within ~200ms | |
+| 2.2 | Swipe to Clip mode | Waveform icon disappears | |
+| 2.3 | Swipe back to Still | Waveform icon reappears | |
+| 2.4 | Disable Sound Stamp in Settings → return to CaptureHub | Waveform icon not shown; no mic activation | |
+
+#### 3 — Acoustic Tag Capture
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 3.1 | Capture a Still in a **quiet indoor** environment | Card in feed; open MomentDetailView → acoustic chip row is **empty** (no tags above threshold — quiet is implied by absence) | |
+| 3.2 | Capture a Still with **music playing nearby** | Acoustic chip shows `music` | |
+| 3.3 | Capture a Still **outdoors with wind** | Acoustic chip shows `wind` | |
+| 3.4 | Capture a Still in a **crowded public space** | Acoustic chip shows `crowd` and/or `speech` | |
+| 3.5 | Capture a Still **near a road with traffic** | Acoustic chip shows `car` | |
+| 3.6 | Capture a Still **outside with birds audible** | Acoustic chip shows `bird` | |
+| 3.7 | Capture a Still **during rain** | Acoustic chip shows `rain` | |
+| 3.8 | Capture a Still **at the beach** (waves audible) | Acoustic chip shows `beach` | |
+| 3.9 | Capture a Still **by a river or creek** | Acoustic chip shows `river` | |
+| 3.10 | Capture in a very ambiguous acoustic environment | Acceptable if acoustic chip row is hidden (no tags above threshold) — card still saves normally | |
+
+#### 4 — Persistence
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 4.1 | After tagging a moment, kill and relaunch | Acoustic chips still present on the card in MomentDetailView | |
+| 4.2 | _(Optional)_ Inspect GRDB file via Xcode Device Manager → `Documents/graph.sqlite` → `acoustic_tags` table | Rows present with correct `asset_id`, `tag`, `source = "soundStamp"`, `confidence` values | |
+
+#### 5 — Privacy & No-File Guarantee
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 5.1 | Profile a Sound Stamp capture in Instruments → File Activity | No `.m4a` / `.caf` / `.wav` / `.pcm` file created in `Documents/assets/` or temp directories during Still capture | |
+| 5.2 | Check Xcode console after capture | No `[SoundStamp] writing` or `AVAudioFile` log lines | |
+
+#### 6 — Regression
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 6.1 | Capture a Live Photo | No acoustic chip on card; Live Photo playback unaffected | |
+| 6.2 | Capture an Echo | Echo recording unaffected; no conflict with SoundStamp pre-roll (Echo disables pre-roll on mode switch) | |
+| 6.3 | Capture a Clip | No acoustic chip; video recording unaffected | |
+| 6.4 | Capture a Booth strip (L4C) | No acoustic chip; strip composite unaffected | |
+| 6.5 | Roll Mode counter | Increments normally for Still captures with Sound Stamp active | |
+
+### v0.5 Sign-off
+
+| Item | Status |
+|------|--------|
+| All verification rows passing | ⬜ |
+| No audio file written to disk during Sound Stamp capture | ⬜ |
+| Acoustic tags visible in `acoustic_tags` GRDB table | ⬜ |
+| Tags survive kill-and-relaunch | ⬜ |
+| No regression in Live / Echo / Clip / Booth modes | ⬜ |
+| **v0.5 complete — ready for v0.6** | ⬜ |
 
 ---
 

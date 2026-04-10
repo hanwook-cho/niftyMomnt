@@ -21,9 +21,25 @@ public struct VibePreset: Equatable, Sendable {
 }
 
 // MARK: - AcousticTagType
+// Curated allowlist mapped from Apple SoundAnalysis (SNClassifySoundRequest) AudioSet labels.
+// "quiet" / "serene" are mood descriptors, not classifier outputs — empty acousticTags implies quiet.
+// Full AudioSet → AcousticTagType mapping lives in CoreMLIndexingAdapter (NiftyData).
 
 public enum AcousticTagType: String, CaseIterable, Sendable {
-    case windy, crowded, music, quiet, serene, rain, ocean, water
+    // Environment
+    case wind, rain, thunder, fire
+    // Water (distinct environments)
+    case beach, river, water
+    // People
+    case speech, crowd, laughter
+    // Music
+    case music, singing
+    // Animals
+    case bird, dog, insect
+    // Transportation
+    case car, train, airplane
+    // Signal
+    case alarm
 }
 
 // MARK: - AcousticSource

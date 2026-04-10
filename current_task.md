@@ -1,6 +1,6 @@
 # niftyMomnt — Current Progress & Architecture Decisions
 
-_Last updated: 2026-04-08 (v0.1–v0.3 signed off · v0.3.5 in progress)_
+_Last updated: 2026-04-09 (v0.1–v0.3 signed off · v0.3.5 in progress · Atmosphere Architecture Pivot)_
 
 ---
 
@@ -16,39 +16,40 @@ _Last updated: 2026-04-08 (v0.1–v0.3 signed off · v0.3.5 in progress)_
 |---|---|
 | `Models/` — `Moment`, `Asset`, `VibeTag`, `AppConfig`, `FeatureSet`, `AssetTypeSet`, `AmbientMetadata` | ✅ |
 | `Protocols/` — `CaptureEngineProtocol`, `VaultProtocol`, `GraphProtocol`, `SoundStampPipelineProtocol`, `FixRepositoryProtocol`, `IndexingProtocol`, `LabClientProtocol`, `NudgeEngineProtocol` | ✅ |
-| `UseCases/` — `CaptureMomentUseCase` (full 7-step pipeline), `FixAssetUseCase`, `AssembleReelUseCase`, `ShareMomentUseCase`, `GenerateNudgeUseCase` | ✅ |
+| `UseCases/` — `CaptureMomentUseCase` (full 8-step pipeline incl. Live MOV step 5b + Echo .m4a path), `FixAssetUseCase`, `AssembleReelUseCase`, `ShareMomentUseCase`, `GenerateNudgeUseCase` | ✅ |
 | `Engines/` — `CaptureEngine`, `IndexingEngine` (classifyImmediate), `StoryEngine`, `NudgeEngine`, `VoiceProseEngine` | ✅ |
-| `Managers/` — `VaultManager`, `GraphManager` (fetchMoments), `LabClient` | ✅ |
-| `SupportingTypes` — `Notification.Name.niftyMomentCaptured` | ✅ |
+| `Managers/` — `VaultManager` (incl. `saveAudioFile`, `saveLiveMovieFile`), `GraphManager` (fetchMoments), `LabClient` | ✅ |
+| `SupportingTypes` — `Notification.Name.niftyMomentCaptured`, `.niftyMomentDeleted` | ✅ |
 
 ### 3. Platform Layer — NiftyData (adapters)
 | Adapter | Status |
 |---|---|
-| `AVCaptureAdapter` | ✅ live — real `AVCaptureSession`, photo capture via `AVCapturePhotoOutput`, `PhotoDelegate` bridging async/await, camera flip |
-| `CoreMLIndexingAdapter` | ✅ live — `VNClassifyImageRequest` → identifier → `VibeTag` keyword mapping |
-| `VaultRepository` | ✅ live — `Documents/assets/{id}.jpg` + `{id}.json` sidecar, `AssetRecord` Codable |
-| `GraphRepository` | ✅ live — GRDB SQLite at `Documents/graph.sqlite`, WAL via `prepareDatabase`, schema: `assets` / `moments` / `moment_assets` |
+| `AVCaptureAdapter` | ✅ live — real `AVCaptureSession`, photo capture via `AVCapturePhotoOutput`, `PhotoDelegate` bridging async/await, camera flip, Live Photo (`livePhotoMovieFileURL`), Echo via `EchoRecordingSession` (AVAudioRecorder), Clip/Atmosphere via `AVCaptureMovieFileOutput` |
+| `CoreMLIndexingAdapter` | ✅ live — `VNClassifyImageRequest` + `CIAreaAverage` palette + Open-Meteo weather |
+| `VaultRepository` | ✅ live — `Documents/assets/{id}.jpg/.mov/.m4a` + `.json` sidecar, `saveVideoFile`, `saveAudioFile`, `saveLiveMovieFile`, `exportToPhotoLibrary` (PHPhotoLibrary), full `delete` |
+| `GraphRepository` | ✅ live — GRDB SQLite, WAL, schema: `assets`/`moments`/`moment_assets`/`place_history`, L4C tables |
 | `SoundStampAdapter`, `CoreImageFixAdapter` | 🔲 stub |
-| `LabNetworkAdapter`, `MapKitGeocoderAdapter`, `MusicKitAdapter`, `WeatherKitAdapter`, `SpeechAdapter`, `JournalSuggestionsAdapter` | 🔲 stub |
+| `LabNetworkAdapter`, `MapKitGeocoderAdapter`, `WeatherKitAdapter` (→ Open-Meteo), `SpeechAdapter`, `JournalSuggestionsAdapter` | ✅/🔲 |
 
 ### 4. UI Layer — Spec v1.8 (complete)
 
 #### CaptureHub (`UI/CaptureHub/`)
 - **Zone A (top bar)** — glass overlay on live preview; Flash · Timer · Film Strip Counter · Flip Camera · More
-- **Zone B (viewfinder)** — `CameraPreviewView` with live camera feed; focus/exposure lock wired on 600ms long-press via transparent gesture overlay + `AVCaptureDevice` point-of-interest configuration
+- **Zone B (viewfinder)** — `CameraPreviewView` with live camera feed; focus/exposure lock wired on 600ms long-press
 - **Zone C (preset bar)** — amber accent strip, preset name, 5 peek swatches; swipe to cycle, long-press to open picker
-- **Zone D (shutter row)** — 84pt shutter; last-captured thumbnail shown left of shutter (loaded from vault after capture)
+- **Zone D (shutter row)** — 84pt shutter; last-captured thumbnail shown left of shutter
 - **§4.5 Post-Capture Overlay** — location chip, 4 tilted vibe sticker chips, quick share pill
-- **Capture Controls deck** — top-right `More` pill opens a floating glass control panel with mode-aware asset settings from PRD §2.3; selections persist via `@AppStorage`
+- **Capture Controls deck** — mode-aware floating glass panel; values persist via `@AppStorage`
+- **Live Photo pill** (Zone A right ①) — toggles STILL ↔ LIVE mode; active/dim state wired
 
 #### Journal (`UI/Journal/`)
 - `JournalContainerView` — `#0F0D0B` shell; glass tab bar; swipe-down dismisses
-- `FilmFeedView` — loads real `[Moment]` from `GraphManager`; refreshes on `niftyMomentCaptured` notification; grouped THIS WEEK / LAST WEEK / MONTH
-- `MomentCardView` — loads hero + thumbnails from `Documents/assets/{id}.jpg` via async `.task`
-- `MomentDetailView` — loads hero from vault; glass nav bar; vibe chips; Fix / Share / ··· actions; `UIActivityViewController` share sheet
+- `FilmFeedView` — loads real `[Moment]` from `GraphManager`; refreshes on `niftyMomentCaptured` / `niftyMomentDeleted`; grouped THIS WEEK / LAST WEEK / MONTH; interleaves Moments and L4CRecords
+- `MomentCardView` — loads hero + type-appropriate thumbnail from vault via async `.task`; **Echo hero renders a `UIGraphicsImageRenderer`-drawn placeholder** (dark amber gradient + waveform icon) so `heroImage` is always non-nil and the card is tappable
+- `MomentDetailView` — loads hero from vault; Live → `PHLivePhotoView`; Echo → `EchoAudioPlayerCardView` (AVPlayer on .m4a); Clip/Atmosphere → inline video player; Fix / Share / Export to Photo Library / Delete actions
 
-#### Other UI
-- `VaultView`, `SettingsView`, `DesignSystem.swift`, `RootView.swift` — complete
+#### Atmosphere (v0.3.6)
+- Pivot to **Still + Looping Audio (JPEG + M4A)**. High-res capture during background audio recording. | ✅ |
 
 ---
 
@@ -81,39 +82,84 @@ Only Foundation, Combine, Swift. All OS frameworks isolated to `NiftyData` adapt
 ### I — Multi-variant via AppConfig, not separate targets
 Feature gating at runtime via `container.config.features.contains(...)`. `AppConfig.v0_1` through `AppConfig.v0_9` defined in `AppConfig+Interim.swift`.
 
+### J — AVCaptureSession on a dedicated serial queue
+All `beginConfiguration` / `commitConfiguration` / `startRunning` / `stopRunning` calls are dispatched through a private `sessionQueue: DispatchQueue`. Calling these from ad-hoc Swift concurrency threads causes multi-second stalls.
+
+### K — Audio input tracked by instance variable, not `session.inputs` scan
+`audioDeviceInput: AVCaptureDeviceInput?` stores the microphone input directly. Iterating `session.inputs` after `stopRunning()` can return invalidated device inputs.
+
+### L — photoBooth mode switch deferred to START tap
+Swiping to `.photoBooth` does **not** fire `switchMode`. The hardware class-change is deferred to `BoothCaptureView.prepareAndRunBoothLoop()`.
+
+### M — Single `CameraPreviewView` instance hoisted above if/else branch
+Prevents AVFoundation from tearing down and reconnecting `AVCaptureVideoPreviewLayer` on mode transitions (~0.4s black-preview gap).
+
+### N — End-to-end gesture latency instrumentation
+`cycleMode` captures `CACurrentMediaTime()` at gesture receipt and threads it through to `AVCaptureAdapter.switchMode`. Measured class-change latency: ~0.31–0.44s (hardware constraint).
+
+### O — L4C stays inside the same CaptureHub shell
+BOOTH is not a separate full-screen mini-app. Zone B gets the 4-slot overlay on top of live preview; shutter row enters START state; review sheet rises over CaptureHub.
+
+### P — Asset settings separated from asset type in CaptureHub UI
+The `More` pill opens a mode-aware `Capture Controls` deck (§2.3 defaults). Values persist with `@AppStorage`.
+
+### Q — Echo is photo-class in AVCaptureSession
+`isVideoMode(.echo)` returns `false`. Echo recording uses `AVAudioRecorder` (`EchoRecordingSession`) which manages the `AVAudioSession` independently. Classifying Echo as video-class causes `AVCaptureSession` to add an audio input and reconfigure the shared `AVAudioSession`, which conflicts with `EchoRecordingSession.init` and silently prevents recording from starting.
+
+### R — Echo card hero image is a rendered UIImage placeholder
+`MomentCardView.loadThumbnail` for `.echo` calls `echoPlaceholderImage()` — a `UIGraphicsImageRenderer`-drawn 400×260 image (dark amber gradient + waveform icon). This ensures `heroImage` is always non-nil for Echo cards, making the `Image(uiImage:)` branch fire and the card tappable. A pure SwiftUI `ZStack` with gradient is not reliably hit-testable when `heroImage` is nil.
+
+### S — Atmosphere is Photo-class hybrid (JPEG + M4A)
+`isVideoMode(.atmosphere)` returns `false`. Atmosphere capture records background audio via `AVAudioRecorder` while maintaining the Photo-output class for high-resolution imagery. `stopVideoRecording()` triggers a `capturePhoto` call to obtain the high-res frame. The vault stores `{id}.jpg` and `{id}.m4a` for this type.
+
+### T — Atmosphere Detail Playback
+`MomentDetailView` loads the Atmosphere JPEG as the primary hero and initializes an `AVPlayer` with the companion M4A set to loop indefinitely. This provides a "Living Still" experience.
+
 ---
 
 ## v0.1 — Verification Status ✅ SIGNED OFF
 
-| Section | Tests | Status |
-|---------|-------|--------|
-| 1 — Capture | 1.1–1.4 | ✅ |
-| 2 — Persist (Vault) | 2.1–2.2 | ✅ |
-| 3 — Classify (VibeTags) | 3.1–3.3 | ✅ |
-| 4 — Film Feed | 4.1–4.4 (incl. 4.3 persistence) | ✅ |
-| 5 — Share | 5.1–5.4 | ✅ |
-| 6 — Edge Cases | 6.1–6.2 | ✅ |
+All rows passing. See `Docs/interim_version_plan.md` §v0.1.
 
 ---
 
-## v0.2 — Persistent Metadata & Feed Quality 🔄 IN PROGRESS
+## v0.2 — Persistent Metadata & Feed Quality ✅ SIGNED OFF
 
-**Note:** WeatherKit replaced with Open-Meteo free API (no paid membership required).
+All rows passing. WeatherKit replaced with Open-Meteo free API. See `Docs/interim_version_plan.md` §v0.2.
 
-| # | Task | File(s) | Status |
-|---|------|---------|--------|
-| 1 | `GeocoderProtocol` + `WeatherProtocol` in NiftyCore | `NiftyCore/Sources/Domain/Protocols/` | ✅ |
-| 2 | `MapKitGeocoderAdapter` — `CLGeocoder` → `PlaceRecord` | `NiftyData/Sources/Platform/MapKitGeocoderAdapter.swift` | ✅ |
-| 3 | `OpenMeteoWeatherAdapter` — Open-Meteo free API → temp + condition | `NiftyData/Sources/Platform/WeatherKitAdapter.swift` | ✅ |
-| 4 | `CoreMLIndexingAdapter.extractPalette()` — `CIAreaAverage` 5-region | `NiftyData/Sources/Platform/CoreMLIndexingAdapter.swift` | ✅ |
-| 5 | `CoreMLIndexingAdapter.harvestAmbientMetadata()` — weather + sun position | `NiftyData/Sources/Platform/CoreMLIndexingAdapter.swift` | ✅ |
-| 6 | `IndexingEngine` — `extractPaletteImmediate` + `harvestAmbientImmediate` | `NiftyCore/Sources/Engines/IndexingEngine.swift` | ✅ |
-| 7 | `CaptureMomentUseCase` — palette + ambient + geocode concurrent in pipeline | `NiftyCore/Sources/Domain/UseCases/CaptureMomentUseCase.swift` | ✅ |
-| 8 | `GraphRepository` — ambient/palette columns, `updatePlaceRecord`, `saveMoodPoint` | `NiftyData/Sources/Repositories/GraphRepository.swift` | ✅ |
-| 9 | `niftyMomntApp` — wire `OpenMeteoWeatherAdapter` + `MapKitGeocoderAdapter` | `Apps/niftyMomnt/niftyMomntApp.swift` | ✅ |
-| 10 | `MomentCardView` — `moment.label` = place name; date subtitle shows weather + sun | `Apps/.../UI/Journal/MomentCardView.swift` | ✅ |
+---
 
-**v0.2 ✅ Signed off.** **v0.3 🔄 Partially verified** — mode switching confirmed on device; full capture/persist/feed verification for all 5 asset types still pending.
+## v0.3 — Multi-Mode Capture ✅ SIGNED OFF
+
+### Live Mode — fully implemented
+| Task | File(s) | Status |
+|------|---------|--------|
+| `AVCapturePhotoOutput.isLivePhotoCaptureEnabled` + `livePhotoMovieFileURL` | `AVCaptureAdapter.swift` | ✅ |
+| Two-phase `PhotoDelegate` (stores JPEG in `didFinishProcessingPhoto`, resumes in `didFinishCapture`) | `AVCaptureAdapter.swift` | ✅ |
+| `VaultProtocol` / `VaultManager` / `VaultRepository` — `saveLiveMovieFile` | various | ✅ |
+| `CaptureMomentUseCase` step 5b — move companion MOV from temp to vault | `CaptureMomentUseCase.swift` | ✅ |
+| `MomentDetailView` — `PHLivePhotoView` playback via `LivePhotoPlayerView` | `JournalFeedView.swift` | ✅ |
+| Live Photo pill (Zone A) toggles STILL ↔ LIVE | `CaptureHubView.swift` | ✅ |
+| `VaultRepository.delete` removes both `{id}.jpg` and `{id}.mov` | `VaultRepository.swift` | ✅ |
+| `exportToPhotoLibrary` — JPEG+pairedVideo for Live, JPEG for Still, MOV for Clip/Atmosphere | `VaultRepository.swift` | ✅ |
+
+### Echo Mode — fully implemented (two bugs fixed this session)
+
+**Bug 1 — Echo recording silently failed after capture:**
+- Root cause: `isVideoMode(.echo) = true` caused `switchMode` to add `AVCaptureMovieFileOutput` + audio input, locking the shared `AVAudioSession`. `EchoRecordingSession.init` then failed to reconfigure it, `recorder.record()` returned false, `activeEchoRecording` stayed nil. On stop tap, `stopRecording()` threw → no `niftyMomentCaptured` notification → no card in feed.
+- Fix: `isVideoMode` now returns `false` for `.echo`. Session stays in photo-output class during Echo mode. `EchoRecordingSession` owns the audio session cleanly. (`AVCaptureAdapter.swift`)
+
+**Bug 2 — Echo card not tappable in JournalFeedView:**
+- Root cause: `loadThumbnail` returned `nil` for `.echo`, so `heroImage` was nil. The hero section rendered a SwiftUI `LinearGradient` which is not hit-testable by default. Taps did not reach the enclosing `Button`.
+- Fix: `loadThumbnail` for `.echo` now calls `echoPlaceholderImage()` — a `UIGraphicsImageRenderer`-drawn `UIImage` (400×260, dark amber gradient + waveform icon). `heroImage` is always non-nil; `Image(uiImage:)` branch fires; card is tappable. (`MomentCardView.swift`)
+
+### Atmosphere Mode — fully implemented
+| Task | File(s) | Status |
+|------|---------|--------|
+| Architecture pivot: JPEG + M4A (Still + Looping Audio) | `AVCaptureAdapter.swift` | ✅ |
+| `stopRecording` triggers photo capture for Atmosphere | `AVCaptureAdapter.swift` | ✅ |
+| `loadHeroImage` dual-load for Atmosphere | `JournalFeedView.swift` | ✅ |
+| `VaultRepository.delete` removes both resources | `VaultRepository.swift` | ✅ |
 
 ---
 
@@ -126,82 +172,20 @@ Feature gating at runtime via `container.config.features.contains(...)`. `AppCon
 | 1–14 | All implementation tasks (see `Docs/interim_version_plan.md` §10) | various | ✅ |
 | 15 | Frame PNG art assets (3 frames) | `Assets.xcassets/` | ⬜ design deliverable |
 
-**Architecture decisions added during v0.3.5:**
-
-### J — AVCaptureSession on a dedicated serial queue
-All `beginConfiguration` / `commitConfiguration` / `startRunning` / `stopRunning` calls are dispatched through a private `sessionQueue: DispatchQueue`. Calling these from ad-hoc Swift concurrency threads causes multi-second stalls (AVFoundation serialises internally on the main thread).
-
-### K — Audio input tracked by instance variable, not `session.inputs` scan
-`audioDeviceInput: AVCaptureDeviceInput?` stores the microphone input directly. Iterating `session.inputs` after `stopRunning()` can return invalidated device inputs whose `.device.hasMediaType()` call throws `EXC_BREAKPOINT`.
-
-### L — photoBooth mode switch deferred to START tap
-Swiping to `.photoBooth` does **not** fire `switchMode` on `AVCaptureAdapter`. The hardware class-change (video→photo output) is deferred to `BoothCaptureView.prepareAndRunBoothLoop()` which runs it before the first countdown starts. Keeps the UI transition instant (~0.001s from gesture).
-
-### M — Single `CameraPreviewView` instance hoisted above if/else branch
-`CameraPreviewView` is placed outside the `if currentMode == .photoBooth { … } else { … }` block in `CaptureHubView.body`. This prevents AVFoundation from tearing down and reconnecting the `AVCaptureVideoPreviewLayer` display path on each mode transition (which caused a ~0.4s black-preview gap).
-
-### N — End-to-end gesture latency instrumentation
-`cycleMode` captures `CACurrentMediaTime()` at gesture receipt and threads it through `CaptureMomentUseCase.switchMode → CaptureEngineProtocol.switchMode → AVCaptureAdapter.switchMode`. Logs show: task-start lag, sessionQueue lag, commitConfiguration time, and total-from-gesture time. Measured class-change latency: ~0.31–0.44s (hardware constraint, not addressable further without pre-warming the session).
-
-**Current BOOTH implementation status:**
-- BOOTH now runs inside the standard `CaptureHub` shell rather than replacing the camera UI
-- `START` drives a full 4-shot countdown sequence with flash/freeze feedback and a review sheet after shot 4
-- BOOTH `More` deck now supports:
-  - `Photo Shape`
-  - `Template`
-  - `Border Colour`
-- Slot-shape support is now present for:
-  - `4:3`
-  - `3:4`
-- `StripPreviewSheet` and the compositing pipeline now use the selected BOOTH photo shape
-
 **Remaining BOOTH quality gap:**
-- preview framing and final captured crop do not yet match closely enough
-- this means BOOTH is operational, but not yet trustworthy as a precise framing experience
-- the next BOOTH milestone should unify:
-  - live preview guide geometry
-  - booth still normalization/cropping
-  - final strip slot geometry
+- Preview framing and final captured crop do not yet match closely enough
+- Next milestone: unify live preview guide geometry, booth still normalization/cropping, and final strip slot geometry for `4:3` and `3:4`
 
 **Pending:**
-- Tighten preview-to-capture crop matching in BOOTH
-- Finalise the BOOTH active preview guide for `4:3` and `3:4`
-- Device verification of the updated BOOTH framing behavior
+- Tighten preview-to-capture crop matching
+- Device verification of updated BOOTH framing
 - Frame PNG art assets (design deliverable)
 
-### O — L4C should stay inside the same CaptureHub shell
-For v0.3.5 UX consistency, BOOTH should not feel like a separate mini-app or replace the camera surface. The preferred direction is:
+---
 
-- same CaptureHub frame as Still / Live / Clip
-- Zone B gets a 4-slot booth strip overlay on top of the live preview
-- shutter row stays in the normal place and enters a `START` state for BOOTH
-- BOOTH-specific controls live in the same `More` deck (`Featured Frame`, `Border Colour`)
-- after shot 4, a review sheet rises over CaptureHub instead of jumping to a totally different full-screen flow
+## Next Steps
 
-This keeps BOOTH understandable as “another capture mode” and reduces UI fragmentation.
-
-### P — Asset settings separated from asset type in CaptureHub UI
-The `More` pill in `CaptureHubView` now opens a compact floating `Capture Controls` deck rather than changing modes or routing to Settings. The deck is mode-aware and scoped to PRD §2.3 defaults:
-
-- Still: Aspect Ratio, Timer, Context Cam, Sound Stamp, Vibe Preview
-- Live: Aspect Ratio (read-only `9:16`), Timer, Context Cam, Vibe Preview, Apple Photos export
-- Clip: Video Format, Clip Length
-- Echo: Echo Limit
-- Atmosphere: Loop Length
-
-Implementation notes:
-
-- values persist with `@AppStorage`
-- aspect ratio defaults to `9:16`; supported options in the capture deck are `9:16`, `4:5`, and `1:1`
-- Live mode is intentionally locked to the default `9:16` ratio for MVP to preserve Apple Live Photo compatibility expectations
-- Clip mode now uses SDK-aligned video format choices in the deck: `VGA 4:3`, `HD 16:9`, and `4K 16:9`
-- Clip recording now honors the selected duration ceiling in the shutter countdown/progress ring and auto-stops at the configured limit
-- Clip recording now maps the selected `VGA` / `HD` / `4K` option to the session preset with safe fallback if a preset is unavailable
-- Clip recording now applies output orientation from the user-held device orientation at record start, with portrait fallback
-- Clip currently uses tap-to-start / tap-to-stop for v0.3 stabilization; hold-to-record / Slide to Lock is deferred until the recording interaction is made reliable on device
-- Clip, Echo, and Atmosphere now show an explicit REC status overlay while recording
-- MomentDetailView now loads `.mov` assets for Clip / Echo / Atmosphere with an inline video player instead of falling back to still-only media
-- current implementation uses a non-destructive, Apple-like framing treatment in the live preview: soft top/bottom letterbox masks plus a subtle centered ratio chip rather than a boxed frame
-- timer pill now reflects the persisted timer default
-- Still shutter badge for Sound Stamp now reflects the persisted Sound Stamp toggle
-- first pass is UI + persistence focused; not every setting is fully wired into engine behavior yet
+1. **Echo verification on device** — now that both bugs are fixed, run the v0.3 §4 Echo checklist in `Docs/interim_version_plan.md`
+2. **Atmosphere verification** — v0.3 §5 (still on placeholder `.mov` path; full PRD alignment deferred)
+3. **BOOTH framing** — unify preview guide ↔ crop ↔ strip slot geometry
+4. **v0.3.5 sign-off** — full booth flow device verification

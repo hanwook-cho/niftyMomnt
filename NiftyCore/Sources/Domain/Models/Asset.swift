@@ -51,6 +51,7 @@ public struct Asset: Identifiable, Equatable, Sendable {
     public var score: AssetScore?         // Set by StoryEngine
     public var duration: TimeInterval?    // Clip / Echo / Atmosphere
     public var derivative: DerivativeAsset? // Set by Fix — nil if no fix applied
+    public var selectedPresetName: String? // v0.4: user-chosen preset name at capture time
 
     public init(
         id: UUID = UUID(),
@@ -64,7 +65,8 @@ public struct Asset: Identifiable, Equatable, Sendable {
         transcript: String? = nil,
         score: AssetScore? = nil,
         duration: TimeInterval? = nil,
-        derivative: DerivativeAsset? = nil
+        derivative: DerivativeAsset? = nil,
+        selectedPresetName: String? = nil
     ) {
         self.id = id
         self.type = type
@@ -78,5 +80,6 @@ public struct Asset: Identifiable, Equatable, Sendable {
         self.score = score
         self.duration = duration
         self.derivative = derivative
+        self.selectedPresetName = selectedPresetName
     }
 }

@@ -71,6 +71,23 @@ public actor VaultRepository: VaultProtocol {
         log.debug("saveVideoFile done — \(destURL.lastPathComponent)")
     }
 
+    public func saveAudioFile(_ asset: Asset, sourceURL: URL) async throws {
+        let destURL = Self.fileURL(for: asset.id, type: asset.type)
+        log.debug("saveAudioFile — moving \(sourceURL.lastPathComponent) → \(destURL.lastPathComponent)")
+        do {
+            try FileManager.default.moveItem(at: sourceURL, to: destURL)
+        } catch {
+            log.error("saveAudioFile — move failed: \(error)")
+            throw error
+        }
+        let record = AssetRecord(from: asset)
+        let encoded = try JSONEncoder().encode(record)
+        let metaURL = Self.metaURL(for: asset.id)
+        try encoded.write(to: metaURL, options: .atomic)
+        storageSubject.send(storageSubject.value + Int64((try? destURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0))
+        log.debug("saveAudioFile done — \(destURL.lastPathComponent)")
+    }
+
     public func saveLiveMovieFile(_ asset: Asset, sourceURL: URL) async throws {
         let destURL = Self.liveMovieURL(for: asset.id)
         log.debug("saveLiveMovieFile — moving \(sourceURL.lastPathComponent) → \(destURL.lastPathComponent)")
@@ -198,7 +215,7 @@ public actor VaultRepository: VaultProtocol {
                 request.addResource(with: .pairedVideo, fileURL: movURL, options: videoOptions)
             }
 
-        case .clip, .echo, .atmosphere:
+        case .clip, .atmosphere:
             guard FileManager.default.fileExists(atPath: fileURL.path) else {
                 throw VaultError.notFound
             }
@@ -208,6 +225,8 @@ public actor VaultRepository: VaultProtocol {
                 options.originalFilename = fileURL.lastPathComponent
                 request.addResource(with: .video, fileURL: fileURL, options: options)
             }
+        case .echo:
+            throw VaultError.unsupportedPhotoLibraryExport
         }
 
         log.debug("exportToPhotoLibrary done — id=\(assetID.uuidString) type=\(asset.type.rawValue)")
@@ -224,7 +243,15 @@ private extension VaultRepository {
     }
 
     static func fileURL(for id: UUID, type: AssetType) -> URL {
-        let ext = (type == .still || type == .live || type == .l4c) ? "jpg" : "mov"
+        let ext: String
+        switch type {
+        case .still, .live, .l4c:
+            ext = "jpg"
+        case .clip, .atmosphere:
+            ext = "mov"
+        case .echo:
+            ext = "m4a"
+        }
         return assetsDirectory.appendingPathComponent("\(id.uuidString).\(ext)")
     }
 
@@ -282,6 +309,8 @@ private struct AssetRecord: Codable {
     let locationLat: Double?
     let locationLon: Double?
     let vibeTags: [String]
+    let transcript: String?
+    let duration: Double?
 
     init(from asset: Asset) {
         id = asset.id.uuidString
@@ -290,6 +319,8 @@ private struct AssetRecord: Codable {
         locationLat = asset.location?.latitude
         locationLon = asset.location?.longitude
         vibeTags = asset.vibeTags.map(\.rawValue)
+        transcript = asset.transcript
+        duration = asset.duration
     }
 
     func toAsset() -> Asset {
@@ -302,7 +333,9 @@ private struct AssetRecord: Codable {
             type: AssetType(rawValue: type) ?? .still,
             capturedAt: Date(timeIntervalSince1970: capturedAt),
             location: location,
-            vibeTags: tags
+            vibeTags: tags,
+            transcript: transcript,
+            duration: duration
         )
     }
 }
@@ -330,4 +363,5 @@ public enum VaultError: Error, Equatable {
     case decryptionFailed
     case photoLibraryAccessDenied
     case photoLibraryExportFailed
+    case unsupportedPhotoLibraryExport
 }

@@ -18,6 +18,10 @@ public actor VaultManager {
         try await vault.saveVideoFile(asset, sourceURL: sourceURL)
     }
 
+    public func saveAudioFile(_ asset: Asset, sourceURL: URL) async throws {
+        try await vault.saveAudioFile(asset, sourceURL: sourceURL)
+    }
+
     public func saveLiveMovieFile(_ asset: Asset, sourceURL: URL) async throws {
         try await vault.saveLiveMovieFile(asset, sourceURL: sourceURL)
     }

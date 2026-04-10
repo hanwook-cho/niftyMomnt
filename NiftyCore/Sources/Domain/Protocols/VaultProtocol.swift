@@ -7,6 +7,8 @@ public protocol VaultProtocol: AnyObject, Sendable {
     func save(_ asset: Asset, data: Data) async throws
     /// Moves a video file from sourceURL into the vault without loading it into memory.
     func saveVideoFile(_ asset: Asset, sourceURL: URL) async throws
+    /// Moves an audio file from sourceURL into the vault without loading it into memory.
+    func saveAudioFile(_ asset: Asset, sourceURL: URL) async throws
     /// Moves a Live Photo companion MOV from sourceURL into the vault alongside its JPEG.
     /// The metadata sidecar is NOT re-written — call this after `save(_:data:)` for the JPEG.
     func saveLiveMovieFile(_ asset: Asset, sourceURL: URL) async throws
