@@ -337,6 +337,9 @@ public extension Notification.Name {
     /// Posted after a Moment is deleted from the graph and its assets removed from the vault.
     /// Object: nil. Observers should re-fetch moments from GraphManager.
     static let niftyMomentDeleted = Notification.Name("com.hwcho99.niftymomnt.momentDeleted")
+    /// Posted by SoundStampAdapter after acoustic tags are written for an asset.
+    /// Object: asset UUID string. MomentDetailView observes to refresh its tag row.
+    static let niftyAcousticTagsUpdated = Notification.Name("com.hwcho99.niftymomnt.acousticTagsUpdated")
 }
 
 // MARK: - MomentCluster

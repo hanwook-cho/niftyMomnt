@@ -1,6 +1,7 @@
 // NiftyData/Sources/Platform/CoreMLIndexingAdapter.swift
 // Wraps Vision, SoundAnalysis, CoreImage. All inference on Neural Engine.
 
+import AVFoundation
 import CoreImage
 import CoreML
 import Foundation
@@ -79,8 +80,42 @@ public final class CoreMLIndexingAdapter: IndexingProtocol, Sendable {
         buffer: UnsafeBufferPointer<Float>,
         sampleRate: Double
     ) async throws -> [AcousticTag] {
-        // TODO v0.5: SNClassifySoundRequest with in-memory PCM — never a file
-        return []
+        // Copy to [Float] (Sendable) before any async hop — AVAudioPCMBuffer is not Sendable.
+        let samples = Array(buffer)
+        return try await Task.detached(priority: .utility) {
+            let format = AVAudioFormat(commonFormat: .pcmFormatFloat32,
+                                       sampleRate: sampleRate,
+                                       channels: 1,
+                                       interleaved: false)
+            guard let format,
+                  let pcm = AVAudioPCMBuffer(pcmFormat: format,
+                                              frameCapacity: AVAudioFrameCount(samples.count)),
+                  let dst = pcm.floatChannelData else { return [] }
+
+            pcm.frameLength = AVAudioFrameCount(samples.count)
+            dst[0].assign(from: samples, count: samples.count)
+
+            let observer = PCMObserver()
+            let request = try SNClassifySoundRequest(classifierIdentifier: .version1)
+            let analyzer = SNAudioStreamAnalyzer(format: format)
+            try analyzer.add(request, withObserver: observer)
+            analyzer.analyze(pcm, atAudioFramePosition: 0)
+            analyzer.completeAnalysis()
+
+            var best: [AcousticTagType: AcousticTag] = [:]
+            for result in observer.results {
+                for c in result.classifications {
+                    guard Float(c.confidence) >= 0.35,
+                          let tagType = SoundStampAdapter.mapAudioSetIdentifier(c.identifier)
+                    else { continue }
+                    let conf = Float(c.confidence)
+                    if best[tagType] == nil || conf > best[tagType]!.confidence {
+                        best[tagType] = AcousticTag(tag: tagType, source: .soundStamp, confidence: conf)
+                    }
+                }
+            }
+            return best.values.sorted { $0.confidence > $1.confidence }
+        }.value
     }
 
     // MARK: - Chromatic Palette (v0.2)
@@ -301,4 +336,15 @@ private extension CoreMLIndexingAdapter {
 
         return nil
     }
+}
+
+// MARK: - SNResultsObserving bridge (batch path)
+
+private final class PCMObserver: NSObject, SNResultsObserving {
+    var results: [SNClassificationResult] = []
+    func request(_ request: SNRequest, didProduce result: SNResult) {
+        if let r = result as? SNClassificationResult { results.append(r) }
+    }
+    func request(_ request: SNRequest, didFailWithError error: Error) {}
+    func requestDidComplete(_ request: SNRequest) {}
 }

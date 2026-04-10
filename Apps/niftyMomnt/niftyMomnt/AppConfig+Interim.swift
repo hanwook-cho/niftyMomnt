@@ -47,22 +47,22 @@ extension AppConfig {
         storage: StorageConfig(smartArchiveEnabled: false, iCloudSyncEnabled: false)
     )
 
-    /// v0.4 — Adds Roll Mode.
+    /// v0.4 — Adds Roll Mode. Carries forward .l4c from v0.3.5.
     static let v0_4 = AppConfig(
         appVariant: .full,
         assetTypes: .all,
         aiModes: .onDevice,
-        features: .rollMode,
+        features: [.l4c, .rollMode],
         sharing: SharingConfig(maxCircleSize: 1, labEnabled: false),
         storage: StorageConfig(smartArchiveEnabled: false, iCloudSyncEnabled: false)
     )
 
-    /// v0.5 — Adds Sound Stamp.
+    /// v0.5 — Adds Sound Stamp. Carries forward .l4c + .rollMode.
     static let v0_5 = AppConfig(
         appVariant: .full,
         assetTypes: .all,
         aiModes: .onDevice,
-        features: [.rollMode, .soundStamp],
+        features: [.l4c, .rollMode, .soundStamp],
         sharing: SharingConfig(maxCircleSize: 1, labEnabled: false),
         storage: StorageConfig(smartArchiveEnabled: false, iCloudSyncEnabled: false)
     )
@@ -72,7 +72,7 @@ extension AppConfig {
         appVariant: .full,
         assetTypes: .all,
         aiModes: .onDevice,
-        features: [.rollMode, .soundStamp, .nudgeEngine],
+        features: [.l4c, .rollMode, .soundStamp, .nudgeEngine],
         sharing: SharingConfig(maxCircleSize: 1, labEnabled: false),
         storage: StorageConfig(smartArchiveEnabled: false, iCloudSyncEnabled: false)
     )
@@ -82,7 +82,7 @@ extension AppConfig {
         appVariant: .full,
         assetTypes: .all,
         aiModes: .onDevice,
-        features: [.rollMode, .soundStamp, .nudgeEngine, .trustedSharing],
+        features: [.l4c, .rollMode, .soundStamp, .nudgeEngine, .trustedSharing],
         sharing: SharingConfig(maxCircleSize: 5, labEnabled: false),
         storage: StorageConfig(smartArchiveEnabled: false, iCloudSyncEnabled: false)
     )
@@ -92,7 +92,7 @@ extension AppConfig {
         appVariant: .full,
         assetTypes: .all,
         aiModes: .onDevice,
-        features: [.rollMode, .soundStamp, .nudgeEngine, .trustedSharing, .journalSuggest],
+        features: [.l4c, .rollMode, .soundStamp, .nudgeEngine, .trustedSharing, .journalSuggest],
         sharing: SharingConfig(maxCircleSize: 5, labEnabled: false),
         storage: StorageConfig(smartArchiveEnabled: false, iCloudSyncEnabled: false)
     )
@@ -102,7 +102,7 @@ extension AppConfig {
         appVariant: .full,
         assetTypes: .all,
         aiModes: [.onDevice, .enhancedAI, .lab],
-        features: [.rollMode, .soundStamp, .nudgeEngine, .trustedSharing, .journalSuggest, .photoFix],
+        features: [.l4c, .rollMode, .soundStamp, .nudgeEngine, .trustedSharing, .journalSuggest, .photoFix],
         sharing: SharingConfig(maxCircleSize: 10, labEnabled: true),
         storage: StorageConfig(smartArchiveEnabled: true, iCloudSyncEnabled: false)
     )

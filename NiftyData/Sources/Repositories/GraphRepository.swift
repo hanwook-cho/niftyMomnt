@@ -135,8 +135,36 @@ public actor GraphRepository: GraphProtocol {
         }
     }
 
+    public func fetchAcousticTags(for assetID: UUID) async throws -> [AcousticTag] {
+        return try await db.read { db in
+            let rows = try Row.fetchAll(db,
+                sql: "SELECT tag, source, confidence FROM acoustic_tags WHERE asset_id = ?",
+                arguments: [assetID.uuidString])
+            return rows.compactMap { row -> AcousticTag? in
+                guard let tagStr = row["tag"]    as? String, let tagType = AcousticTagType(rawValue: tagStr),
+                      let srcStr = row["source"] as? String, let source  = AcousticSource(rawValue: srcStr),
+                      let conf   = row["confidence"] as? Double else { return nil }
+                return AcousticTag(tag: tagType, source: source, confidence: Float(conf))
+            }
+        }
+    }
+
     public func updateAcousticTag(_ tag: AcousticTag, for assetID: UUID) async throws {
-        // v0.5: acoustic_tags table
+        try await db.write { db in
+            try db.execute(sql: """
+                INSERT INTO acoustic_tags (asset_id, tag, source, confidence)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(asset_id, tag) DO UPDATE SET
+                    confidence = MAX(confidence, excluded.confidence)
+                """,
+                arguments: [
+                    assetID.uuidString,
+                    tag.tag.rawValue,
+                    tag.source.rawValue,
+                    tag.confidence
+                ]
+            )
+        }
     }
 
     public func saveNudgeResponse(_ response: NudgeResponse) async throws {
@@ -272,7 +300,7 @@ public actor GraphRepository: GraphProtocol {
                     arguments: [idStr]
                 )
 
-                let assets: [Asset] = assetRows.compactMap { aRow in
+                var assets: [Asset] = assetRows.compactMap { aRow in
                     guard let aIdStr = aRow["id"] as? String,
                           let aId = UUID(uuidString: aIdStr),
                           let typeStr = aRow["type"] as? String,
@@ -312,6 +340,31 @@ public actor GraphRepository: GraphProtocol {
                         ambient: ambient,
                         selectedPresetName: aRow["preset_name"] as? String
                     )
+                }
+
+                // Batch-load acoustic tags for this moment's assets (single IN query, no N+1)
+                if !assets.isEmpty {
+                    let placeholders = assets.map { _ in "?" }.joined(separator: ", ")
+                    let tagArgs: [DatabaseValueConvertible] = assets.map { $0.id.uuidString }
+                    let tagRows = (try? Row.fetchAll(db,
+                        sql: "SELECT asset_id, tag, source, confidence FROM acoustic_tags WHERE asset_id IN (\(placeholders))",
+                        arguments: StatementArguments(tagArgs))) ?? []
+
+                    var tagsMap: [String: [AcousticTag]] = [:]
+                    for tRow in tagRows {
+                        guard let aIDStr  = tRow["asset_id"]  as? String,
+                              let tagStr  = tRow["tag"]        as? String,
+                              let tagType = AcousticTagType(rawValue: tagStr),
+                              let srcStr  = tRow["source"]     as? String,
+                              let source  = AcousticSource(rawValue: srcStr),
+                              let conf    = tRow["confidence"] as? Double else { continue }
+                        tagsMap[aIDStr, default: []].append(
+                            AcousticTag(tag: tagType, source: source, confidence: Float(conf))
+                        )
+                    }
+                    for i in assets.indices {
+                        assets[i].acousticTags = tagsMap[assets[i].id.uuidString] ?? []
+                    }
                 }
 
                 let dominantVibes: [VibeTag] = {
@@ -595,6 +648,17 @@ extension GraphRepository {
                 location_lat REAL,
                 location_lon REAL,
                 label        TEXT NOT NULL DEFAULT ''
+            )
+            """)
+
+        // acoustic_tags — v0.5: SoundStamp results, one row per (asset, tag)
+        try db.execute(sql: """
+            CREATE TABLE IF NOT EXISTS acoustic_tags (
+                asset_id   TEXT NOT NULL,
+                tag        TEXT NOT NULL,
+                source     TEXT NOT NULL DEFAULT 'soundStamp',
+                confidence REAL NOT NULL DEFAULT 0.0,
+                PRIMARY KEY (asset_id, tag)
             )
             """)
 

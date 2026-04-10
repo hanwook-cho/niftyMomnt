@@ -30,6 +30,10 @@ public actor GraphManager {
         try await graph.updatePreset(name, for: assetID)
     }
 
+    public func fetchAcousticTags(for assetID: UUID) async throws -> [AcousticTag] {
+        try await graph.fetchAcousticTags(for: assetID)
+    }
+
     public func fetchTodayMomentCount() async throws -> Int {
         try await graph.fetchTodayMomentCount()
     }

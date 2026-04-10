@@ -2,6 +2,7 @@
 // Holds all resolved dependencies for injection into the view hierarchy.
 
 import AVFoundation
+import Combine
 import NiftyCore
 import Observation
 import SwiftUI
@@ -21,6 +22,11 @@ public final class AppContainer {
     public let captureSession: AVCaptureSession
     /// Set by CaptureMomentUseCase after geocoding completes. Read by CaptureHubView overlay.
     public var lastCapturedPlaceName: String = ""
+    /// True while SoundStamp pre-roll buffer is active (Still mode + feature enabled).
+    public var isSoundStampActive: Bool = false
+
+    private let soundStampPipeline: (any SoundStampPipelineProtocol)?
+    private var soundStampCancellable: AnyCancellable?
 
     public init(
         config: AppConfig,
@@ -32,7 +38,8 @@ public final class AppContainer {
         nudgeEngine: any NudgeEngineProtocol,
         vaultManager: VaultManager,
         graphManager: GraphManager,
-        captureSession: AVCaptureSession
+        captureSession: AVCaptureSession,
+        soundStampPipeline: (any SoundStampPipelineProtocol)? = nil
     ) {
         self.config = config
         self.captureUseCase = captureUseCase
@@ -44,5 +51,23 @@ public final class AppContainer {
         self.vaultManager = vaultManager
         self.graphManager = graphManager
         self.captureSession = captureSession
+        self.soundStampPipeline = soundStampPipeline
+
+        soundStampCancellable = soundStampPipeline?.isActive
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] active in self?.isSoundStampActive = active }
+    }
+
+    /// Called by CaptureHubView when the Sound Stamp Settings toggle changes at runtime.
+    /// Activates pre-roll when enabled in Still mode; deactivates otherwise.
+    public func applySoundStampToggle(enabled: Bool, currentMode: CaptureMode) {
+        guard let pipeline = soundStampPipeline else { return }
+        Task {
+            if enabled && currentMode == .still {
+                try? await pipeline.activatePreRoll()
+            } else {
+                await pipeline.deactivatePreRoll()
+            }
+        }
     }
 }

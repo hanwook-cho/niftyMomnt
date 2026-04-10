@@ -15,16 +15,16 @@ struct NiftyMomntApp: App {
 
     @MainActor
     init() {
-        let config = AppConfig.v0_4
+        let config = AppConfig.v0_5
 
         // Platform adapters (NiftyData)
         let captureAdapter     = AVCaptureAdapter(config: config)
-        let soundStampAdapter  = SoundStampAdapter(config: config)
         let weatherAdapter     = OpenMeteoWeatherAdapter()
         let geocoderAdapter    = MapKitGeocoderAdapter()
         let indexingAdapter    = CoreMLIndexingAdapter(config: config, weather: weatherAdapter)
         let vaultRepo          = VaultRepository(config: config)
         let graphRepo          = GraphRepository(config: config)
+        let soundStampAdapter  = SoundStampAdapter(config: config, graph: graphRepo)
         let labClient          = LabNetworkAdapter(config: config)
         let nudgeTrigger       = JournalSuggestionsAdapter(config: config)
         let compositingAdapter = CoreImageCompositingAdapter()
@@ -93,7 +93,8 @@ struct NiftyMomntApp: App {
             nudgeEngine: nudgeEngine,
             vaultManager: vaultManager,
             graphManager: graphManager,
-            captureSession: captureAdapter.session
+            captureSession: captureAdapter.session,
+            soundStampPipeline: soundStampAdapter
         )
         self.nudgeEngine = nudgeEngine
 

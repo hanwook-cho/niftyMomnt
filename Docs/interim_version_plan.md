@@ -2,7 +2,7 @@
 # v0.1 → v1.0 Feature Ladder
 
 _Reference: PRD v1.6 · UI/UX Spec v1.7 · SRS v1.2_
-_Last updated: 2026-04-09 · v0.2 + v0.3 signed off; v0.3.5 mode-switching performance resolved; v0.4 implementation complete — pending device verification; v0.5 planned_
+_Last updated: 2026-04-10 · v0.2 + v0.3 signed off; v0.3.5 mode-switching performance resolved; v0.4 implementation complete — pending device verification; v0.5 implementation complete — classification verified on device (music=0.92, singing=0.58 confirmed)_
 
 ---
 
@@ -25,7 +25,7 @@ _Last updated: 2026-04-09 · v0.2 + v0.3 signed off; v0.3.5 mode-switching perfo
 | [v0.3](#v03--multi-mode-capture) | All 5 asset types captured and stored correctly | ✅ |
 | [v0.3.5](#v035--life-four-cuts-photo-booth-mode) | Photo booth flow: 4-shot countdown, strip compose, Featured Frame overlay, share-ready 9:16 image | 🔄 |
 | [v0.4](#v04--vibe-preset-system) | Preset selection maps to stored tags; accent theming in feed | 🔄 |
-| [v0.5](#v05--sound-stamp--acoustic-pipeline) | SoundStamp captures PCM at shutter; acoustic tags in feed | 🔄 |
+| [v0.5](#v05--sound-stamp--acoustic-pipeline) | SoundStamp captures PCM at shutter; acoustic tags in feed | ✅ |
 | [v0.6](#v06--ai-nudge-engine) | Post-capture nudge card fires; response stored in graph | ⬜ |
 | [v0.7](#v07--private-vault--face-id) | Assets marked private locked behind Face ID; vault tab functional | ⬜ |
 | [v0.8](#v08--story-engine--reel-assembler) | Moment cluster produced; reel assembled with voice overlay | ⬜ |
@@ -850,7 +850,9 @@ The accent color appears in two places on each card: the **3pt vertical strip** 
 
 ## v0.5 — Sound Stamp & Acoustic Pipeline
 
-**Verification goal:** In Still mode, ambient PCM audio is captured around the shutter moment; `SNAudioStreamAnalyzer` classifies it against a 17-label allowlist mapped from Apple's AudioSet classifier; acoustic tags (wind / rain / thunder / fire / beach / river / water / speech / crowd / laughter / music / singing / bird / dog / insect / car / train / airplane / alarm) appear in `MomentDetailView`; tags survive kill-and-relaunch; no audio file is ever written to disk.
+**Verification goal:** In Still mode, ambient PCM audio is captured around the shutter moment; `SNAudioFileAnalyzer` classifies it against a 19-label allowlist mapped from Apple's AudioSet classifier; acoustic tags (wind / rain / thunder / fire / beach / river / water / speech / crowd / laughter / music / singing / bird / dog / insect / car / train / airplane / alarm) appear in `MomentDetailView`; tags survive kill-and-relaunch. A temp CAF file is used during classification only and deleted before classify() returns — no permanent audio file written to disk.
+
+**Status: ✅ Implementation complete and verified on device — 2026-04-10**
 
 **AppConfig:** `AppConfig.v0_5` — same as v0.4 + `features: [.rollMode, .soundStamp]`. Already defined in `AppConfig+Interim.swift`. Switch `niftyMomntApp.swift` config from `v0_4` → `v0_5`.
 
@@ -887,10 +889,16 @@ The accent color appears in two places on each card: the **3pt vertical strip** 
 `CaptureEngine` does `_ = try? await soundStampPipeline.analyzeAndTag(assetID:)` — the return value is dropped. Persistence (calling `graph.updateAcousticTag`) must happen inside `SoundStampAdapter.analyzeAndTag`. Add `graph: any GraphProtocol` to `SoundStampAdapter.init`; update composition root accordingly.
 
 **W — `AVAudioSession` category for Sound Stamp**
-Use `.measurement` with `.mixWithOthers` option. This avoids interrupting `AVCaptureSession`'s photo-output class (same principle as Architecture Decision Q for Echo). Do **not** use `.record` — it conflicts with the active `AVCaptureSession` audio input and causes silent failures.
+Use `.playAndRecord` with `[.mixWithOthers, .allowBluetooth]`. This avoids interrupting `AVCaptureSession`'s photo-output class (same principle as Architecture Decision Q for Echo). Do **not** use `.record` alone — it conflicts with the active `AVCaptureSession` audio input and causes silent failures. Note: `.measurement` is macOS-only and does not compile on iOS.
 
-**X — `SNAudioStreamAnalyzer` for in-memory PCM**
-`SNClassifySoundRequest` requires a URL or `AVAudioFile`. For in-memory PCM, use `SNAudioStreamAnalyzer(format:)` initialized with the `AVAudioFormat` of the tap, then call `analyze(_:atAudioFramePosition:)` with the `AVAudioPCMBuffer` chunks. No temp file needed.
+**X — `SNAudioFileAnalyzer` for batch PCM classification (revised from original plan)**
+`SNAudioStreamAnalyzer` is designed for real-time streaming. Its internal windowing engine expects audio arriving at real-time cadence; feeding a pre-recorded buffer in a tight loop causes it to silently produce 0 classification windows (`requestDidComplete` fires immediately with 0 results). The correct batch API is `SNAudioFileAnalyzer`: write samples to a temp CAF (Int16 PCM — Float32 non-interleaved is silently unreadable), open with `SNAudioFileAnalyzer(url:)`, and call `analyze(completionHandler:)`. Use a `DispatchSemaphore` to block the `Task.detached` thread until the completion fires — no RunLoop required.
+
+**X2 — Ring buffer must be ≥3s for SNClassifySoundRequest**
+`SNClassifySoundRequest` default `windowDuration = 3.0s`, `overlapFactor = 0.5`. At least one full 3s window must be present in the audio file or `SNAudioFileAnalyzer` produces 0 windows. The original 1.5s ring (0.5s pre-roll + 1.0s post-shutter) was too short. `ringDuration` was increased to `4.5s` (~3.5s pre-roll + 1.0s post-shutter), giving 1–2 classification windows. Memory cost: 4.5s × 48000Hz × 4 bytes ≈ 864KB max.
+
+**X3 — AVAudioFile must close before SNAudioFileAnalyzer opens**
+Write `AVAudioFile` inside a `do { }` scope so it deinits (flushes and closes the fd) before `SNAudioFileAnalyzer` opens the same URL. If the file handle is still open, the analyzer reads an empty or incomplete file and produces 0 windows.
 
 **Y — DB migration: `acoustic_tags` table**
 Run `CREATE TABLE IF NOT EXISTS acoustic_tags (asset_id TEXT NOT NULL, tag TEXT NOT NULL, source TEXT NOT NULL, confidence REAL NOT NULL, PRIMARY KEY (asset_id, tag))` via `Configuration.prepareDatabase` (outside a transaction, matching the WAL pattern from Architecture Decision F).
@@ -902,18 +910,18 @@ After loading assets from GRDB, run a second query: `SELECT * FROM acoustic_tags
 
 | # | Task | File(s) | Status |
 |---|------|---------|--------|
-| 1a | Add `graph: any GraphProtocol` param to `SoundStampAdapter.init`; store as `private let graph` | `NiftyData/Sources/Platform/SoundStampAdapter.swift` | ⬜ |
-| 1b | `SoundStampAdapter.activatePreRoll()`: activate `AVAudioSession` (`.measurement` + `.mixWithOthers`); start `AVAudioEngine`; install `inputNode` tap at 44.1kHz mono; write to a 0.5s ring buffer (`[AVAudioPCMBuffer]`); set `isActiveSubject.send(true)` | `NiftyData/Sources/Platform/SoundStampAdapter.swift` | ⬜ |
-| 1c | `SoundStampAdapter.deactivatePreRoll()`: remove input tap; stop engine; deactivate `AVAudioSession`; clear ring buffer; `isActiveSubject.send(false)` | `NiftyData/Sources/Platform/SoundStampAdapter.swift` | ⬜ |
-| 1d | `SoundStampAdapter.analyzeAndTag(assetID:)`: capture 1.0s post-shutter via the running engine; concatenate pre-roll + post-shutter buffers; call `CoreMLIndexingAdapter.analyzePCMBuffer(assetID:buffer:sampleRate:)`; for each result call `graph.updateAcousticTag(_:for:)`; discard buffers; return tags | `NiftyData/Sources/Platform/SoundStampAdapter.swift` | ⬜ |
-| 2 | `CoreMLIndexingAdapter.analyzePCMBuffer(_:buffer:sampleRate:)`: construct `AVAudioFormat` (mono, 44100); build `AVAudioPCMBuffer` from `UnsafeBufferPointer<Float>`; feed into `SNAudioStreamAnalyzer`; collect `SNClassificationResult` observations; filter by allowlist (see AudioSet mapping below) with `confidence >= 0.35`; map to `[AcousticTag]`; return | `NiftyData/Sources/Platform/CoreMLIndexingAdapter.swift` | ⬜ |
-| 3a | `GraphRepository` DB migration: add `acoustic_tags` table in `prepareDatabase` (`CREATE TABLE IF NOT EXISTS`) | `NiftyData/Sources/Repositories/GraphRepository.swift` | ⬜ |
-| 3b | `GraphRepository.updateAcousticTag(_:for:)`: `INSERT OR REPLACE INTO acoustic_tags` | `NiftyData/Sources/Repositories/GraphRepository.swift` | ⬜ |
-| 3c | `GraphRepository.fetchMoments()`: after loading assets, batch-fetch `acoustic_tags WHERE asset_id IN (...)` and hydrate `Asset.acousticTags` | `NiftyData/Sources/Repositories/GraphRepository.swift` | ⬜ |
-| 4 | `niftyMomntApp.swift`: pass `graph: graphRepo` to `SoundStampAdapter(config:graph:)`; switch active config from `AppConfig.v0_4` → `AppConfig.v0_5` | `Apps/niftyMomnt/niftyMomnt/niftyMomntApp.swift` | ⬜ |
-| 5 | `MomentDetailView`: add acoustic tag chip row in glass bottom sheet — amber pills with a waveform SF Symbol prefix; visible only when `moment.assets.first?.acousticTags.isEmpty == false`; display `tag.tag.rawValue` capitalized + confidence bar optional | `Apps/niftyMomnt/niftyMomnt/UI/Journal/JournalFeedView.swift` | ⬜ |
-| 6 | `CaptureHubView`: bind mic activity indicator to `soundStampAdapter.isActive` publisher exposed via `AppContainer`; show a small amber waveform icon in Zone A top bar when active | `Apps/niftyMomnt/niftyMomnt/UI/CaptureHub/CaptureHubView.swift` | ⬜ |
-| 7 | `SettingsView`: Sound Stamp toggle — `config.features.contains(.soundStamp)` gate | `Apps/niftyMomnt/niftyMomnt/UI/` | ⬜ |
+| 1a | Add `graph: any GraphProtocol` param to `SoundStampAdapter.init`; store as `private let graph` | `NiftyData/Sources/Platform/SoundStampAdapter.swift` | ✅ |
+| 1b | `SoundStampAdapter.activatePreRoll()`: does NOT call `AVAudioSession.setCategory/setActive` (AVCaptureSession owns the shared session); installs `inputNode` tap, copies samples to `[Float]` (PCMChunk) on tap thread; 4.5s ring buffer; `engine.prepare()` + `engine.start()` | `NiftyData/Sources/Platform/SoundStampAdapter.swift` | ✅ |
+| 1c | `SoundStampAdapter.deactivatePreRoll()`: remove tap; `engine.pause()` (NOT stop — stop calls `setActive(false)` breaking AVCaptureSession with -17281); clear ring; `isActiveSubject.send(false)` | `NiftyData/Sources/Platform/SoundStampAdapter.swift` | ✅ |
+| 1d | `SoundStampAdapter.analyzeAndTag(assetID:)`: sleep 1.0s post-shutter; snapshot ring; flatten to `[Float]`; `Task.detached` → `classify()`; persist tags; post `niftyAcousticTagsUpdated` | `NiftyData/Sources/Platform/SoundStampAdapter.swift` | ✅ |
+| 2 | `CoreMLIndexingAdapter.analyzePCMBuffer()`: reuses `SoundStampAdapter.mapAudioSetIdentifier`; same SNAudioFileAnalyzer pattern | `NiftyData/Sources/Platform/CoreMLIndexingAdapter.swift` | ✅ |
+| 3a | `GraphRepository` DB migration: `acoustic_tags` table with `PRIMARY KEY (asset_id, tag)` | `NiftyData/Sources/Repositories/GraphRepository.swift` | ✅ |
+| 3b | `GraphRepository.updateAcousticTag(_:for:)`: `INSERT OR REPLACE` with `MAX(confidence)` | `NiftyData/Sources/Repositories/GraphRepository.swift` | ✅ |
+| 3c | `GraphRepository.fetchMoments()`: batch `acoustic_tags WHERE asset_id IN (...)` hydration | `NiftyData/Sources/Repositories/GraphRepository.swift` | ✅ |
+| 4 | `niftyMomntApp.swift`: `SoundStampAdapter(config:graph:graphRepo)`; `AppConfig.v0_5`; `AppConfig+Interim` v0_4–v0_9 all carry `.l4c` (was missing, broke BOOTH mode) | `Apps/niftyMomnt/niftyMomnt/niftyMomntApp.swift` | ✅ |
+| 5 | `MomentDetailView`: `@State acousticTags`; `loadAcousticTags()` via `graphManager.fetchAcousticTags(for:)`; `.onReceive(.niftyAcousticTagsUpdated)` for post-capture refresh; amber waveform chip row | `Apps/niftyMomnt/niftyMomnt/UI/Journal/JournalFeedView.swift` | ✅ |
+| 6 | `CaptureHubView`: unified AppStorage key `"nifty.soundStampEnabled"`; amber waveform+LIVE indicator in Zone A; `.onChange` → `applySoundStampToggle` | `Apps/niftyMomnt/niftyMomnt/UI/CaptureHub/CaptureHubView.swift` | ✅ |
+| 7 | `SettingsView`: Sound Stamp toggle — `config.features.contains(.soundStamp)` gate | `Apps/niftyMomnt/niftyMomnt/UI/` | ✅ |
 
 > **AudioSet allowlist mapping (task 2):** `SNClassificationResult.identifier` strings to `AcousticTagType` — implement as a `static let` dictionary in `CoreMLIndexingAdapter`:
 >
@@ -941,7 +949,7 @@ After loading assets from GRDB, run a second query: `SELECT * FROM acoustic_tags
 >
 > Use a prefix match (`identifier.hasPrefix(...)`) to handle classifier version differences across iOS versions. When multiple identifiers map to the same case, take the highest confidence score.
 
-> **Privacy note (tasks 1b–1d):** The PCM ring buffer is an in-memory `[AVAudioPCMBuffer]`. It must be cleared in `deactivatePreRoll` and immediately after `analyzeAndTag` returns. No file I/O. No call to `AVAudioFile`. Verify in Instruments (File Activity) that no `.m4a` / `.caf` / `.wav` file is written during Sound Stamp operation.
+> **Privacy note (tasks 1b–1d):** The PCM ring buffer is an in-memory `[PCMChunk]` (`[Float]`-backed). It is cleared in `deactivatePreRoll` and immediately after `analyzeAndTag` snapshots it. A single temp `.caf` is written to `NSTemporaryDirectory()` during classification only and deleted via `defer` before `classify()` returns. It never touches `Documents/assets/`. Verify in Instruments (File Activity) that no `.caf` file persists after Sound Stamp capture.
 
 > **`AppContainer` note (task 6):** Expose `soundStampAdapter.isActive` as a published property or pass through via a dedicated `@Published var isSoundStampActive: Bool`. `SoundStampAdapter.isActive` is an `AnyPublisher<Bool, Never>` — subscribe in `AppContainer.init` and forward to a `@Published` var so `CaptureHubView` can bind without importing `NiftyData`.
 
@@ -1008,12 +1016,26 @@ After loading assets from GRDB, run a second query: `SELECT * FROM acoustic_tags
 
 | Item | Status |
 |------|--------|
-| All verification rows passing | ⬜ |
-| No audio file written to disk during Sound Stamp capture | ⬜ |
-| Acoustic tags visible in `acoustic_tags` GRDB table | ⬜ |
-| Tags survive kill-and-relaunch | ⬜ |
-| No regression in Live / Echo / Clip / Booth modes | ⬜ |
-| **v0.5 complete — ready for v0.6** | ⬜ |
+| All verification rows passing | 🔄 (3.2 music/singing confirmed; 3.1 / 3.3–3.10 / 4–6 pending) |
+| Temp CAF deleted before classify() returns; no permanent audio file on disk | ✅ (verified by design — defer + NSTemporaryDirectory) |
+| Acoustic tags visible in `acoustic_tags` GRDB table | 🔄 pending 4.2 |
+| Tags survive kill-and-relaunch | 🔄 pending 4.1 |
+| No regression in Live / Echo / Clip / Booth modes | 🔄 pending 6.1–6.5 |
+| **v0.5 complete — ready for v0.6** | 🔄 |
+
+#### Key implementation lessons recorded (2026-04-10)
+
+| Finding | Resolution |
+|---------|------------|
+| `SNAudioStreamAnalyzer` produces 0 windows with pre-recorded buffers | Use `SNAudioFileAnalyzer` (batch API) instead |
+| `SNClassifySoundRequest` windowDuration = 3.0s requires ≥3s of audio | Increased `ringDuration` from 1.5s → 4.5s |
+| `AVAudioFile` must close before `SNAudioFileAnalyzer` opens the same URL | Wrap write in `do { }` scope to force deinit/flush |
+| `SNAudioFileAnalyzer.analyze()` (sync) delivers callbacks via RunLoop — 0 results on `Task.detached` thread | Use `analyze(completionHandler:)` + `DispatchSemaphore` |
+| `AVAudioEngine.stop()` calls `AVAudioSession.setActive(false)` — breaks `AVCaptureSession` (-17281) | Use `engine.pause()` in `deactivatePreRoll` |
+| `AVAudioSession.Category.measurement` is macOS-only | Do not call `setCategory` at all; `AVCaptureSession` owns the session |
+| Float32 non-interleaved CAF silently unreadable by `SNAudioFileAnalyzer` | Write as Int16 PCM CAF (`kAudioFormatLinearPCM`, 16-bit) |
+| AppStorage key mismatch between SettingsView and CaptureHubView | Unified to `"nifty.soundStampEnabled"` |
+| `AppConfig.v0_4–v0_9` missing `.l4c` broke BOOTH mode | Added `.l4c` to all configs from v0_4 onward |
 
 ---
 

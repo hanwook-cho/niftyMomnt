@@ -32,9 +32,15 @@ public final class CaptureEngine: CaptureEngineProtocol {
         self.soundStampPipeline = soundStampPipeline
     }
 
+    /// Returns true when both the compile-time feature flag and the runtime user toggle are on.
+    private var isSoundStampEnabled: Bool {
+        config.features.contains(.soundStamp) &&
+        UserDefaults.standard.bool(forKey: "nifty.soundStampEnabled")
+    }
+
     public func startSession(mode: CaptureMode, config: AppConfig) async throws {
         try await captureAdapter.startSession(mode: mode, config: config)
-        if mode == .still && config.features.contains(.soundStamp) {
+        if mode == .still && isSoundStampEnabled {
             try await soundStampPipeline.activatePreRoll()
         }
         captureStateSubject.send(.ready(mode: mode))
@@ -60,7 +66,7 @@ public final class CaptureEngine: CaptureEngineProtocol {
     public func captureAsset() async throws -> Asset {
         captureStateSubject.send(.capturing(mode: currentMode()))
         let asset = try await captureAdapter.captureAsset()
-        if currentMode() == .still && config.features.contains(.soundStamp) {
+        if currentMode() == .still && isSoundStampEnabled {
             Task.detached { [soundStampPipeline] in
                 _ = try? await soundStampPipeline.analyzeAndTag(assetID: asset.id)
             }
@@ -76,7 +82,7 @@ public final class CaptureEngine: CaptureEngineProtocol {
             await soundStampPipeline.deactivatePreRoll()
         }
         try await captureAdapter.switchMode(to: mode, gestureTime: gestureTime)
-        if isStill && config.features.contains(.soundStamp) {
+        if isStill && isSoundStampEnabled {
             try await soundStampPipeline.activatePreRoll()
         }
         captureStateSubject.send(.ready(mode: mode))

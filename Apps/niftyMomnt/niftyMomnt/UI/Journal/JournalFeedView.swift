@@ -510,6 +510,9 @@ struct MomentDetailView: View {
     @State private var audioDuration: TimeInterval? = nil
     @State private var livePhotoReplayToken: Int = 0
     @State private var heroLoadRequestID: String? = nil
+    /// Acoustic tags loaded separately — SoundStamp writes them ~1s after capture,
+    /// after the moment is already in the feed. Refreshed via niftyAcousticTagsUpdated notification.
+    @State private var acousticTags: [AcousticTag] = []
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -532,7 +535,15 @@ struct MomentDetailView: View {
             }
         }
         .preferredColorScheme(.dark)
-        .task(id: moment.id) { await loadHeroImage() }
+        .task(id: moment.id) {
+            await loadHeroImage()
+            await loadAcousticTags()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .niftyAcousticTagsUpdated)) { note in
+            guard let assetIDStr = note.object as? String,
+                  moment.assets.contains(where: { $0.id.uuidString == assetIDStr }) else { return }
+            Task { await loadAcousticTags() }
+        }
         .alert(
             "Photo Library Export",
             isPresented: Binding(
@@ -544,6 +555,12 @@ struct MomentDetailView: View {
         } message: {
             Text(exportAlertMessage ?? "")
         }
+    }
+
+    private func loadAcousticTags() async {
+        guard let first = moment.assets.first else { return }
+        let tags = (try? await container.graphManager.fetchAcousticTags(for: first.id)) ?? []
+        acousticTags = tags
     }
 
     private func loadHeroImage() async {
@@ -983,6 +1000,19 @@ struct MomentDetailView: View {
             }
             .padding(.top, NiftySpacing.md)
 
+            // Acoustic tags row (v0.5 — SoundStamp; loaded async, refreshed via notification)
+            if !acousticTags.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: NiftySpacing.sm) {
+                        ForEach(acousticTags.prefix(5), id: \.tag) { tag in
+                            acousticChip(tag)
+                        }
+                    }
+                    .padding(.horizontal, NiftySpacing.lg)
+                }
+                .padding(.top, NiftySpacing.xs)
+            }
+
             // Actions row
             HStack(spacing: NiftySpacing.sm) {
                 if currentAssetSupportsFix {
@@ -1042,6 +1072,24 @@ struct MomentDetailView: View {
                 }
         )
         .padding(.bottom, 34) // home indicator
+    }
+
+    private func acousticChip(_ tag: AcousticTag) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: "waveform")
+                .font(.system(size: 9, weight: .medium))
+            Text(tag.tag.rawValue)
+                .font(.system(size: 11, weight: .semibold))
+        }
+        .foregroundStyle(Color.niftyAmberVivid.opacity(0.80))
+        .padding(.horizontal, NiftySpacing.md)
+        .padding(.vertical, 3)
+        .background(Color.niftyAmberVivid.opacity(0.10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(Color.niftyAmberVivid.opacity(0.22), lineWidth: 0.5)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
     private func vibeChip(_ vibe: VibeTag) -> some View {

@@ -87,7 +87,7 @@ struct CaptureHubView: View {
     @State private var showFlipHint: Bool = false
     @AppStorage("capture.selfTimerDelay") private var captureSelfTimerDelay: Int = 0
     @AppStorage("capture.secondaryCameraEnabled") private var secondaryCameraEnabled: Bool = true
-    @AppStorage("capture.soundStampEnabled") private var soundStampEnabled: Bool = false
+    @AppStorage("nifty.soundStampEnabled") private var soundStampEnabled: Bool = false
     @AppStorage("capture.liveVibePreviewEnabled") private var liveVibePreviewEnabled: Bool = true
     @AppStorage("capture.aspectRatio") private var captureAspectRatioRaw: String = "9:16"
     @AppStorage("capture.clipVideoFormat") private var clipVideoFormatRaw: String = "hd"
@@ -215,6 +215,9 @@ struct CaptureHubView: View {
         .onChange(of: isCaptureActive) { _, isActive in
             performPreviewControl(active: isActive)
         }
+        .onChange(of: soundStampEnabled) { _, enabled in
+            container.applySoundStampToggle(enabled: enabled, currentMode: currentMode)
+        }
         .sheet(isPresented: $showBoothReviewSheet, onDismiss: handleBoothReviewDismiss) {
             StripPreviewSheet(
                 container: container,
@@ -330,9 +333,14 @@ struct CaptureHubView: View {
 
                 Spacer()
 
-                // CENTER: Film Strip Counter (Roll Mode only)
-                if container.config.features.contains(.rollMode) {
-                    filmStripCounter
+                // CENTER: Film Strip Counter (Roll Mode) + SoundStamp mic indicator
+                HStack(spacing: NiftySpacing.sm) {
+                    if container.config.features.contains(.rollMode) {
+                        filmStripCounter
+                    }
+                    if container.config.features.contains(.soundStamp) && container.isSoundStampActive {
+                        soundStampIndicator
+                    }
                 }
 
                 Spacer()
@@ -459,6 +467,27 @@ struct CaptureHubView: View {
             .frame(width: 40, height: 40)
         }
         .accessibilityLabel("More options")
+    }
+
+    // MARK: Sound Stamp Indicator (Zone A centre, pre-roll active)
+
+    private var soundStampIndicator: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "waveform.and.mic")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color(hex: "#E8A020"))
+            Text("LIVE")
+                .font(.system(size: 9, weight: .bold))
+                .kerning(0.06 * 9)
+                .foregroundStyle(Color(hex: "#E8A020").opacity(0.80))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color(hex: "#E8A020").opacity(0.12))
+        .overlay(
+            Capsule().strokeBorder(Color(hex: "#E8A020").opacity(0.30), lineWidth: 0.5)
+        )
+        .clipShape(Capsule())
     }
 
     // MARK: Film Strip Counter (Zone A centre, Roll Mode only)
