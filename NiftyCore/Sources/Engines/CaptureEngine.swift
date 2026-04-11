@@ -4,6 +4,9 @@
 
 import Combine
 import Foundation
+import os
+
+private let log = Logger(subsystem: "com.hwcho99.niftymomnt", category: "CaptureEngine")
 
 @MainActor
 public final class CaptureEngine: CaptureEngineProtocol {
@@ -41,7 +44,13 @@ public final class CaptureEngine: CaptureEngineProtocol {
     public func startSession(mode: CaptureMode, config: AppConfig) async throws {
         try await captureAdapter.startSession(mode: mode, config: config)
         if mode == .still && isSoundStampEnabled {
-            try await soundStampPipeline.activatePreRoll()
+            // Sound Stamp failure (e.g. audio engine conflict after session rebuild) must NOT
+            // propagate — the camera is already running at this point. Log and continue.
+            do {
+                try await soundStampPipeline.activatePreRoll()
+            } catch {
+                log.warning("startSession — activatePreRoll failed, Sound Stamp disabled for this session: \(error)")
+            }
         }
         captureStateSubject.send(.ready(mode: mode))
     }
@@ -83,7 +92,11 @@ public final class CaptureEngine: CaptureEngineProtocol {
         }
         try await captureAdapter.switchMode(to: mode, gestureTime: gestureTime)
         if isStill && isSoundStampEnabled {
-            try await soundStampPipeline.activatePreRoll()
+            do {
+                try await soundStampPipeline.activatePreRoll()
+            } catch {
+                log.warning("switchMode — activatePreRoll failed, Sound Stamp disabled for this session: \(error)")
+            }
         }
         captureStateSubject.send(.ready(mode: mode))
     }

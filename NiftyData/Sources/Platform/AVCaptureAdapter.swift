@@ -99,7 +99,8 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
                     log.debug("AVCaptureSession running")
                     cont.resume()
                 } else {
-                    log.error("AVCaptureSession failed to start — attempting rebuild")
+                    log.error("AVCaptureSession failed to start — waiting 300ms then rebuilding")
+                    Thread.sleep(forTimeInterval: 0.3)
                     do {
                         resetSessionStateOnQueue()
                         try configureSession(for: mode)

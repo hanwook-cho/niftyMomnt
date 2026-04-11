@@ -14,6 +14,7 @@ public final class CaptureMomentUseCase {
     private let indexing: IndexingEngine
     private let graph: GraphManager
     private let geocoder: (any GeocoderProtocol)?
+    private let nudge: (any NudgeEngineProtocol)?
     /// Called on MainActor with the resolved place name after geocoding completes.
     public var onPlaceResolved: ((String) -> Void)?
 
@@ -22,13 +23,15 @@ public final class CaptureMomentUseCase {
         vault: VaultManager,
         indexing: IndexingEngine,
         graph: GraphManager,
-        geocoder: (any GeocoderProtocol)? = nil
+        geocoder: (any GeocoderProtocol)? = nil,
+        nudge: (any NudgeEngineProtocol)? = nil
     ) {
         self.engine = engine
         self.vault = vault
         self.indexing = indexing
         self.graph = graph
         self.geocoder = geocoder
+        self.nudge = nudge
     }
 
     /// Starts the capture session for live preview without capturing an asset.
@@ -145,8 +148,13 @@ public final class CaptureMomentUseCase {
         }
         log.debug("[7/8] graph save OK")
 
-        // 8. Notify feed to refresh
-        log.debug("[8/8] posting niftyMomentCaptured notification")
+        // 8. Fire nudge (publishes NudgeCard to pendingNudge; UI presents after overlay closes)
+        log.debug("[8/8] evaluating nudge triggers…")
+        await nudge?.evaluateTriggers(for: moment)
+        log.debug("[8/8] nudge evaluated")
+
+        // 9. Notify feed to refresh
+        log.debug("[9/9] posting niftyMomentCaptured notification")
         NotificationCenter.default.post(name: .niftyMomentCaptured, object: nil)
 
         // Clean up temp file
@@ -246,8 +254,13 @@ public final class CaptureMomentUseCase {
         log.debug("[6] Asset duration before graph save: \(enrichedAsset.duration ?? 0)s")
         log.debug("[6] graph save OK")
 
-        // 7. Notify feed
-        log.debug("[7] posting niftyMomentCaptured")
+        // 7. Fire nudge
+        log.debug("[7] evaluating nudge triggers…")
+        await nudge?.evaluateTriggers(for: moment)
+        log.debug("[7] nudge evaluated")
+
+        // 8. Notify feed
+        log.debug("[8] posting niftyMomentCaptured")
         NotificationCenter.default.post(name: .niftyMomentCaptured, object: nil)
         log.debug("── stopVideoRecording pipeline complete ──")
 

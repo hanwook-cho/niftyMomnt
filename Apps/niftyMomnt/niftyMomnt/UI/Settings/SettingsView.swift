@@ -13,6 +13,7 @@ struct SettingsView: View {
     @AppStorage("nifty.dualCameraEnabled")       private var dualCameraEnabled: Bool = true
     @AppStorage("nifty.rollModeEnabled")         private var rollModeEnabled: Bool = false
     @AppStorage("nifty.iCloudSyncEnabled")       private var iCloudSyncEnabled: Bool = false
+    @AppStorage("nifty.nudgeCardMode")           private var nudgeCardMode: String = "full"
 
     var body: some View {
         NavigationStack {
@@ -61,6 +62,26 @@ struct SettingsView: View {
                         .font(.niftyBody)
                 }
                 .tint(Color.niftyBrand)
+            }
+
+            if container.config.features.contains(.nudgeEngine) {
+                VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Capture Reflection")
+                            .font(.niftyBody)
+                        Text("Off · Quick (emoji tap) · Full (text note)")
+                            .font(.niftyCaption)
+                            .foregroundStyle(Color.niftyTextSecondary)
+                    }
+                    Picker("Capture Reflection", selection: $nudgeCardMode) {
+                        Text("Off").tag("off")
+                        Text("Quick").tag("quick")
+                        Text("Full").tag("full")
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                }
+                .padding(.vertical, 4)
             }
         }
     }

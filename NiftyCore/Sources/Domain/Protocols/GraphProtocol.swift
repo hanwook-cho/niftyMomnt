@@ -9,6 +9,7 @@ public protocol GraphProtocol: AnyObject, Sendable {
     func updateAcousticTag(_ tag: AcousticTag, for assetID: UUID) async throws
     func fetchAcousticTags(for assetID: UUID) async throws -> [AcousticTag]
     func saveNudgeResponse(_ response: NudgeResponse) async throws
+    func mergeAcousticVibes(_ vibes: [VibeTag], for assetID: UUID) async throws  // v0.6
     func saveMoodPoint(_ point: MoodPoint) async throws
     func updatePlaceRecord(_ record: PlaceRecord) async throws
     func saveDerivativeRecord(_ derivative: DerivativeAsset) async throws

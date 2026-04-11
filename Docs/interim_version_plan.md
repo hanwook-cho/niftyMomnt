@@ -2,7 +2,7 @@
 # v0.1 → v1.0 Feature Ladder
 
 _Reference: PRD v1.6 · UI/UX Spec v1.7 · SRS v1.2_
-_Last updated: 2026-04-10 · v0.2 + v0.3 signed off; v0.3.5 mode-switching performance resolved; v0.4 implementation complete — pending device verification; v0.5 implementation complete — classification verified on device (music=0.92, singing=0.58 confirmed)_
+_Last updated: 2026-04-10 · v0.2 + v0.3 signed off; v0.3.5 mode-switching performance resolved; v0.4 implementation complete — pending device verification; v0.5 complete (Sound Stamp verified on device); v0.6 AI Nudge Engine — planning complete, implementation starting_
 
 ---
 
@@ -26,7 +26,7 @@ _Last updated: 2026-04-10 · v0.2 + v0.3 signed off; v0.3.5 mode-switching perfo
 | [v0.3.5](#v035--life-four-cuts-photo-booth-mode) | Photo booth flow: 4-shot countdown, strip compose, Featured Frame overlay, share-ready 9:16 image | 🔄 |
 | [v0.4](#v04--vibe-preset-system) | Preset selection maps to stored tags; accent theming in feed | 🔄 |
 | [v0.5](#v05--sound-stamp--acoustic-pipeline) | SoundStamp captures PCM at shutter; acoustic tags in feed | ✅ |
-| [v0.6](#v06--ai-nudge-engine) | Post-capture nudge card fires; response stored in graph | ⬜ |
+| [v0.6](#v06--ai-nudge-engine) | Post-capture nudge card fires; response stored in graph | 🔄 |
 | [v0.7](#v07--private-vault--face-id) | Assets marked private locked behind Face ID; vault tab functional | ⬜ |
 | [v0.8](#v08--story-engine--reel-assembler) | Moment cluster produced; reel assembled with voice overlay | ⬜ |
 | [v0.9](#v09--extended-intelligence--dual-camera) | Dual-camera capture; Lab Mode; Journaling Suggestions; AI caption | ⬜ |
@@ -1041,25 +1041,103 @@ After loading assets from GRDB, run a second query: `SELECT * FROM acoustic_tags
 
 ## v0.6 — AI Nudge Engine
 
-**Verification goal:** Post-capture nudge card appears after vibe tag window closes; user response persists in graph; nudge reads stored vibe tags (not live classification).
+**Verification goal:** Post-capture nudge card appears after vibe tag overlay closes; user response persists in `nudge_responses` GRDB table; nudge is gated by `.nudgeEngine` feature flag.
 
-**AppConfig:** adds `features: .nudgeEngine`
+**AppConfig:** `AppConfig.v0_6` — `features: [.l4c, .rollMode, .soundStamp, .nudgeEngine]` _(already defined in AppConfig+Interim.swift)_
+
+### Pre-existing scaffold (no re-implementation needed)
+
+| Item | Location | State |
+|------|----------|-------|
+| `NudgeEngineProtocol` | `NiftyCore/Sources/Domain/Protocols/NudgeEngineProtocol.swift` | ✅ fully defined |
+| `NudgeCard`, `NudgeResponse`, `NudgeTrigger` models | `NiftyCore/Sources/Domain/Models/SupportingTypes.swift` | ✅ defined |
+| `NudgeEngine` shell | `NiftyCore/Sources/Engines/NudgeEngine.swift` | stub — `evaluateTriggers` is empty |
+| `GenerateNudgeUseCase` | `NiftyCore/Sources/Domain/UseCases/GenerateNudgeUseCase.swift` | ✅ thin wrapper |
+| `AppConfig.v0_6` | `Apps/niftyMomnt/niftyMomnt/AppConfig+Interim.swift` | ✅ defined |
+| `AppContainer.nudgeEngine` | `Apps/niftyMomnt/niftyMomnt/AppContainer.swift` | ✅ wired + exposed |
+| `GraphRepository.saveNudgeResponse()` | `NiftyData/Sources/Repositories/GraphRepository.swift` | stub — body empty |
+| BGAppRefreshTask → `nudgeEngine.refresh()` | `Apps/niftyMomnt/niftyMomnt/niftyMomntApp.swift` | ✅ wired |
 
 ### Features In Scope
 
-- `NudgeEngine`: read `VibeTag[]` from graph → generate reflection prompt (on-device, template-based at this stage)
-- Post-capture overlay sequencing: vibe tag prompt fires first → tags written → nudge card after window closes (per PRD §3.9 / §8)
-- `NudgeResponse` persistence in `GraphRepository.saveNudgeResponse()`
-- `CaptureHubView`: nudge card sheet presentation after overlay dismisses
+- `NudgeEngine.evaluateTriggers(for:)`: pick a template question from `VibeTag[]` → publish `NudgeCard` on `pendingNudge`
+- GRDB `nudge_responses` table migration + real `saveNudgeResponse()` INSERT
+- `CaptureMomentUseCase`: inject `nudgeEngine: NudgeEngine`; call `evaluateTriggers(for: moment)` after graph save (still + video pipelines)
+- `niftyMomntApp.swift`: pass `nudgeEngine` into `CaptureMomentUseCase` init
+- `CaptureHubView`: `.onReceive(container.nudgeEngine.pendingNudge)` → hold in `@State var pendingNudgeCard: NudgeCard?`; present nudge sheet only after `dismissPostCapture()` completes; dismiss calls `submitResponse()` or `dismiss(nudgeID:)`
+
+### Sequencing (per PRD §3.9 / §8)
+
+```
+shutter tap
+  → captureAsset() pipeline
+      → graph.saveMoment()
+      → nudgeEngine.evaluateTriggers(for: moment)   ← publishes NudgeCard to subject
+      → NotificationCenter.niftyMomentCaptured
+  → CaptureHubView shows post-capture vibe overlay  ← user picks chip or auto-dismisses (3s)
+  → dismissPostCapture() completes (0.25s animation)
+  → pendingNudgeCard is non-nil → .sheet presents NudgeCardView
+  → user responds / dismisses → submitResponse() or dismiss() → subject sends nil
+```
 
 ### Implementation Tasks
 
 | # | Task | File(s) | Status |
 |---|------|---------|--------|
-| 1 | `NudgeEngine.generateNudge(for:)` — template-based from vibe tags | `NiftyCore/Sources/Engines/NudgeEngine.swift` | ⬜ |
-| 2 | `GraphRepository.saveNudgeResponse()` | `NiftyData/Sources/Repositories/GraphRepository.swift` | ⬜ |
-| 3 | `CaptureMomentUseCase`: fire nudge after classification | `NiftyCore/Sources/Domain/UseCases/CaptureMomentUseCase.swift` | ⬜ |
-| 4 | `CaptureHubView`: nudge card sheet, dismiss → write response | `Apps/niftyMomnt/niftyMomnt/UI/CaptureHub/CaptureHubView.swift` | ⬜ |
+| 1 | `NudgeEngine.evaluateTriggers(for:)` — pick template question from `moment.dominantVibes` → publish `NudgeCard` on `nudgeSubject` | `NiftyCore/Sources/Engines/NudgeEngine.swift` | ✅ |
+| 2 | GRDB migration: `nudge_responses` table (`id TEXT PK, nudge_id TEXT, response_type TEXT, response_value TEXT, timestamp REAL`) + real `saveNudgeResponse()` INSERT | `NiftyData/Sources/Repositories/GraphRepository.swift` | ✅ |
+| 3 | `CaptureMomentUseCase`: add `nudge: NudgeEngine?` init param (optional, defaults nil for backward compat); call `await nudge?.evaluateTriggers(for: moment)` after step 7 in both `captureAsset()` and `stopVideoRecording()` | `NiftyCore/Sources/Domain/UseCases/CaptureMomentUseCase.swift` | ✅ |
+| 4 | `niftyMomntApp.swift`: pass `nudgeEngine` into `CaptureMomentUseCase(nudge: nudgeEngine)` + switch to `AppConfig.v0_6` | `Apps/niftyMomnt/niftyMomnt/niftyMomntApp.swift` | ✅ |
+| 5 | `CaptureHubView`: `@State var pendingNudgeCard: NudgeCard?`; `.onReceive(container.nudgeEngine.pendingNudge)` stores card; modify `dismissPostCapture()` to set sheet after animation; `.sheet(item: $pendingNudgeCard)` presents `NudgeCardView`; response/dismiss path calls `container.nudgeEngine` | `Apps/niftyMomnt/niftyMomnt/UI/CaptureHub/CaptureHubView.swift` | ✅ |
+| 6 | `NudgeCardView` — bottom sheet: question text, text-entry or quick-pick response, submit + dismiss buttons | `Apps/niftyMomnt/niftyMomnt/UI/CaptureHub/NudgeCardView.swift` _(new file)_ | ✅ |
+
+### Verification Checklist
+
+> Run on real device with `AppConfig.v0_6`. Record Pass / Fail / Note per row. All rows must pass before v0.6 sign-off.
+
+#### 1 — Nudge Card Appearance
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 1.1 | Still capture → post-capture overlay appears → wait 3s for auto-dismiss | After overlay fades out (~3.25s), nudge card sheet slides up | |
+| 1.2 | Still capture → tap a vibe chip to dismiss overlay early | Nudge card sheet appears shortly after overlay closes | |
+| 1.3 | Nudge card is visible — check question text | Non-empty reflection question; text varies with different dominant vibe tags (e.g. `.golden` → different prompt than `.moody`) | |
+| 1.4 | Capture with no dominant vibe tags (ambiguous scene) | Nudge card still appears with a fallback generic question | |
+
+#### 2 — Nudge Response & Persistence
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 2.1 | Enter text in nudge card → tap Submit | Sheet dismisses, no crash | |
+| 2.2 | Xcode Device Manager → `Documents/graph.sqlite` → inspect `nudge_responses` table | Row exists: correct `nudge_id`, `response_type`, non-empty `response_value`, valid `timestamp` | |
+| 2.3 | Tap "✕" / dismiss nudge without responding | Sheet closes, no row written to `nudge_responses` (dismiss ≠ response) | |
+| 2.4 | Kill + relaunch → open Film | Previously captured moments + nudge responses still present (GRDB migration didn't break existing tables) | |
+
+#### 3 — Feature Flag Gating
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 3.1 | Switch boot config to `AppConfig.v0_5` → capture still | No nudge card appears (feature flag `.nudgeEngine` absent) | |
+| 3.2 | Switch back to `AppConfig.v0_6` → capture still | Nudge card appears again | |
+
+#### 4 — Regression
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 4.1 | Still capture with Sound Stamp enabled | Acoustic tags still appear in Film feed (Sound Stamp pipeline unaffected) | |
+| 4.2 | Clip / Echo / Booth / Roll capture → check for nudge | Nudge card fires for all capture types (or is explicitly suppressed — document whichever is chosen) | |
+| 4.3 | Rapid-tap shutter 3× (still mode) | No crash; at most one nudge card queued at a time (latest wins) | |
+| 4.4 | Open Film → existing moments visible | Feed not broken by GRDB migration adding `nudge_responses` table | |
+
+### v0.6 Sign-off
+
+| Item | Status |
+|------|--------|
+| All verification rows passing | ⬜ |
+| `nudge_responses` table populated in graph.sqlite | ⬜ |
+| Feature gating confirmed (v0_5 config → no nudge) | ⬜ |
+| Sound Stamp regression clean | ⬜ |
+| **v0.6 complete — ready for v0.7** | ⬜ |
 
 ---
 

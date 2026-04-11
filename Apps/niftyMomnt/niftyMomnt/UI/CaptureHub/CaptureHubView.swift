@@ -63,6 +63,10 @@ struct CaptureHubView: View {
     @State private var postCaptureShareVisible: Bool = false
     @State private var selectedVibeChipIndex: Int? = nil
 
+    // v0.6 — Nudge card: received from NudgeEngine publisher, shown after overlay dismisses
+    @State private var receivedNudgeCard: NudgeCard? = nil
+    @State private var pendingNudgeCard: NudgeCard? = nil
+
     // Last captured thumbnail (shown left of shutter)
     @State private var lastCapturedImage: UIImage? = nil
     @State private var lastCapturedThumbnailUsesFit: Bool = false
@@ -87,7 +91,8 @@ struct CaptureHubView: View {
     @State private var showFlipHint: Bool = false
     @AppStorage("capture.selfTimerDelay") private var captureSelfTimerDelay: Int = 0
     @AppStorage("capture.secondaryCameraEnabled") private var secondaryCameraEnabled: Bool = true
-    @AppStorage("nifty.soundStampEnabled") private var soundStampEnabled: Bool = false
+    @AppStorage("nifty.soundStampEnabled")  private var soundStampEnabled: Bool = false
+    @AppStorage("nifty.nudgeCardMode")      private var nudgeCardMode: String = "full"
     @AppStorage("capture.liveVibePreviewEnabled") private var liveVibePreviewEnabled: Bool = true
     @AppStorage("capture.aspectRatio") private var captureAspectRatioRaw: String = "9:16"
     @AppStorage("capture.clipVideoFormat") private var clipVideoFormatRaw: String = "hd"
@@ -234,6 +239,52 @@ struct CaptureHubView: View {
                     resetBoothSession()
                 }
             )
+        }
+        // v0.6 — Nudge card sheet: Quick (emoji) or Full (text) based on settings
+        .sheet(item: $pendingNudgeCard) { card in
+            if nudgeCardMode == "quick" {
+                NudgeCardQuickView(
+                    card: card,
+                    onSelect: { emoji in
+                        let response = NudgeResponse(
+                            nudgeID: card.id,
+                            responseType: "emoji",
+                            responseValue: emoji
+                        )
+                        Task { try? await container.nudgeEngine.submitResponse(response) }
+                        pendingNudgeCard = nil
+                    },
+                    onDismiss: {
+                        container.nudgeEngine.dismiss(nudgeID: card.id)
+                        pendingNudgeCard = nil
+                    }
+                )
+            } else {
+                NudgeCardView(
+                    card: card,
+                    onSubmit: { responseValue in
+                        let response = NudgeResponse(
+                            nudgeID: card.id,
+                            responseType: "text",
+                            responseValue: responseValue
+                        )
+                        Task { try? await container.nudgeEngine.submitResponse(response) }
+                        pendingNudgeCard = nil
+                    },
+                    onDismiss: {
+                        container.nudgeEngine.dismiss(nudgeID: card.id)
+                        pendingNudgeCard = nil
+                    }
+                )
+            }
+        }
+        .onReceive(container.nudgeEngine.pendingNudge) { card in
+            if let card {
+                receivedNudgeCard = card
+            } else {
+                receivedNudgeCard = nil
+                pendingNudgeCard = nil
+            }
         }
     }
 
@@ -1977,6 +2028,13 @@ struct CaptureHubView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             showPostCapture = false
             selectedVibeChipIndex = nil
+            // v0.6: present nudge card if mode is not off and one arrived while overlay was showing
+            if nudgeCardMode != "off", let card = receivedNudgeCard {
+                pendingNudgeCard = card
+                receivedNudgeCard = nil
+            } else {
+                receivedNudgeCard = nil
+            }
         }
     }
 

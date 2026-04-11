@@ -15,7 +15,7 @@ struct NiftyMomntApp: App {
 
     @MainActor
     init() {
-        let config = AppConfig.v0_5
+        let config = AppConfig.v0_6
 
         // Platform adapters (NiftyData)
         let captureAdapter     = AVCaptureAdapter(config: config)
@@ -66,7 +66,8 @@ struct NiftyMomntApp: App {
             vault: vaultManager,
             indexing: indexingEngine,
             graph: graphManager,
-            geocoder: geocoderAdapter
+            geocoder: geocoderAdapter,
+            nudge: nudgeEngine
         )
         let lifeFourCutsUseCase = LifeFourCutsUseCase(
             captureEngine: captureEngine,
@@ -126,17 +127,28 @@ extension NiftyMomntApp {
     /// Called once at app launch to register BGProcessingTask handler.
     /// The task identifier must match BGTaskSchedulerPermittedIdentifiers in Info.plist.
     static func registerBackgroundTasks(indexingEngine: IndexingEngine) {
+        // using: .main — handler and expirationHandler are always called on the main queue.
+        // BGTaskScheduler.shared.submit() requires the main thread; calling it from any other
+        // context (e.g. Task.detached cooperative pool) causes _dispatch_assert_queue_fail.
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: "com.hwcho99.niftyMomnt.indexBatch",
-            using: nil
+            using: .main
         ) { task in
             guard let processingTask = task as? BGProcessingTask else { return }
-            Task {
+            // Actual indexing work runs detached (background priority, off main thread).
+            let workItem = Task.detached(priority: .background) {
                 // TODO: fetch unindexed asset IDs + data from vault, then call processBatch
                 await indexingEngine.processBatch(assets: [])
+            }
+            // Completion and re-scheduling happen back on the main actor.
+            Task { @MainActor in
+                _ = await workItem.value
                 processingTask.setTaskCompleted(success: true)
+                NiftyMomntApp.scheduleIndexBatch()  // must be main thread
             }
             processingTask.expirationHandler = {
+                // expirationHandler also called on main queue (using: .main)
+                workItem.cancel()
                 processingTask.setTaskCompleted(success: false)
             }
         }

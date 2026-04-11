@@ -168,7 +168,54 @@ public actor GraphRepository: GraphProtocol {
     }
 
     public func saveNudgeResponse(_ response: NudgeResponse) async throws {
-        // v0.6: nudge_responses table
+        log.debug("saveNudgeResponse — nudgeID=\(response.nudgeID) type=\(response.responseType)")
+        try await db.write { db in
+            try db.execute(sql: """
+                INSERT INTO nudge_responses (id, nudge_id, response_type, response_value, timestamp)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                arguments: [
+                    UUID().uuidString,
+                    response.nudgeID.uuidString,
+                    response.responseType,
+                    response.responseValue,
+                    response.timestamp.timeIntervalSince1970
+                ]
+            )
+        }
+        log.debug("saveNudgeResponse done — nudgeID=\(response.nudgeID)")
+    }
+
+    public func mergeAcousticVibes(_ vibes: [VibeTag], for assetID: UUID) async throws {
+        guard !vibes.isEmpty else { return }
+        log.debug("mergeAcousticVibes — assetID=\(assetID.uuidString) vibes=[\(vibes.map(\.rawValue).joined(separator: ","))]")
+        try await db.write { db in
+            // 1. Look up the moment that contains this asset
+            guard let momentID = try String.fetchOne(db, sql: """
+                SELECT moment_id FROM moment_assets WHERE asset_id = ? LIMIT 1
+                """, arguments: [assetID.uuidString])
+            else {
+                return  // asset not yet linked to a moment — skip
+            }
+            // 2. Read current dominant_vibes JSON
+            let existing = (try String.fetchOne(db, sql: """
+                SELECT dominant_vibes FROM moments WHERE id = ?
+                """, arguments: [momentID])) ?? "[]"
+            let existingTags = (try? JSONDecoder().decode([String].self,
+                from: existing.data(using: .utf8) ?? Data())) ?? []
+            // 3. Merge — append only tags not already present
+            var merged = existingTags
+            for v in vibes where !merged.contains(v.rawValue) {
+                merged.append(v.rawValue)
+            }
+            guard merged.count > existingTags.count else { return }  // nothing new
+            let mergedJSON = (try? String(data: JSONEncoder().encode(merged), encoding: .utf8)) ?? existing
+            // 4. Update moment
+            try db.execute(sql: """
+                UPDATE moments SET dominant_vibes = ? WHERE id = ?
+                """, arguments: [mergedJSON, momentID])
+            log.debug("mergeAcousticVibes done — momentID=\(momentID) merged=\(merged)")
+        }
     }
 
     public func saveMoodPoint(_ point: MoodPoint) async throws {
@@ -659,6 +706,17 @@ extension GraphRepository {
                 source     TEXT NOT NULL DEFAULT 'soundStamp',
                 confidence REAL NOT NULL DEFAULT 0.0,
                 PRIMARY KEY (asset_id, tag)
+            )
+            """)
+
+        // nudge_responses — v0.6: user responses to post-capture nudge cards
+        try db.execute(sql: """
+            CREATE TABLE IF NOT EXISTS nudge_responses (
+                id             TEXT PRIMARY KEY NOT NULL,
+                nudge_id       TEXT NOT NULL,
+                response_type  TEXT NOT NULL,
+                response_value TEXT NOT NULL,
+                timestamp      REAL NOT NULL
             )
             """)
 

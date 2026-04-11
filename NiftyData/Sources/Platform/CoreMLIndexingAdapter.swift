@@ -48,8 +48,8 @@ public final class CoreMLIndexingAdapter: IndexingProtocol, Sendable {
             .filter { $0.confidence > 0.3 }
             .prefix(10)
 
-        // Log top-5 raw observations for tuning the identifier→VibeTag map
-        for obs in topObservations.prefix(5) {
+        // Log all top observations for tuning the identifier→VibeTag map
+        for obs in topObservations {
             log.debug("  observation: '\(obs.identifier)' confidence=\(String(format: "%.2f", obs.confidence))")
         }
 
@@ -60,6 +60,8 @@ public final class CoreMLIndexingAdapter: IndexingProtocol, Sendable {
                 log.debug("  mapped '\(obs.identifier)' → .\(tag.rawValue)")
                 seen.insert(tag)
                 tags.append(tag)
+            } else if vibeTag(for: obs.identifier) == nil {
+                log.debug("  no mapping for '\(obs.identifier)' (conf=\(String(format: "%.2f", obs.confidence)))")
             }
             if tags.count == 3 { break }
         }
@@ -273,64 +275,87 @@ private extension CoreMLIndexingAdapter {
 
 private extension CoreMLIndexingAdapter {
     /// Maps a VNClassifyImageRequest observation identifier to a VibeTag.
-    /// Identifiers are hierarchical dot-notation strings from Apple's taxonomy,
-    /// e.g. "outdoor_nature", "outdoor_sky", "food_drink", "indoor_dim".
+    ///
+    /// Apple's taxonomy uses concrete noun identifiers, not aesthetic keywords.
+    /// Observed examples: "structure", "wood_processed", "cord", "machine",
+    /// "consumer_electronics", "outdoor_nature", "sky", "person", "food_drink".
+    /// Priority order matters — first match wins. Tune using the "no mapping for"
+    /// debug log lines emitted for every unmatched observation.
     func vibeTag(for identifier: String) -> VibeTag? {
         let id = identifier.lowercased()
 
-        // Golden — warm, bright, sunset/sunrise light
-        if id.contains("sunset") || id.contains("sunrise") || id.contains("golden")
-            || id.contains("warm_light") || id.contains("sunlight") || id.contains("yellow")
-            || id.contains("autumn") || id.contains("fall") {
+        // ── Golden ── warm, bright, sunset/sunrise, golden-hour light
+        if id.contains("sunset")    || id.contains("sunrise")  || id.contains("golden")
+        || id.contains("warm_light") || id.contains("sunlight") || id.contains("yellow")
+        || id.contains("autumn")    || id.contains("fall")     || id.contains("orange")
+        || id.contains("amber")     || id.contains("candlelight") {
             return .golden
         }
 
-        // Moody — dark, dramatic, night, stormy
-        if id.contains("night") || id.contains("dark") || id.contains("dramatic")
-            || id.contains("storm") || id.contains("overcast") || id.contains("fog")
-            || id.contains("mist") || id.contains("rain") {
+        // ── Moody ── dark, dramatic, night, stormy, overcast
+        if id.contains("night")     || id.contains("dark")      || id.contains("dramatic")
+        || id.contains("storm")     || id.contains("overcast")  || id.contains("mist")
+        || id.contains("rain")      || id.contains("gloomy")    || id.contains("dusk") {
             return .moody
         }
 
-        // Serene — nature, green, calm, outdoor
-        if id.contains("nature") || id.contains("forest") || id.contains("mountain")
-            || id.contains("field") || id.contains("meadow") || id.contains("garden")
-            || id.contains("plant") || id.contains("leaf") || id.contains("grass")
-            || id.contains("tree") || id.contains("outdoor") {
+        // ── Serene ── outdoor nature, green, calm, botanical
+        if id.contains("nature")    || id.contains("forest")    || id.contains("mountain")
+        || id.contains("field")     || id.contains("meadow")    || id.contains("garden")
+        || id.contains("plant")     || id.contains("leaf")      || id.contains("grass")
+        || id.contains("tree")      || id.contains("outdoor")   || id.contains("flower")
+        || id.contains("floral")    || id.contains("landscape") || id.contains("park")
+        || id.contains("trail")     || id.contains("hiking")    || id.contains("wildlife")
+        || id.contains("beach")     || id.contains("coast")     || id.contains("lake") {
             return .serene
         }
 
-        // Electric — urban, neon, vivid, city
-        if id.contains("neon") || id.contains("city") || id.contains("urban")
-            || id.contains("street") || id.contains("night_life") || id.contains("crowd")
-            || id.contains("vibrant") || id.contains("colorful") || id.contains("bright") {
+        // ── Electric ── urban, city, technology, screens, vivid light
+        if id.contains("neon")      || id.contains("city")      || id.contains("urban")
+        || id.contains("street")    || id.contains("nightlife") || id.contains("crowd")
+        || id.contains("vibrant")   || id.contains("colorful")  || id.contains("signage")
+        || id.contains("consumer_electronics") || id.contains("electronic")
+        || id.contains("technology") || id.contains("screen")    || id.contains("light_effect")
+        || id.contains("festival")  || id.contains("concert")   || id.contains("performer") {
             return .electric
         }
 
-        // Nostalgic — vintage, film, aged, retro
-        if id.contains("vintage") || id.contains("retro") || id.contains("old")
-            || id.contains("aged") || id.contains("classic") || id.contains("historic") {
+        // ── Nostalgic ── vintage, retro, aged, historic, film-era
+        if id.contains("vintage")   || id.contains("retro")     || id.contains("aged")
+        || id.contains("classic")   || id.contains("historic")  || id.contains("antique")
+        || id.contains("monument")  || id.contains("ruin")      || id.contains("heritage") {
             return .nostalgic
         }
 
-        // Cozy — interior, warm, food, home
-        if id.contains("indoor") || id.contains("interior") || id.contains("home")
-            || id.contains("cozy") || id.contains("food") || id.contains("drink")
-            || id.contains("cafe") || id.contains("coffee") || id.contains("candle") {
+        // ── Cozy ── indoor, home, food, warm materials (wood, textile, furniture)
+        if id.contains("indoor")    || id.contains("interior")  || id.contains("home")
+        || id.contains("food")      || id.contains("drink")     || id.contains("cafe")
+        || id.contains("coffee")    || id.contains("candle")    || id.contains("kitchen")
+        || id.contains("wood")      || id.contains("textile")   || id.contains("furniture")
+        || id.contains("table")     || id.contains("chair")     || id.contains("sofa")
+        || id.contains("bedroom")   || id.contains("living")    || id.contains("fireplace")
+        || id.contains("book")      || id.contains("library")   || id.contains("bakery") {
             return .cozy
         }
 
-        // Dreamy — soft, hazy, pastel, sky
-        if id.contains("sky") || id.contains("cloud") || id.contains("pastel")
-            || id.contains("soft") || id.contains("haze") || id.contains("snow")
-            || id.contains("water") || id.contains("ocean") || id.contains("sea") {
+        // ── Dreamy ── sky, clouds, water, soft/hazy light, snow
+        if id.contains("sky")       || id.contains("cloud")     || id.contains("pastel")
+        || id.contains("haze")      || id.contains("snow")      || id.contains("fog")
+        || id.contains("water")     || id.contains("ocean")     || id.contains("sea")
+        || id.contains("river")     || id.contains("reflection") || id.contains("mist")
+        || id.contains("ethereal")  || id.contains("dreamy") {
             return .dreamy
         }
 
-        // Raw — stark, minimal, concrete, shadow
-        if id.contains("shadow") || id.contains("abstract") || id.contains("minimal")
-            || id.contains("concrete") || id.contains("black_and_white")
-            || id.contains("monochrome") || id.contains("industrial") {
+        // ── Raw ── structural, industrial, machinery, wires, concrete, minimal
+        if id.contains("structure") || id.contains("machine")   || id.contains("cord")
+        || id.contains("metal")     || id.contains("wire")      || id.contains("cable")
+        || id.contains("concrete")  || id.contains("industrial") || id.contains("shadow")
+        || id.contains("abstract")  || id.contains("minimal")   || id.contains("monochrome")
+        || id.contains("black_and_white")      || id.contains("architecture")
+        || id.contains("building")  || id.contains("bridge")    || id.contains("wall")
+        || id.contains("fence")     || id.contains("stone")     || id.contains("graffiti")
+        || id.contains("tool")      || id.contains("hardware") {
             return .raw
         }
 

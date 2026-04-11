@@ -165,16 +165,42 @@ public actor SoundStampAdapter: SoundStampPipelineProtocol {
             try? await graph.updateAcousticTag(tag, for: assetID)
         }
 
-        // Notify observers (MomentDetailView) that tags are ready — fires after the 1s delay
+        // Merge acoustic-derived VibeTag values into the moment's dominant_vibes (Option B)
+        let acousticVibes = tags.compactMap { Self.vibeTag(for: $0.tag) }
+        var seen = Set<VibeTag>()
+        let uniqueVibes = acousticVibes.filter { seen.insert($0).inserted }
+        if !uniqueVibes.isEmpty {
+            try? await graph.mergeAcousticVibes(uniqueVibes, for: assetID)
+            log.debug("analyzeAndTag — merged acoustic vibes [\(uniqueVibes.map(\.rawValue).joined(separator: ","))] into moment")
+        }
+
+        // Notify observers that acoustic tags (and potentially updated vibes) are ready
         if !tags.isEmpty {
             NotificationCenter.default.post(
                 name: .niftyAcousticTagsUpdated,
                 object: assetID.uuidString
             )
-            log.debug("analyzeAndTag — posted niftyAcousticTagsUpdated for assetID=\(assetID.uuidString)")
+            NotificationCenter.default.post(name: .niftyMomentCaptured, object: nil)
+            log.debug("analyzeAndTag — posted niftyAcousticTagsUpdated + niftyMomentCaptured for assetID=\(assetID.uuidString)")
         }
 
         return tags
+    }
+
+    // MARK: - Acoustic → VibeTag mapping
+
+    static func vibeTag(for acoustic: AcousticTagType) -> VibeTag? {
+        switch acoustic {
+        case .music, .singing:              return .dreamy
+        case .rain, .thunder:               return .moody
+        case .bird, .wind, .insect:         return .serene
+        case .beach, .river, .water:        return .serene
+        case .crowd, .alarm:                return .electric
+        case .fire:                         return .cozy
+        case .speech, .laughter:            return .nostalgic
+        case .car, .train, .airplane:       return .raw
+        case .dog:                          return .cozy
+        }
     }
 
     // MARK: - Ring buffer management
