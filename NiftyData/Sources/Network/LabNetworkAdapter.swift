@@ -276,16 +276,17 @@ private struct CaptionRequest: Encodable {
 }
 
 private struct AmbientMetadata: Encodable {
-    let weatherCondition: String?
     let timeOfDay: String?
     let locationLabel: String?
+    let dayLabel: String?
 
     init(from moment: Moment) {
-        self.weatherCondition = moment.weatherCondition?.rawValue
-        self.timeOfDay = moment.timeOfDay?.rawValue
-        // Extract location segment from "Morning · San Francisco · Thursday" pattern.
+        // Moment label format: "Morning · San Francisco · Thursday"
+        // Segments: [0] time-of-day, [1] location, [2] day
         let parts = moment.label.components(separatedBy: " · ")
+        self.timeOfDay     = parts.count >= 1 ? parts[0] : nil
         self.locationLabel = parts.count >= 2 ? parts[1] : nil
+        self.dayLabel      = parts.count >= 3 ? parts[2] : nil
     }
 }
 

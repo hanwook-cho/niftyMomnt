@@ -143,7 +143,6 @@ public final class VoiceProseEngine: Sendable {
         }
         var parts = ["Moment: \(label)", "Vibe: \(vibe)"]
         if !location.isEmpty { parts.append("Place: \(location)") }
-        if let weather = moment.weatherCondition { parts.append("Weather: \(weather.rawValue)") }
         let context = parts.joined(separator: ". ")
 
         return """
