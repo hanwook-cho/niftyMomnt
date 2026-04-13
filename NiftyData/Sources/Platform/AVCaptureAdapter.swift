@@ -243,9 +243,7 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
         if isDualCamSession {
             let secondaryInput = secondaryVideoInput?.device.localizedName ?? "none"
             log.info("captureAsset — secondary input=\(secondaryInput)")
-            secondaryFrameLock.lock()
-            let hasFrame = _latestSecondaryFrame != nil
-            secondaryFrameLock.unlock()
+            let hasFrame = secondaryFrameLock.withLock { _latestSecondaryFrame != nil }
             log.info("captureAsset — secondary frame buffer: \(hasFrame ? "HAS FRAME ✓" : "EMPTY — no frame received yet")")
         }
         // ─────────────────────────────────────────────────────────────────────
