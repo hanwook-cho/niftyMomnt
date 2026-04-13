@@ -2,6 +2,13 @@
 // JournalingSuggestions framework — iOS 17.2+.
 // Foundation Models (on-device LLM) — iOS 26+ — used to generate richer NudgeCard questions.
 //
+// Architecture note:
+//   JournalingSuggestions has NO programmatic fetch API. Suggestions are delivered exclusively
+//   through the SwiftUI `JournalingSuggestionsPicker` picker via its `onCompletion` callback.
+//   The UI layer (e.g. CaptureHubView post-capture overlay) presents the picker and calls
+//   `receiveSuggestion(_:)` on this adapter when the user selects one.
+//   `evaluateTriggers(for:)` then matches stored suggestions against the captured moment.
+//
 // Entitlement required: com.apple.developer.journaling-suggestion
 // (Enable in Xcode → Signing & Capabilities before running on device.)
 
@@ -28,22 +35,47 @@ public final class JournalSuggestionsAdapter: NudgeEngineProtocol {
     private let config: AppConfig
     private let onDeviceLLM: (any OnDeviceLLMProtocol)?
 
-    /// Authorization state for JournalingSuggestions framework.
-    /// Persisted across `evaluateTriggers` calls to avoid redundant auth requests.
-    private var isAuthorized: Bool = false
-    private var authorizationRequested: Bool = false
+    // Suggestions fed in from JournalingSuggestionsPicker (UI layer).
+    // Keyed by suggestion title hash for deduplication.
+#if canImport(JournalingSuggestions)
+    @available(iOS 17.2, *)
+    private var storedSuggestions: [JournalingSuggestion] {
+        get { _storedSuggestions as? [JournalingSuggestion] ?? [] }
+        set { _storedSuggestions = newValue }
+    }
+#endif
+    private var _storedSuggestions: Any = [String: Any]()
 
     // MARK: - Init
 
-    /// - Parameters:
-    ///   - config: App feature/AI mode configuration.
-    ///   - onDeviceLLM: Optional on-device LLM (Foundation Models iOS 26+) for generating
-    ///     richer nudge question text from journaling suggestion content.
     public init(config: AppConfig, onDeviceLLM: (any OnDeviceLLMProtocol)? = nil) {
         self.config = config
         self.onDeviceLLM = onDeviceLLM
+        if #available(iOS 17.2, *) {
+#if canImport(JournalingSuggestions)
+            _storedSuggestions = [JournalingSuggestion]()
+#endif
+        }
         log.debug("JournalSuggestionsAdapter — initialized; journalSuggest=\(config.features.contains(.journalSuggest)); onDeviceLLM=\(onDeviceLLM?.isAvailable == true ? "available" : "unavailable")")
     }
+
+    // MARK: - Public: receive suggestion from picker
+
+    /// Called by the UI layer after `JournalingSuggestionsPicker` completes.
+    /// The picker handles all authorization; no explicit auth call needed here.
+    ///
+    /// - Parameter suggestion: The suggestion selected by the user.
+#if canImport(JournalingSuggestions)
+    @available(iOS 17.2, *)
+    public func receiveSuggestion(_ suggestion: JournalingSuggestion) async {
+        guard config.features.contains(.journalSuggest) else {
+            log.debug("receiveSuggestion — .journalSuggest not in features; ignoring")
+            return
+        }
+        storedSuggestions.append(suggestion)
+        log.info("receiveSuggestion — title=\"\(suggestion.title)\" date=\(suggestion.date?.start.description ?? "nil") stored=\(storedSuggestions.count)")
+    }
+#endif
 
     // MARK: - NudgeEngineProtocol
 
@@ -56,21 +88,19 @@ public final class JournalSuggestionsAdapter: NudgeEngineProtocol {
             log.debug("evaluateTriggers — .journalSuggest not in features; skipping")
             return
         }
-
         if #available(iOS 17.2, *) {
 #if canImport(JournalingSuggestions)
-            await evaluateJournalingSuggestions(for: moment)
+            await matchStoredSuggestions(for: moment)
 #else
             log.warning("evaluateTriggers — JournalingSuggestions not importable at compile time")
 #endif
         } else {
-            log.info("evaluateTriggers — iOS 17.2+ required for JournalingSuggestions; skipping (current OS too old)")
+            log.info("evaluateTriggers — iOS 17.2+ required for JournalingSuggestions; skipping")
         }
     }
 
     public func submitResponse(_ response: NudgeResponse) async throws {
         log.debug("submitResponse — nudgeID=\(response.nudgeID.uuidString) type=\(response.responseType)")
-        // Response stored via NudgeEngine — no JournalingSuggestions API call needed here.
     }
 
     public func dismiss(nudgeID: UUID) {
@@ -85,188 +115,110 @@ public final class JournalSuggestionsAdapter: NudgeEngineProtocol {
 
     public func refresh() async {
         guard config.features.contains(.journalSuggest) else { return }
-
         if #available(iOS 17.2, *) {
 #if canImport(JournalingSuggestions)
-            await refreshJournalingSuggestions()
+            evictStaleSuggestions()
+            if storedSuggestions.isEmpty {
+                log.debug("refresh — no stored suggestions after eviction; clearing nudge")
+                nudgeSubject.send(nil)
+            }
 #endif
-        } else {
-            log.info("refresh — iOS 17.2+ required; skipping")
         }
     }
 
-    // MARK: - Internal: JournalingSuggestions (iOS 17.2+)
+    // MARK: - Internal (iOS 17.2+)
 
 #if canImport(JournalingSuggestions)
+
     @available(iOS 17.2, *)
-    private func evaluateJournalingSuggestions(for moment: Moment) async {
-        // ── Authorization ─────────────────────────────────────────────────────
-        guard await ensureAuthorized() else { return }
+    private func matchStoredSuggestions(for moment: Moment) async {
+        log.debug("matchStoredSuggestions — stored=\(storedSuggestions.count) momentID=\(moment.id.uuidString)")
+        evictStaleSuggestions()
 
-        // ── Fetch suggestions ─────────────────────────────────────────────────
-        // JournalingSuggestions provides a SwiftUI picker (JournalingSuggestionsPicker)
-        // as the primary API surface. Programmatic access fetches the same underlying
-        // content the picker shows, filtered to assets matching our window.
-        log.debug("evaluateJournalingSuggestions — momentID=\(moment.id.uuidString) startTime=\(moment.startTime)")
+        let windowStart = moment.startTime.addingTimeInterval(-24 * 3600)
+        let windowEnd   = moment.startTime.addingTimeInterval(24 * 3600)
 
-        do {
-            // The framework returns suggestions for recent activity.
-            // We filter to within 24 hours of the captured moment's start time.
-            let suggestions = try await fetchRecentSuggestions()
-            log.debug("evaluateJournalingSuggestions — fetched \(suggestions.count) raw suggestion(s)")
-
-            let windowStart = moment.startTime.addingTimeInterval(-24 * 3600)
-            let windowEnd   = moment.startTime.addingTimeInterval(24 * 3600)
-
-            let matching = suggestions.filter { suggestion in
-                let date = suggestion.date
-                return date >= windowStart && date <= windowEnd
+        let matching = storedSuggestions.filter { suggestion in
+            // suggestion.date is DateInterval? — use .start for window comparison.
+            // If date is nil (some suggestion types omit it), include it — better to
+            // show a nudge than to silently drop the user's picker selection.
+            guard let interval = suggestion.date else {
+                log.debug("matchStoredSuggestions — suggestion \"\(suggestion.title)\" has no date; including")
+                return true
             }
-            log.debug("evaluateJournalingSuggestions — \(matching.count) suggestion(s) in ±24h window")
+            let inWindow = interval.start >= windowStart && interval.start <= windowEnd
+            log.debug("matchStoredSuggestions — \"\(suggestion.title)\" start=\(interval.start) inWindow=\(inWindow)")
+            return inWindow
+        }
+        log.debug("matchStoredSuggestions — \(matching.count) suggestion(s) in ±24h window")
 
-            guard let best = matching.first else {
-                log.debug("evaluateJournalingSuggestions — no matching suggestion; clearing nudge")
-                nudgeSubject.send(nil)
-                return
-            }
-
-            // ── Build NudgeCard question ──────────────────────────────────────
-            let question = await buildNudgeQuestion(from: best, moment: moment)
-            let card = NudgeCard(question: question, momentID: moment.id)
-            log.info("evaluateJournalingSuggestions — publishing NudgeCard: \"\(question)\"")
-            nudgeSubject.send(card)
-
-        } catch {
-            log.error("evaluateJournalingSuggestions — error: \(error.localizedDescription)")
+        guard let best = matching.first else {
+            log.debug("matchStoredSuggestions — no match; clearing nudge")
             nudgeSubject.send(nil)
+            return
         }
+
+        let question = await buildNudgeQuestion(from: best, moment: moment)
+        let card = NudgeCard(id: UUID(), question: question, momentID: moment.id)
+        log.info("matchStoredSuggestions — publishing NudgeCard: \"\(question)\"")
+        nudgeSubject.send(card)
     }
 
+    /// Removes suggestions older than 48 hours to prevent stale nudges.
     @available(iOS 17.2, *)
-    private func refreshJournalingSuggestions() async {
-        guard await ensureAuthorized() else { return }
-
-        do {
-            let suggestions = try await fetchRecentSuggestions()
-            log.debug("refresh — \(suggestions.count) suggestion(s) fetched")
-
-            guard let latest = suggestions.first else {
-                log.debug("refresh — no suggestions; clearing nudge")
-                nudgeSubject.send(nil)
-                return
-            }
-            let question = await buildNudgeQuestion(from: latest, moment: nil)
-            let card = NudgeCard(question: question, momentID: nil)
-            log.info("refresh — publishing refreshed NudgeCard: \"\(question)\"")
-            nudgeSubject.send(card)
-        } catch {
-            log.error("refresh — error: \(error.localizedDescription)")
-            nudgeSubject.send(nil)
+    private func evictStaleSuggestions() {
+        let cutoff = Date().addingTimeInterval(-48 * 3600)
+        let before = storedSuggestions.count
+        storedSuggestions.removeAll { suggestion in
+            guard let interval = suggestion.date else { return false }
+            return interval.end < cutoff
         }
-    }
-
-    // MARK: - Authorization
-
-    @available(iOS 17.2, *)
-    private func ensureAuthorized() async -> Bool {
-        if isAuthorized { return true }
-
-        // Check current status first to avoid redundant system prompts.
-        let status = JournalingSuggestions.authorizationStatus
-        log.debug("ensureAuthorized — current status=\(String(describing: status))")
-
-        switch status {
-        case .authorized:
-            isAuthorized = true
-            return true
-        case .denied:
-            log.warning("ensureAuthorized — authorization denied by user; cannot fetch suggestions")
-            return false
-        case .notDetermined:
-            guard !authorizationRequested else {
-                log.debug("ensureAuthorized — authorization already requested but not yet determined; skipping")
-                return false
-            }
-            authorizationRequested = true
-            log.debug("ensureAuthorized — requesting authorization from system")
-            await JournalingSuggestions.requestAuthorization()
-            let newStatus = JournalingSuggestions.authorizationStatus
-            log.info("ensureAuthorized — post-request status=\(String(describing: newStatus))")
-            isAuthorized = (newStatus == .authorized)
-            return isAuthorized
-        @unknown default:
-            log.warning("ensureAuthorized — unknown authorization status; treating as denied")
-            return false
+        let evicted = before - storedSuggestions.count
+        if evicted > 0 {
+            log.debug("evictStaleSuggestions — removed \(evicted) stale suggestion(s); remaining=\(storedSuggestions.count)")
         }
-    }
-
-    // MARK: - Fetch helpers
-
-    /// Returns up to 5 recent journaling suggestions, newest first.
-    @available(iOS 17.2, *)
-    private func fetchRecentSuggestions() async throws -> [JournalingSuggestion] {
-        // JournalingSuggestions.current returns the suggestions the system has computed
-        // for the user's recent activity (photos, workouts, locations, etc.).
-        let all = await JournalingSuggestions.current
-        log.debug("fetchRecentSuggestions — \(all.count) total suggestion(s) from framework")
-        // Return up to 5, already sorted newest-first by the framework.
-        return Array(all.prefix(5))
     }
 
     // MARK: - NudgeCard question generation
 
-    /// Builds a question string for a NudgeCard.
-    /// On iOS 26+ with on-device LLM available: generates a contextual question using Foundation Models.
-    /// Fallback: returns a template question derived from the suggestion title.
     @available(iOS 17.2, *)
-    private func buildNudgeQuestion(from suggestion: JournalingSuggestion, moment: Moment?) async -> String {
+    private func buildNudgeQuestion(from suggestion: JournalingSuggestion, moment: Moment) async -> String {
+        let title = suggestion.title.isEmpty ? "this moment" : suggestion.title
+
         // Try on-device LLM first (iOS 26+).
         if let llm = onDeviceLLM, llm.isAvailable {
             if #available(iOS 26, *) {
-                let context = suggestion.title.isEmpty ? "a recent moment" : "\"\(suggestion.title)\""
-                let momentContext = moment.map { "captured at \($0.label)" } ?? "recently"
+                let momentContext = "captured at \(moment.label)"
                 let prompt = """
-                    You are a mindful journaling assistant. Generate one short, warm, open-ended reflection question (max 12 words) inspired by this activity: \(context), \(momentContext).
+                    You are a mindful journaling assistant. Generate one short, warm, open-ended reflection question (max 12 words) inspired by this activity: "\(title)", \(momentContext).
                     Only output the question text. No quotes, no extra words.
                     """
                 do {
                     let question = try await llm.respond(to: prompt)
-                    // Trim whitespace and ensure it ends with a question mark.
                     var clean = question.trimmingCharacters(in: .whitespacesAndNewlines)
                     if !clean.hasSuffix("?") { clean += "?" }
-                    log.info("buildNudgeQuestion — Foundation Models question: \"\(clean)\"")
+                    log.info("buildNudgeQuestion — Foundation Models: \"\(clean)\"")
                     return clean
                 } catch {
-                    log.warning("buildNudgeQuestion — Foundation Models inference failed: \(error.localizedDescription); using template")
+                    log.warning("buildNudgeQuestion — Foundation Models failed: \(error.localizedDescription); using template")
                 }
             }
         }
 
-        // Template fallback (all iOS versions).
-        return templateQuestion(for: suggestion, moment: moment)
+        return templateQuestion(title: title)
     }
 
     @available(iOS 17.2, *)
-    private func templateQuestion(for suggestion: JournalingSuggestion, moment: Moment?) -> String {
-        let title = suggestion.title.isEmpty ? "this moment" : suggestion.title
+    private func templateQuestion(title: String) -> String {
         let templates = [
             "What made \(title) worth remembering?",
             "How did you feel during \(title)?",
             "What would you tell someone about \(title)?",
             "What surprised you about \(title)?",
         ]
-        // Deterministic selection based on suggestion content hash.
         let index = abs(title.hashValue) % templates.count
         return templates[index]
     }
 
 #endif // canImport(JournalingSuggestions)
-}
-
-// MARK: - NudgeCard convenience init
-
-private extension NudgeCard {
-    init(question: String, momentID: UUID?) {
-        self.init(id: UUID(), question: question, momentID: momentID)
-    }
 }

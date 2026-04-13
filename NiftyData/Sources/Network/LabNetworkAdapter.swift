@@ -18,7 +18,7 @@ private enum Endpoint {
     static let caption     = base.appendingPathComponent("caption")
     static let prose       = base.appendingPathComponent("prose")
     static let lab         = base.appendingPathComponent("lab")
-    static let sessionPath = { (id: UUID) in Endpoint.lab.appendingPathComponent(id.uuidString) }
+    static func sessionPath(for id: UUID) -> URL { lab.appendingPathComponent(id.uuidString) }
 }
 
 // MARK: - LabNetworkAdapter
@@ -135,7 +135,7 @@ public final class LabNetworkAdapter: LabClientProtocol, Sendable {
             log.info("requestLabSession — .lab not in aiModes; skipping")
             return LabSession(assetIDs: assets)
         }
-        log.debug("requestLabSession — assets=\(assets.count) consent=\(consent.granted)")
+        log.debug("requestLabSession — assets=\(assets.count) consent=\(consent.accepted)")
 
         // ── 1. Ephemeral client key pair ──────────────────────────────────────
         let clientPrivateKey = P256.KeyAgreement.PrivateKey()
@@ -171,7 +171,7 @@ public final class LabNetworkAdapter: LabClientProtocol, Sendable {
         let requestBody = LabSessionRequest(
             clientPublicKey: clientPublicKeyData.base64EncodedString(),
             encryptedAssets: encryptedChunks,
-            consentGranted: consent.granted
+            consentGranted: consent.accepted
         )
 
         do {
@@ -206,7 +206,7 @@ public final class LabNetworkAdapter: LabClientProtocol, Sendable {
         log.debug("processLabSession — sessionID=\(labSession.id.uuidString) assets=\(labSession.assetIDs.count)")
 
         do {
-            var req = URLRequest(url: Endpoint.sessionPath(labSession.id), timeoutInterval: 20)
+            var req = URLRequest(url: Endpoint.sessionPath(for:labSession.id), timeoutInterval: 20)
             req.httpMethod = "GET"
             req.setValue("application/json", forHTTPHeaderField: "Accept")
             log.debug("processLabSession — GET \(req.url?.absoluteString ?? "")")
@@ -240,7 +240,7 @@ public final class LabNetworkAdapter: LabClientProtocol, Sendable {
         log.debug("verifyPurge — sessionID=\(sessionID.uuidString)")
 
         do {
-            var req = URLRequest(url: Endpoint.sessionPath(sessionID), timeoutInterval: 10)
+            var req = URLRequest(url: Endpoint.sessionPath(for:sessionID), timeoutInterval: 10)
             req.httpMethod = "DELETE"
             log.debug("verifyPurge — DELETE \(req.url?.absoluteString ?? "")")
 
