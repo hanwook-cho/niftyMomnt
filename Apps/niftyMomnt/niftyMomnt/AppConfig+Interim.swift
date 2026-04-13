@@ -77,22 +77,22 @@ extension AppConfig {
         storage: StorageConfig(smartArchiveEnabled: false, iCloudSyncEnabled: false)
     )
 
-    /// v0.7 — Adds Private Vault + Trusted Sharing.
+    /// v0.7 — Adds Story Engine + Reel Assembler.
     static let v0_7 = AppConfig(
         appVariant: .full,
         assetTypes: .all,
         aiModes: .onDevice,
-        features: [.l4c, .rollMode, .soundStamp, .nudgeEngine, .trustedSharing],
+        features: [.l4c, .rollMode, .soundStamp, .nudgeEngine, .journalSuggest],
         sharing: SharingConfig(maxCircleSize: 5, labEnabled: false),
         storage: StorageConfig(smartArchiveEnabled: false, iCloudSyncEnabled: false)
     )
 
-    /// v0.8 — Adds Story Engine + Journal Suggest.
+    /// v0.8 — Adds Private Vault + Face ID.
     static let v0_8 = AppConfig(
         appVariant: .full,
         assetTypes: .all,
         aiModes: .onDevice,
-        features: [.l4c, .rollMode, .soundStamp, .nudgeEngine, .trustedSharing, .journalSuggest],
+        features: [.l4c, .rollMode, .soundStamp, .nudgeEngine, .journalSuggest, .trustedSharing],
         sharing: SharingConfig(maxCircleSize: 5, labEnabled: false),
         storage: StorageConfig(smartArchiveEnabled: false, iCloudSyncEnabled: false)
     )

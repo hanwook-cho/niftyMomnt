@@ -15,7 +15,7 @@ struct NiftyMomntApp: App {
 
     @MainActor
     init() {
-        let config = AppConfig.v0_6
+        let config = AppConfig.v0_7
 
         // Platform adapters (NiftyData)
         let captureAdapter     = AVCaptureAdapter(config: config)
@@ -53,6 +53,8 @@ struct NiftyMomntApp: App {
             graph: graphRepo,
             lab: labClient
         )
+        let reelComposer = AVReelComposer(vault: vaultRepo)
+        let voiceProseEngine = VoiceProseEngine(lab: labClient)
         let nudgeEngine = NudgeEngine(
             config: config,
             graph: graphRepo,
@@ -81,7 +83,7 @@ struct NiftyMomntApp: App {
             vault: vaultManager,
             graph: graphManager
         )
-        let storyUseCase = AssembleReelUseCase(engine: storyEngine)
+        let storyUseCase = AssembleReelUseCase(engine: storyEngine, composer: reelComposer)
         let shareUseCase = ShareMomentUseCase(vault: vaultManager, config: config)
 
         container = AppContainer(
@@ -91,6 +93,7 @@ struct NiftyMomntApp: App {
             fixUseCase: fixUseCase,
             storyUseCase: storyUseCase,
             shareUseCase: shareUseCase,
+            voiceProseEngine: voiceProseEngine,
             nudgeEngine: nudgeEngine,
             vaultManager: vaultManager,
             graphManager: graphManager,

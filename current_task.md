@@ -189,3 +189,43 @@ All rows passing. WeatherKit replaced with Open-Meteo free API. See `Docs/interi
 2. **Atmosphere verification** — v0.3 §5 (still on placeholder `.mov` path; full PRD alignment deferred)
 3. **BOOTH framing** — unify preview guide ↔ crop ↔ strip slot geometry
 4. **v0.3.5 sign-off** — full booth flow device verification
+
+
+Session Summary
+What was done this session (v0.6 implementation)
+6 core tasks — all complete:
+
+NudgeEngine.evaluateTriggers() — VibeTag → question template → publishes NudgeCard
+GraphRepository — nudge_responses GRDB table + real saveNudgeResponse() INSERT
+CaptureMomentUseCase — nudge step (step 8) added to capture pipeline
+niftyMomntApp.swift — nudgeEngine wired into use case; AppConfig.v0_6
+CaptureHubView — 3-way nudge mode state machine; sheet routing to Quick or Full card
+NudgeCardView (full text) + NudgeCardQuickView (5 emoji reactions) — new files
+Bug fixes also applied:
+
+Vision taxonomy was returning empty vibe tags → expanded CoreMLIndexingAdapter.vibeTag(for:) with Apple's real concrete noun taxonomy
+Acoustic tags (SoundStamp) not feeding into vibe tags → SoundStampAdapter now calls GraphRepository.mergeAcousticVibes() after classification
+BGTaskScheduler crash on background thread → using: .main + Task { @MainActor in } restructure
+AVAudioEngine error crashing capture → activatePreRoll() wrapped in do-catch
+Camera session rebuild race condition → 300ms delay before rebuild
+Planning done for v0.7:
+
+Swapped v0.7 ↔ v0.8 (Story Engine first, Private Vault second)
+Full plan written in Docs/interim_version_plan.md §v0.7 — clustering algorithm, arc selection logic, scoring formulas, prose templates, AVMutableComposition strategy, 17-row verification checklist
+Next steps to resume
+If v0.6 verification is not complete — run the checklist in Docs/interim_version_plan.md §v0.6, rows 1.4, 2.1–2.4, 3.1–3.2, 4.1–4.4.
+
+If starting v0.7 — 11 tasks in order:
+
+AppConfig.v0_7 (add .journalSuggest)
+IndexingEngine.clusterMoments() — the only truly new engine method
+GraphProtocol + GraphRepository.fetchAssets(for momentID:)
+StoryEngine — real scoring + 3 arc templates
+VoiceProseEngine — on-device template prose (no network)
+AssembleReelUseCase — AVMutableComposition → export .mov
+AppContainer — expose new use cases
+MomentDetailView — new file, asset grid + AVPlayer sheet
+JournalFeedView — tap → NavigationLink
+Config bump to AppConfig.v0_7
+All design decisions are in Docs/interim_version_plan.md §v0.7 Design Notes and in project_v07_status.md.
+

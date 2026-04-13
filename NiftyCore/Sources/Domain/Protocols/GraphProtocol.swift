@@ -20,6 +20,8 @@ public protocol GraphProtocol: AnyObject, Sendable {
     func fetchPlaceHistory(limit: Int) async throws -> [PlaceRecord]
     func fetchMoodMap(range: DateInterval) async throws -> [MoodPoint]
     func exportForCompanion() async throws -> GraphExport
+    // MARK: v0.7
+    func fetchAssets(for momentID: UUID) async throws -> [Asset]
     // MARK: L4C
     func saveL4CRecord(_ record: L4CRecord) async throws
     func fetchL4CRecords() async throws -> [L4CRecord]

@@ -15,6 +15,7 @@ public final class AppContainer {
     public let fixUseCase: FixAssetUseCase
     public let storyUseCase: AssembleReelUseCase
     public let shareUseCase: ShareMomentUseCase
+    public let voiceProseEngine: VoiceProseEngine
     public let nudgeEngine: any NudgeEngineProtocol
     public let vaultManager: VaultManager
     public let graphManager: GraphManager
@@ -35,6 +36,7 @@ public final class AppContainer {
         fixUseCase: FixAssetUseCase,
         storyUseCase: AssembleReelUseCase,
         shareUseCase: ShareMomentUseCase,
+        voiceProseEngine: VoiceProseEngine,
         nudgeEngine: any NudgeEngineProtocol,
         vaultManager: VaultManager,
         graphManager: GraphManager,
@@ -47,6 +49,7 @@ public final class AppContainer {
         self.fixUseCase = fixUseCase
         self.storyUseCase = storyUseCase
         self.shareUseCase = shareUseCase
+        self.voiceProseEngine = voiceProseEngine
         self.nudgeEngine = nudgeEngine
         self.vaultManager = vaultManager
         self.graphManager = graphManager

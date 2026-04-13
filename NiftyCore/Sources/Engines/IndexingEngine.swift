@@ -56,6 +56,60 @@ public actor IndexingEngine {
         return ambient
     }
 
+    /// Clusters assets into moments by time (2 h) and space (500 m) proximity.
+    /// Returns groups of ≥2 assets; single-asset captures are dropped (insufficient for a reel).
+    public func clusterMoments(assets: [Asset]) -> [[Asset]] {
+        log.debug("clusterMoments — input \(assets.count) asset(s)")
+        guard !assets.isEmpty else {
+            log.debug("clusterMoments — no assets, returning empty")
+            return []
+        }
+        let sorted = assets.sorted { $0.capturedAt < $1.capturedAt }
+
+        var clusters: [[Asset]] = []
+        var current: [Asset] = [sorted[0]]
+
+        for asset in sorted.dropFirst() {
+            let prev = current.last!
+            let timeDelta = asset.capturedAt.timeIntervalSince(prev.capturedAt)
+            let spatialDelta = IndexingEngine.haversineMeters(prev.location, asset.location)
+
+            if timeDelta > 7_200 || spatialDelta > 500 {
+                log.debug("clusterMoments — boundary: timeDelta=\(String(format: "%.0f", timeDelta))s spatialDelta=\(String(format: "%.0f", spatialDelta))m → new cluster")
+                clusters.append(current)
+                current = [asset]
+            } else {
+                log.debug("clusterMoments — merge: timeDelta=\(String(format: "%.0f", timeDelta))s spatialDelta=\(String(format: "%.0f", spatialDelta))m → cluster now \(current.count + 1) asset(s)")
+                current.append(asset)
+            }
+        }
+        clusters.append(current)
+
+        let qualified = clusters.filter { $0.count >= 2 }
+        log.debug("clusterMoments — \(clusters.count) raw cluster(s), \(qualified.count) with ≥2 assets (reel-eligible)")
+        for (i, c) in qualified.enumerated() {
+            log.debug("clusterMoments — cluster[\(i)]: \(c.count) asset(s), span=\(String(format: "%.0f", c.last!.capturedAt.timeIntervalSince(c.first!.capturedAt)))s")
+        }
+        return qualified
+    }
+
+    // MARK: - Helpers
+
+    /// Haversine great-circle distance in metres. Returns 0 when either coordinate is nil.
+    /// Public so CaptureMomentUseCase can reuse the same threshold logic.
+    public static func haversineMeters(_ a: GPSCoordinate?, _ b: GPSCoordinate?) -> Double {
+        guard let a, let b else { return 0 }
+        let R = 6_371_000.0
+        let φ1 = a.latitude  * .pi / 180
+        let φ2 = b.latitude  * .pi / 180
+        let Δφ = (b.latitude  - a.latitude)  * .pi / 180
+        let Δλ = (b.longitude - a.longitude) * .pi / 180
+        let sinΔφ = sin(Δφ / 2)
+        let sinΔλ = sin(Δλ / 2)
+        let h = sinΔφ * sinΔφ + cos(φ1) * cos(φ2) * sinΔλ * sinΔλ
+        return R * 2 * atan2(sqrt(h), sqrt(1 - h))
+    }
+
     /// Process a batch of unindexed assets. Called by BGProcessingTask.
     public func processBatch(assets: [(id: UUID, data: Data, type: AssetType)]) async {
         for asset in assets {

@@ -513,6 +513,11 @@ struct MomentDetailView: View {
     /// Acoustic tags loaded separately — SoundStamp writes them ~1s after capture,
     /// after the moment is already in the feed. Refreshed via niftyAcousticTagsUpdated notification.
     @State private var acousticTags: [AcousticTag] = []
+    // v0.7 — Reel assembly
+    @State private var isAssemblingReel: Bool = false
+    @State private var reelURL: URL? = nil
+    @State private var isReelPlayerPresented: Bool = false
+    @State private var reelError: String? = nil
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -529,6 +534,23 @@ struct MomentDetailView: View {
                         .padding(.bottom, NiftySpacing.lg)
                 }
                 .frame(maxHeight: .infinity)
+                .gesture(
+                    DragGesture(minimumDistance: 30)
+                        .onEnded { value in
+                            guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                            if value.translation.width < 0 {
+                                // swipe left → next asset
+                                if currentAssetIndex < moment.assets.count - 1 {
+                                    currentAssetIndex += 1
+                                }
+                            } else {
+                                // swipe right → previous asset
+                                if currentAssetIndex > 0 {
+                                    currentAssetIndex -= 1
+                                }
+                            }
+                        }
+                )
 
                 // Glass bottom sheet
                 glassBottomSheet
@@ -536,8 +558,12 @@ struct MomentDetailView: View {
         }
         .preferredColorScheme(.dark)
         .task(id: moment.id) {
-            await loadHeroImage()
+            currentAssetIndex = 0
+            await loadHeroImage(at: 0)
             await loadAcousticTags()
+        }
+        .onChange(of: currentAssetIndex) { _, newIndex in
+            Task { await loadHeroImage(at: newIndex) }
         }
         .onReceive(NotificationCenter.default.publisher(for: .niftyAcousticTagsUpdated)) { note in
             guard let assetIDStr = note.object as? String,
@@ -555,6 +581,35 @@ struct MomentDetailView: View {
         } message: {
             Text(exportAlertMessage ?? "")
         }
+        .alert(
+            "Reel Error",
+            isPresented: Binding(get: { reelError != nil }, set: { if !$0 { reelError = nil } })
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(reelError ?? "")
+        }
+        .sheet(isPresented: $isReelPlayerPresented) {
+            if let url = reelURL {
+                ReelPlayerView(url: url)
+            }
+        }
+    }
+
+    private func assembleAndPlayReel() {
+        guard !isAssemblingReel else { return }
+        isAssemblingReel = true
+        Task {
+            do {
+                let url = try await container.storyUseCase.execute(moment: moment)
+                reelURL = url
+                isReelPlayerPresented = true
+            } catch {
+                detailLog.error("assembleReel failed: \(error)")
+                reelError = "Could not assemble reel: \(error.localizedDescription)"
+            }
+            isAssemblingReel = false
+        }
     }
 
     private func loadAcousticTags() async {
@@ -563,11 +618,12 @@ struct MomentDetailView: View {
         acousticTags = tags
     }
 
-    private func loadHeroImage() async {
-        guard let first = moment.assets.first else { return }
+    private func loadHeroImage(at index: Int = 0) async {
+        guard moment.assets.indices.contains(index) else { return }
+        let first = moment.assets[index]
         let requestID = UUID().uuidString
         heroLoadRequestID = requestID
-        detailLog.debug("loadHeroImage[\(requestID)] start — momentID=\(moment.id.uuidString) assetID=\(first.id.uuidString) type=\(first.type.rawValue) cancelled=\(Task.isCancelled)")
+        detailLog.debug("loadHeroImage[\(requestID)] start — momentID=\(moment.id.uuidString) assetID=\(first.id.uuidString) type=\(first.type.rawValue) index=\(index)/\(moment.assets.count) cancelled=\(Task.isCancelled)")
         guard let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
         let assetsDir = dir.appendingPathComponent("assets")
         let jpegURL = assetsDir.appendingPathComponent("\(first.id.uuidString).jpg")
@@ -1018,6 +1074,19 @@ struct MomentDetailView: View {
                 if currentAssetSupportsFix {
                     actionButton(title: "Fix this shot", icon: "checkmark.circle", isGlass: true)
                 }
+                // v0.7 — Play Reel (visible when moment has ≥2 still-type assets)
+                let reelableCount = moment.assets.filter { [.still, .live, .l4c].contains($0.type) }.count
+                if reelableCount >= 2 {
+                    actionButton(
+                        title: isAssemblingReel ? "Assembling…" : "Play Reel",
+                        icon: isAssemblingReel ? nil : "play.circle",
+                        isGlass: false,
+                        tinted: true
+                    ) {
+                        assembleAndPlayReel()
+                    }
+                    .disabled(isAssemblingReel)
+                }
                 if currentAssetType != .echo {
                     actionButton(
                         title: isExportingToPhotoLibrary ? "Exporting..." : "Export to Photo Library",
@@ -1214,6 +1283,51 @@ extension VibeTag {
         case .raw:       return "🌑"
         case .dreamy:    return "🌙"
         case .cozy:      return "🕯️"
+        }
+    }
+}
+
+// MARK: - ReelPlayerView (v0.7)
+
+/// Full-screen AVPlayer sheet for assembled reel playback.
+private struct ReelPlayerView: View {
+    let url: URL
+    @Environment(\.dismiss) private var dismiss
+    @State private var player: AVPlayer? = nil
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Color.black.ignoresSafeArea()
+
+            if let player {
+                VideoPlayer(player: player)
+                    .ignoresSafeArea()
+                    .onAppear { player.play() }
+                    .onDisappear { player.pause() }
+            } else {
+                ProgressView()
+                    .tint(.white)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+
+            Button { dismiss() } label: {
+                Circle()
+                    .fill(.black.opacity(0.52))
+                    .overlay(Circle().strokeBorder(.white.opacity(0.18), lineWidth: 0.5))
+                    .frame(width: 36, height: 36)
+                    .overlay(
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.82))
+                    )
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 56)
+            .padding(.trailing, 16)
+        }
+        .preferredColorScheme(.dark)
+        .onAppear {
+            player = AVPlayer(url: url)
         }
     }
 }

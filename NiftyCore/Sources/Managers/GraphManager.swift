@@ -50,6 +50,12 @@ public actor GraphManager {
         try await graph.exportForCompanion()
     }
 
+    // MARK: - v0.7
+
+    public func fetchAssets(for momentID: UUID) async throws -> [Asset] {
+        try await graph.fetchAssets(for: momentID)
+    }
+
     // MARK: - L4C
 
     public func saveL4CRecord(_ record: L4CRecord) async throws {

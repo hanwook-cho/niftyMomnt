@@ -1,7 +1,16 @@
 // NiftyCore/Sources/Engines/StoryEngine.swift
-// Nonisolated — stateless scoring and assembly.
+// Nonisolated — stateless scoring and arc assembly.
 
 import Foundation
+
+public enum ReelArc: Sendable {
+    /// Consistent mood throughout — assets loop in vibe-coherence order.
+    case vibeLoop
+    /// 5+ assets — build from calm to motion climax.
+    case risingAction
+    /// Default — simple chronological sequence.
+    case quietChronicle
+}
 
 public final class StoryEngine: Sendable {
     private let config: AppConfig
@@ -21,13 +30,34 @@ public final class StoryEngine: Sendable {
         self.lab = lab
     }
 
+    // MARK: - assembleReel
+
+    /// Scores all assets in `moment`, selects an arc, orders them, and returns a
+    /// capped sequence (≤60 s of content at 2.5 s per still frame).
     public func assembleReel(for moment: Moment) async throws -> [ReelAsset] {
-        let scored = moment.assets.compactMap { asset -> ReelAsset? in
-            guard let score = asset.score else { return nil }
-            return ReelAsset(asset: asset, score: score)
+        // Fetch fresh assets so scores reflect current GRDB state.
+        let allAssets = try await graph.fetchAssets(for: moment.id)
+        guard !allAssets.isEmpty else { return [] }
+
+        // Restrict to composable types for v0.7 (AVReelComposer handles still/live/l4c).
+        // Filtering here keeps arc selection and duration-cap honest about what will render.
+        // Clips, echo, and atmosphere are deferred to v0.9 full AVComposition support.
+        let assets = allAssets.filter { [.still, .live, .l4c].contains($0.type) }
+        guard !assets.isEmpty else { return [] }
+
+        // Score every asset in the context of this moment.
+        let scored: [ReelAsset] = assets.map { asset in
+            ReelAsset(asset: asset, score: score(asset, in: moment))
         }
-        return scored.sorted { $0.score.composite > $1.score.composite }
+
+        let arc = selectArc(scored: scored)
+        let ordered = order(scored: scored, arc: arc)
+
+        // Cap at 60 s: each still = 2.5 s, video assets counted at their duration (min 1 s).
+        return capToSixtySeconds(ordered)
     }
+
+    // MARK: - Public scoring
 
     /// Scores an asset within its moment cluster per §6.3 weights.
     public func score(_ asset: Asset, in moment: Moment) -> AssetScore {
@@ -39,14 +69,70 @@ public final class StoryEngine: Sendable {
         )
     }
 
-    // MARK: - Private scoring helpers
+    // MARK: - Arc selection
+
+    public func selectArc(scored: [ReelAsset]) -> ReelArc {
+        guard !scored.isEmpty else { return .quietChronicle }
+
+        let coherenceValues = scored.map(\.score.vibeCoherence)
+        let spread = coherenceValues.max()! - coherenceValues.min()!
+
+        if spread < 0.2 { return .vibeLoop }
+        if scored.count >= 5 { return .risingAction }
+        return .quietChronicle
+    }
+
+    // MARK: - Ordering
+
+    private func order(scored: [ReelAsset], arc: ReelArc) -> [ReelAsset] {
+        switch arc {
+        case .vibeLoop:
+            // Most coherent first — reinforces the dominant mood
+            return scored.sorted { $0.score.vibeCoherence > $1.score.vibeCoherence }
+        case .risingAction:
+            // Primary: ascending motionInterest (calm → high-energy).
+            // Secondary: ascending vibeCoherence (off-vibe → on-vibe) as tiebreaker —
+            // stills all score 0.4 so this produces a "builds to dominant mood" feel.
+            return scored.sorted {
+                if $0.score.motionInterest != $1.score.motionInterest {
+                    return $0.score.motionInterest < $1.score.motionInterest
+                }
+                return $0.score.vibeCoherence < $1.score.vibeCoherence
+            }
+        case .quietChronicle:
+            // Chronological
+            return scored.sorted { $0.asset.capturedAt < $1.asset.capturedAt }
+        }
+    }
+
+    // MARK: - Duration cap
+
+    private func capToSixtySeconds(_ assets: [ReelAsset]) -> [ReelAsset] {
+        var result: [ReelAsset] = []
+        var totalSeconds: Double = 0
+        for ra in assets {
+            let duration: Double
+            switch ra.asset.type {
+            case .clip, .atmosphere, .echo:
+                duration = ra.asset.duration ?? 2.5
+            default:
+                duration = 2.5
+            }
+            if totalSeconds + duration > 60 { break }
+            result.append(ra)
+            totalSeconds += duration
+        }
+        return result
+    }
+
+    // MARK: - Scoring helpers
 
     private func computeMotionInterest(_ asset: Asset) -> Double {
         switch asset.type {
-        case .clip: return 0.8  // placeholder — motion analysis TBD
-        case .still, .live: return 0.4
-        case .echo, .atmosphere: return 0.5
-        case .l4c: return 0.4
+        case .clip:        return 0.9
+        case .atmosphere:  return 0.6
+        case .echo:        return 0.5
+        case .still, .live, .l4c: return 0.4
         }
     }
 
@@ -56,13 +142,66 @@ public final class StoryEngine: Sendable {
         return Double(overlap.count) / Double(moment.dominantVibes.count)
     }
 
+    /// Cosine similarity between asset's palette centroid (RGB) and moment's median palette.
     private func computeChromaticHarmony(_ asset: Asset, in moment: Moment) -> Double {
-        // Placeholder — HSL distance computation TBD
-        return 0.5
+        guard let assetPalette = asset.palette, !assetPalette.colors.isEmpty else { return 0.5 }
+
+        // Collect all palette colors across moment assets for median computation.
+        let allColors = moment.assets.compactMap(\.palette).flatMap(\.colors)
+        guard !allColors.isEmpty else { return 0.5 }
+
+        let assetRGB  = rgbCentroid(assetPalette.colors)
+        let momentRGB = rgbCentroid(allColors)
+        return cosineSimilarity(assetRGB, momentRGB)
     }
 
+    /// Fraction of moment assets that do NOT share a similar palette with this asset.
     private func computeUniqueness(_ asset: Asset, in moment: Moment) -> Double {
-        // Placeholder — cosine similarity TBD
-        return 0.7
+        let others = moment.assets.filter { $0.id != asset.id }
+        guard !others.isEmpty else { return 1.0 }
+        guard let assetPalette = asset.palette, !assetPalette.colors.isEmpty else { return 0.7 }
+
+        let assetRGB = rgbCentroid(assetPalette.colors)
+        let similarCount = others.filter { other in
+            guard let otherPalette = other.palette, !otherPalette.colors.isEmpty else { return false }
+            return cosineSimilarity(assetRGB, rgbCentroid(otherPalette.colors)) > 0.9
+        }.count
+        return 1.0 - (Double(similarCount) / Double(others.count))
+    }
+
+    // MARK: - Colour math (pure Swift, zero platform imports)
+
+    private func rgbCentroid(_ colors: [HSLColor]) -> (Double, Double, Double) {
+        guard !colors.isEmpty else { return (0, 0, 0) }
+        let rgbs = colors.map { hslToRGB($0.hue, $0.saturation, $0.lightness) }
+        let count = Double(rgbs.count)
+        let r = rgbs.map(\.0).reduce(0, +) / count
+        let g = rgbs.map(\.1).reduce(0, +) / count
+        let b = rgbs.map(\.2).reduce(0, +) / count
+        return (r, g, b)
+    }
+
+    private func hslToRGB(_ h: Double, _ s: Double, _ l: Double) -> (Double, Double, Double) {
+        let c = (1 - abs(2 * l - 1)) * s
+        let x = c * (1 - abs((h / 60).truncatingRemainder(dividingBy: 2) - 1))
+        let m = l - c / 2
+        let (r, g, b): (Double, Double, Double)
+        switch h {
+        case   0..<60:  (r, g, b) = (c, x, 0)
+        case  60..<120: (r, g, b) = (x, c, 0)
+        case 120..<180: (r, g, b) = (0, c, x)
+        case 180..<240: (r, g, b) = (0, x, c)
+        case 240..<300: (r, g, b) = (x, 0, c)
+        default:        (r, g, b) = (c, 0, x)
+        }
+        return (r + m, g + m, b + m)
+    }
+
+    private func cosineSimilarity(_ a: (Double, Double, Double), _ b: (Double, Double, Double)) -> Double {
+        let dot  = a.0 * b.0 + a.1 * b.1 + a.2 * b.2
+        let normA = sqrt(a.0 * a.0 + a.1 * a.1 + a.2 * a.2)
+        let normB = sqrt(b.0 * b.0 + b.1 * b.1 + b.2 * b.2)
+        guard normA > 0, normB > 0 else { return 0.5 }
+        return dot / (normA * normB)
     }
 }

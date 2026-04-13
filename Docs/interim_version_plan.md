@@ -2,7 +2,7 @@
 # v0.1 → v1.0 Feature Ladder
 
 _Reference: PRD v1.6 · UI/UX Spec v1.7 · SRS v1.2_
-_Last updated: 2026-04-10 · v0.2 + v0.3 signed off; v0.3.5 mode-switching performance resolved; v0.4 implementation complete — pending device verification; v0.5 complete (Sound Stamp verified on device); v0.6 AI Nudge Engine — planning complete, implementation starting_
+_Last updated: 2026-04-12 · v0.2 + v0.3 signed off; v0.3.5 mode-switching performance resolved; v0.4 implementation complete — pending device verification; v0.5 complete (Sound Stamp verified on device); v0.6 AI Nudge Engine — implementation complete, verification in progress; v0.7 Story Engine & Reel Assembler — implementation complete, verification in progress (checklist updated to reflect AVAssetWriter stills-only scope, prose UI deferred to v0.8)_
 
 ---
 
@@ -27,8 +27,8 @@ _Last updated: 2026-04-10 · v0.2 + v0.3 signed off; v0.3.5 mode-switching perfo
 | [v0.4](#v04--vibe-preset-system) | Preset selection maps to stored tags; accent theming in feed | 🔄 |
 | [v0.5](#v05--sound-stamp--acoustic-pipeline) | SoundStamp captures PCM at shutter; acoustic tags in feed | ✅ |
 | [v0.6](#v06--ai-nudge-engine) | Post-capture nudge card fires; response stored in graph | 🔄 |
-| [v0.7](#v07--private-vault--face-id) | Assets marked private locked behind Face ID; vault tab functional | ⬜ |
-| [v0.8](#v08--story-engine--reel-assembler) | Moment cluster produced; reel assembled with voice overlay | ⬜ |
+| [v0.7](#v07--story-engine--reel-assembler) | Moment cluster produced; reel assembled with voice overlay | ⬜ |
+| [v0.8](#v08--private-vault--face-id) | Assets marked private locked behind Face ID; vault tab functional | ⬜ |
 | [v0.9](#v09--extended-intelligence--dual-camera) | Dual-camera capture; Lab Mode; Journaling Suggestions; AI caption | ⬜ |
 | [v1.0](#v10--full-feature-set--app-store-ready) | All MVP features gated, tested, performant; App Store submission ready | ⬜ |
 
@@ -1141,54 +1141,219 @@ shutter tap
 
 ---
 
-## v0.7 — Private Vault & Face ID
+## v0.7 — Story Engine & Reel Assembler
 
-**Verification goal:** Assets marked private are encrypted and hidden behind Face ID; Vault tab shows only authenticated assets; lock/unlock state persists across app launches.
+**Verification goal:** `IndexingEngine.clusterMoments()` groups assets into temporal `[Moment]` clusters automatically; `AssembleReelUseCase` produces a playable `.mov` reel with scored asset ordering and prose captions; `MomentDetailView` plays the reel inline.
 
-**AppConfig:** adds `features: .trustedSharing`
+**AppConfig:** `AppConfig.v0_7` — adds `features: .journalSuggest`, `aiModes: .onDevice` (prose on-device only for v0.7; `.enhancedAI` lab prose deferred to v0.9)
+
+### Pre-existing Scaffold
+
+| Component | File | State |
+|-----------|------|-------|
+| `StoryEngine` | `NiftyCore/Sources/Engines/StoryEngine.swift` | Stub — `assembleReel()` sorts `[ReelAsset]` by `score.composite`; all 4 scoring methods return placeholder floats |
+| `AssembleReelUseCase` | `NiftyCore/Sources/Domain/UseCases/AssembleReelUseCase.swift` | Thin wrapper — calls `engine.assembleReel(moment:)`, no `AVMutableComposition` yet |
+| `VoiceProseEngine` | `NiftyCore/Sources/Engines/VoiceProseEngine.swift` | Stub — delegates to `lab.transformProse()` (no on-device path) |
+| `AssetScore` | `NiftyCore/Sources/Domain/Models/SupportingTypes.swift` | Fully defined: `motionInterest`, `vibeCoherence`, `chromaticHarmony`, `uniqueness` (weights 0.25 each) |
+| `ReelAsset` | `NiftyCore/Sources/Domain/Models/SupportingTypes.swift` | Fully defined: `asset`, `score`, `caption`, `startTime`, `duration` |
+| `ProseStyle` / `ProseVariant` | `NiftyCore/Sources/Domain/Models/SupportingTypes.swift` | Fully defined enum with raw values |
+| `IndexingEngine` | `NiftyCore/Sources/Engines/IndexingEngine.swift` | `clusterMoments()` does **not exist** — must be added |
+| `MomentDetailView` | `Apps/niftyMomnt/niftyMomnt/UI/Journal/` | **Does not exist** — must be created (currently feed is the only journal view) |
 
 ### Features In Scope
 
-- `VaultRepository`: encrypted file storage (`CryptoKit` AES-GCM) for assets flagged `.private`
-- `LocalAuthentication`: Face ID / Touch ID gate in `VaultView`
-- `VaultManager.lockVault()` / `unlockVault()` state machine
-- `VaultView`: locked shell → Face ID prompt → unlocked asset grid (per current UI scaffold)
-- `MomentDetailView`: "Move to Vault" action
+- `IndexingEngine.clusterMoments()`: time-window (≤ 2 h gap) + optional location radius (≤ 500 m) clustering → returns `[[Asset]]` groups that map to `[Moment]`
+- `StoryEngine`: implement 3 narrative arc templates (Rising Action, Quiet Chronicle, Vibe Loop); real scoring for `motionInterest` (video vs still), `vibeCoherence` (dominant vibe match), `chromaticHarmony` (palette similarity), `uniqueness` (timestamp spread)
+- `VoiceProseEngine`: on-device prose path using `ProseStyle` — 3 simple template strings per style (Poet, Foodie, Minimalist), no network call for v0.7
+- `AssembleReelUseCase`: real `AVMutableComposition` — still photo → `CMSampleBuffer` via `AVAssetImageGenerator`, video assets appended natively; total duration target 15–60 s; exported to `.mov` in `Documents/reels/{momentID}.mov`
+- `MomentDetailView`: pushed from `JournalFeedView` on moment tap; shows asset grid + "Play Reel" button; `AVPlayer` inline reel playback in a sheet
 
 ### Implementation Tasks
 
 | # | Task | File(s) | Status |
 |---|------|---------|--------|
-| 1 | `VaultRepository`: `CryptoKit` encryption for `.private` assets | `NiftyData/Sources/Repositories/VaultRepository.swift` | ⬜ |
-| 2 | `VaultManager`: lock/unlock state + `LAContext` auth | `NiftyCore/Sources/Managers/VaultManager.swift` | ⬜ |
-| 3 | `VaultView`: Face ID gate → unlocked grid | `Apps/niftyMomnt/niftyMomnt/UI/` | ⬜ |
-| 4 | `MomentDetailView`: "Move to Vault" action | `Apps/niftyMomnt/niftyMomnt/UI/Journal/` | ⬜ |
+| 1 | `AppConfig.v0_7` — add `.journalSuggest` to features | `Apps/niftyMomnt/AppConfig+Interim.swift` | ⬜ |
+| 2 | `IndexingEngine.clusterMoments(assets:)` — time-window + location clustering | `NiftyCore/Sources/Engines/IndexingEngine.swift` | ⬜ |
+| 3 | `GraphProtocol.fetchAssets(for momentID:)` — asset list for a moment | `NiftyCore/Sources/Domain/Protocols/GraphProtocol.swift` | ⬜ |
+| 4 | `GraphRepository`: implement `fetchAssets(for momentID:)` | `NiftyData/Sources/Repositories/GraphRepository.swift` | ⬜ |
+| 5 | `StoryEngine`: implement 3 arc templates + real `AssetScore` computation | `NiftyCore/Sources/Engines/StoryEngine.swift` | ⬜ |
+| 6 | `VoiceProseEngine`: on-device prose (template strings per `ProseStyle`) | `NiftyCore/Sources/Engines/VoiceProseEngine.swift` | ⬜ |
+| 7 | `AssembleReelUseCase`: `AVMutableComposition` reel → export `.mov` | `NiftyCore/Sources/Domain/UseCases/AssembleReelUseCase.swift` | ⬜ |
+| 8 | `AppContainer`: expose `storyUseCase` + `assembleUseCase` to views | `Apps/niftyMomnt/niftyMomnt/AppContainer.swift` | ⬜ |
+| 9 | `MomentDetailView`: asset grid + "Play Reel" → `AVPlayer` sheet | `Apps/niftyMomnt/niftyMomnt/UI/Journal/MomentDetailView.swift` | ⬜ |
+| 10 | `JournalFeedView`: tap row → `NavigationLink` to `MomentDetailView` | `Apps/niftyMomnt/niftyMomnt/UI/Journal/JournalFeedView.swift` | ⬜ |
+| 11 | `niftyMomntApp.swift`: bump config to `AppConfig.v0_7` | `Apps/niftyMomnt/niftyMomntApp.swift` | ⬜ |
+
+### Design Notes
+
+**Clustering algorithm (task 2):**
+- Sort all un-clustered assets by `capturedAt` ascending
+- Start new cluster when gap to previous asset > 7200 s (2 h) OR location distance > 500 m (if location available)
+- Minimum cluster size = 2 assets; singletons remain as standalone moments (no reel)
+- Each cluster maps 1:1 to a `Moment` via existing `GraphRepository` moment + `moment_assets` join
+
+**Narrative arc selection (task 5):**
+- **Rising Action**: lead with lowest-score asset, end with highest — classic build
+- **Quiet Chronicle**: chronological order, no reordering — preserves memory sequence
+- **Vibe Loop**: sort by `vibeCoherence` descending, drop outliers — coherent mood reel
+- Arc is selected automatically: if `vibeCoherence` spread < 0.2 → Vibe Loop; if sequence is ≥ 5 assets → Rising Action; else Quiet Chronicle
+
+**Scoring implementation (task 5):**
+- `motionInterest`: video asset = 0.9, still = 0.4 + (0.1 × nudge response weight if present)
+- `vibeCoherence`: fraction of moment's `dominant_vibes` that appear in this asset's vibe tags
+- `chromaticHarmony`: compare first 3 palette colours to moment median palette — cosine similarity in RGB space
+- `uniqueness`: score = 1.0 − (similar_timestamp_count / total_assets); assets > 30 s apart from nearest neighbour score 1.0
+
+**Prose generation (task 6):**
+- Input: `[ReelAsset]`, `ProseStyle`, moment `location` name (optional)
+- Poet template: `"A {vibe} moment{location_suffix} — {asset_count} frames of something worth keeping."`
+- Foodie template: `"Savoured {asset_count} glimpses of {vibe}{location_suffix}."`
+- Minimalist template: `"{vibe}.{location_suffix_short}"` (single sentence)
+- Fill `{vibe}` from `moment.dominant_vibes.first?.rawValue ?? "quiet"`
+- Fill `{location_suffix}` from geocoded place name if available; empty string otherwise
+
+**AVMutableComposition (task 7):**
+- Still photos: create `AVURLAsset` from JPEG on disk → `AVAssetImageGenerator` → `CVPixelBuffer` → write frames at 30fps for `ReelAsset.duration` seconds (default 2.5 s per still)
+- Video clips: append native `AVAsset` track segment directly
+- Total composition capped at 60 s; trim lowest-score assets first if over limit
+- Export with `AVAssetExportSession`, preset `AVAssetExportPresetHighestQuality`, output to `Documents/reels/{momentID}.mov`
+- Exported URL stored in `Moment.reelURL` (new optional field in GRDB `moments` table)
+
+### Verification Checklist
+
+> Run on a real device after all tasks complete. All rows must pass before starting v0.8.
+>
+> **v0.7 scope notes (updated after implementation):**
+> - Reel composer is `AVAssetWriter` (JPEG stills → H.264), **not** `AVMutableComposition`. Video clips (Clip, Echo, Atmosphere) are **excluded** from v0.7 reels; full AVComposition support is v0.9.
+> - `VoiceProseEngine` generates `[ProseVariant]` on-device and is available via `container.voiceProseEngine.generateProse(for:)`. Prose UI (caption overlay, style picker) is deferred to v0.8.
+> - Clustering is wired into the **capture pipeline** (`mergedOrNew()` in `CaptureMomentUseCase`), not a post-hoc batch step. Console filter `CaptureUseCase` → look for `[merge]` lines.
+
+#### 1 — Clustering (merge-on-capture)
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 1.1 | Capture 3+ stills within 10 minutes at the same location | Console shows `[merge] merging asset … into moment … (now N assets)` for shots 2+; single moment in feed with N assets | |
+| 1.2 | Capture 2 stills, move >500 m away (or wait >2 h), capture 2 more | Console shows `[merge] no compatible moment found` for the second pair; two separate moments in feed | |
+| 1.3 | Capture a single asset with no other nearby assets | Console shows `[merge] no compatible moment found`; moment created with 1 asset; "Play Reel" button absent in MomentDetailView | |
+| 1.4 | Open MomentDetailView for a merged moment | "Shot N of M" counter shows correct total; swipe left/right navigates all M shots | |
+
+#### 2 — Story Scoring & Arc
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 2.1 | Open MomentDetailView for a moment with ≥2 stills → tap "Play Reel" | Reel plays without crash; asset order is deterministic across runs (same scoring each time) | |
+| 2.2 | Capture a moment with a mix of Clip + Still assets (≥2 stills) | "Play Reel" button appears; reel plays stills-only (clips excluded in v0.7, no error shown); no crash | |
+| 2.3 | Capture a moment with only Clip assets and no stills | "Play Reel" button absent (gate: ≥2 still/live/l4c assets required) | |
+| 2.4 | Capture a mood-coherent burst (all assets share same vibe context, ≥2 stills) | Vibe Loop arc selected (vibeCoherence spread < 0.2); most-coherent shot plays first | |
+| 2.5 | Capture a moment with ≥5 still assets with varied vibe spread | Rising Action arc selected; shots build from lowest to highest vibeCoherence as tiebreaker | |
+
+#### 3 — Prose Engine (backend verification only)
+
+> Prose UI is deferred to v0.8. Test the engine directly via Xcode debugger or a temporary log call.
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 3.1 | Call `container.voiceProseEngine.generateProse(for: moment)` in debugger for a moment with a geocoded location | Returns 3 `ProseVariant` values; each contains location name in body text | |
+| 3.2 | Call for a moment with no location | Returns 3 variants; location suffix omitted gracefully (no "nil" or placeholder text) | |
+| 3.3 | Call for a moment with a dominant vibe | `{vibe}` token replaced with `dominantVibes.first?.rawValue`; deterministic across calls (same moment ID → same template) | |
+
+#### 4 — Reel Export & Playback
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 4.1 | Tap "Play Reel" for a moment with ≥2 stills | AVPlayer sheet appears and plays `.mov`; no crash | |
+| 4.2 | Xcode Device Manager → `Documents/reels/` | `.mov` file exists for the moment; file size > 0 | |
+| 4.3 | Play a reel with portrait stills | Frames display upright (not rotated 90°); EXIF orientation correctly applied | |
+| 4.4 | Play a reel with a mix of landscape and portrait stills | Output dimensions match the first successfully decoded image; no crash on dimension mismatch | |
+| 4.5 | Reel for a moment with >24 still assets (edge case) | Reel ≤ 60 s (lowest-scored assets trimmed); no crash | |
+
+#### 5 — Navigation & Regression
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 5.1 | Tap any moment card in Film feed | MomentDetailView sheet opens with correct moment data | |
+| 5.2 | Swipe left in MomentDetailView (multi-shot moment) | Hero image advances to next shot; "Shot N of M" counter increments; pagination dots update | |
+| 5.3 | Swipe right from shot 2+ | Returns to previous shot | |
+| 5.4 | Dismiss MomentDetailView and re-open | Returns to Shot 1 (index resets on `.task(id: moment.id)`) | |
+| 5.5 | Still capture with nudge card (v0.6) | Nudge card still fires; merge-on-capture and reel assembly unaffected | |
+| 5.6 | Kill + relaunch | `Documents/reels/` `.mov` persists; tapping "Play Reel" plays the cached file on second launch | |
+
+### v0.7 Sign-off
+
+| Item | Status |
+|------|--------|
+| All verification rows passing | ⬜ |
+| `Documents/reels/` contains valid upright `.mov` files | ⬜ |
+| Merge-on-capture respects 2 h / 500 m thresholds (console verified) | ⬜ |
+| Mixed clips+stills: reel plays stills-only without crash | ⬜ |
+| Shot swipe navigation works for all asset types | ⬜ |
+| v0.6 nudge card regression clean | ⬜ |
+| **v0.7 complete — ready for v0.8** | ⬜ |
 
 ---
 
-## v0.8 — Story Engine & Reel Assembler
+## v0.8 — Private Vault & Face ID
 
-**Verification goal:** `IndexingEngine.clusterMoments()` groups assets into `[Moment]` automatically; `AssembleReelUseCase` produces a playable `.mov` reel with voice overlay.
+**Verification goal:** Assets marked private are AES-GCM encrypted and hidden from the feed; VaultView is Face ID-gated; lock/unlock state persists correctly across app launches.
 
-**AppConfig:** adds `features: .journalSuggest` (voice prose), `aiModes: .enhancedAI` optional
+**AppConfig:** `AppConfig.v0_8` — cumulative features: `[.l4c, .rollMode, .soundStamp, .nudgeEngine, .journalSuggest, .trustedSharing]`
+
+> **Pre-condition (fix in v0.7 task 1):** `AppConfig+Interim.swift` labels are inverted from the v0.7↔v0.8 swap. Before starting v0.7:
+> - `v0_7` comment → "Story Engine + Reel Assembler"; remove `.trustedSharing`, add `.journalSuggest`
+> - `v0_8` comment → "Private Vault + Face ID"; features → cumulative through `.trustedSharing`
 
 ### Features In Scope
 
-- `IndexingEngine.clusterMoments()`: time + location proximity clustering
-- `StoryEngine`: narrative arc selection (3 templates)
-- `VoiceProseEngine`: Poet / Foodie / Minimalist caption generation
-- `AssembleReelUseCase`: `AVMutableComposition` — photo sequence + audio overlay + captions
-- Reel playback in `MomentDetailView`
+- `Asset.isPrivate: Bool` domain flag; stored in `.json` sidecar and GRDB `assets` table
+- `VaultRepository`: AES-GCM encryption via `CryptoKit`; single app DEK in Keychain; `moveToVault` re-encrypts in place
+- `VaultManager`: `isVaultLocked` state + `LAContext` Face ID gate + `moveToVault` coordinating vault + graph
+- `GraphRepository`: `is_private` column migration; `fetchMoments` excludes private assets when locked
+- `VaultView`: real Face ID prompt; private asset grid when unlocked
+- `MomentDetailView`: "Move to Vault" action (extends v0.7-built view)
+- `FilmFeedView` / `JournalFeedView`: filter out private moments when vault is locked
+
+### Design Decisions
+
+**Encryption:** Single 256-bit app DEK stored in Keychain under `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`. AES-GCM nonce stored as 12-byte prefix of each ciphertext file. No per-asset DEK for v0.8 — key rotation deferred to v0.9+.
+
+**`moveToVault` flow:** Update sidecar `isPrivate = true` → re-encrypt file in place → call `GraphRepository.markAssetPrivate(assetID:isPrivate:true)`. Encrypted file overwrites original.
+
+**Vault lock state:** `VaultManager.isVaultLocked` is in-process only — resets to `true` on every cold launch. No stored unlock token. User must re-authenticate every session.
+
+**LAContext policy:** Primary policy `.deviceOwnerAuthenticationWithBiometrics`. If fails with `LAError.biometryNotEnrolled`, surface a user-facing message (do not silently fall back to passcode in v0.8).
+
+**Feed filtering:** `GraphRepository.fetchMoments()` gains `showPrivate: Bool = false`. Moments where all linked assets have `is_private = 1` are excluded by default. `VaultView` queries with `showPrivate: true` post-auth.
 
 ### Implementation Tasks
 
 | # | Task | File(s) | Status |
 |---|------|---------|--------|
-| 1 | `IndexingEngine.clusterMoments()`: time+location proximity | `NiftyCore/Sources/Engines/IndexingEngine.swift` | ⬜ |
-| 2 | `StoryEngine`: 3 narrative arc templates | `NiftyCore/Sources/Engines/StoryEngine.swift` | ⬜ |
-| 3 | `VoiceProseEngine`: prose style variants | `NiftyCore/Sources/Engines/VoiceProseEngine.swift` | ⬜ |
-| 4 | `AssembleReelUseCase`: `AVMutableComposition` reel | `NiftyCore/Sources/Domain/UseCases/AssembleReelUseCase.swift` | ⬜ |
-| 5 | `MomentDetailView`: reel playback | `Apps/niftyMomnt/niftyMomnt/UI/Journal/` | ⬜ |
+| 1 | `Asset.isPrivate: Bool = false` + `AssetRecord` sidecar field + `VaultQuery.showPrivateOnly: Bool` | `NiftyCore/Sources/Domain/Models/Asset.swift`, `NiftyCore/Sources/Domain/Models/SupportingTypes.swift`, `NiftyData/Sources/Repositories/VaultRepository.swift` | ⬜ |
+| 2 | `VaultProtocol.moveToVault(assetID:)` | `NiftyCore/Sources/Domain/Protocols/VaultProtocol.swift` | ⬜ |
+| 3 | `GraphProtocol.markAssetPrivate(assetID:isPrivate:)` | `NiftyCore/Sources/Domain/Protocols/GraphProtocol.swift` | ⬜ |
+| 4 | `GraphRepository`: `is_private INTEGER NOT NULL DEFAULT 0` migration + `markAssetPrivate` UPDATE + `fetchMoments` excludes private rows when `showPrivate: false` | `NiftyData/Sources/Repositories/GraphRepository.swift` | ⬜ |
+| 5 | `VaultRepository`: AES-GCM encrypt on `save`/`saveVideoFile`/`saveAudioFile` when `asset.isPrivate`; Keychain DEK; `moveToVault` (sidecar update + re-encrypt in place) | `NiftyData/Sources/Repositories/VaultRepository.swift` | ⬜ |
+| 6 | `VaultManager`: add `graph: any GraphProtocol` injection; `isVaultLocked: Bool`; `unlockVault()` via `LAContext`; `lockVault()`; `moveToVault(assetID:)` → coordinates vault + graph | `NiftyCore/Sources/Managers/VaultManager.swift` | ⬜ |
+| 7 | `AppContainer`: inject `graph` into `VaultManager`; expose `vaultManager.isVaultLocked` to views | `Apps/niftyMomnt/niftyMomnt/AppContainer.swift` | ⬜ |
+| 8 | `VaultView`: bind `container.vaultManager` state; real `LAContext` Face ID prompt; private asset grid via `VaultQuery(showPrivateOnly: true)`; lock button re-locks | `Apps/niftyMomnt/niftyMomnt/UI/Vault/VaultView.swift` | ⬜ |
+| 9 | `MomentDetailView`: "Move to Vault" action (extends v0.7-built view) | `Apps/niftyMomnt/niftyMomnt/UI/Journal/MomentDetailView.swift` | ⬜ |
+| 10 | `FilmFeedView`/`JournalFeedView`: pass `showPrivate: false` to `fetchMoments` + `AppConfig.v0_8` label fix + `niftyMomntApp.swift` bump to `AppConfig.v0_8` | `Apps/niftyMomnt/niftyMomnt/UI/Journal/JournalFeedView.swift`, `Apps/niftyMomnt/niftyMomnt/AppConfig+Interim.swift`, `Apps/niftyMomnt/niftyMomnt/niftyMomntApp.swift` | ⬜ |
+
+### Verification Checklist
+
+> Run on a real device after all tasks complete. All rows must pass before starting v0.9.
+
+| Check | Status |
+|-------|--------|
+| Mark asset private via "Move to Vault" → sidecar `isPrivate = true` + file encrypted on disk | ⬜ |
+| Cold launch → vault locked; DEK not accessible in memory without auth | ⬜ |
+| Face ID pass → vault unlocks; private asset grid loads | ⬜ |
+| Face ID fail → vault stays locked; no assets visible | ⬜ |
+| Lock button → vault re-locks; grid clears | ⬜ |
+| Regular feed excludes private moments when vault is locked | ⬜ |
+| Delete private asset → encrypted file + sidecar + GRDB row all removed | ⬜ |
+| v0.7 reel regression clean | ⬜ |
+| **v0.8 complete — ready for v0.9** | ⬜ |
 
 ---
 

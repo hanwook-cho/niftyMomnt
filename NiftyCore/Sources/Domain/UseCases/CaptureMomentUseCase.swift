@@ -125,19 +125,17 @@ public final class CaptureMomentUseCase {
             }
         }
 
-        // 6. Build Moment (label = place name if available, otherwise date)
+        // 6. Merge into existing nearby moment or create a new one.
         let label = placeRecord?.placeName ?? dateLabel(for: asset)
         onPlaceResolved?(label)
-        let moment = Moment(
-            label: label,
-            assets: [asset],
-            centroid: asset.location ?? GPSCoordinate(latitude: 0, longitude: 0),
-            startTime: asset.capturedAt,
-            endTime: asset.capturedAt,
-            dominantVibes: tags,
-            selectedPresetName: preset
+
+        let recentMoments = (try? await graph.fetchMoments(query: GraphQuery())) ?? []
+        log.debug("[6/8] checking \(recentMoments.count) existing moment(s) for merge candidate…")
+        let moment = mergedOrNew(
+            asset: asset, tags: tags, label: label, preset: preset,
+            recentMoments: recentMoments
         )
-        log.debug("[6/8] moment built id=\(moment.id.uuidString) label='\(moment.label)'")
+        log.debug("[6/8] moment id=\(moment.id.uuidString) assets=\(moment.assets.count) label='\(moment.label)'")
 
         // 7. Save to intelligence graph (moment + optional place record)
         log.debug("[7/8] saving to graph…")
@@ -232,19 +230,16 @@ public final class CaptureMomentUseCase {
         }
         log.debug("[4] vault save OK")
 
-        // 5. Build Moment
+        // 5. Build Moment — merge into existing nearby moment if within 2h / 500m.
         let label = placeRecord?.placeName ?? dateLabel(for: enrichedAsset)
         onPlaceResolved?(label)
-        let moment = Moment(
-            label: label,
-            assets: [enrichedAsset],
-            centroid: enrichedAsset.location ?? GPSCoordinate(latitude: 0, longitude: 0),
-            startTime: enrichedAsset.capturedAt,
-            endTime: enrichedAsset.capturedAt,
-            dominantVibes: enrichedAsset.vibeTags,
-            selectedPresetName: preset
+        let recentMomentsV = (try? await graph.fetchMoments(query: GraphQuery())) ?? []
+        log.debug("[5] checking \(recentMomentsV.count) existing moment(s) for merge candidate…")
+        let moment = mergedOrNew(
+            asset: enrichedAsset, tags: enrichedAsset.vibeTags, label: label, preset: preset,
+            recentMoments: recentMomentsV
         )
-        log.debug("[5] moment id=\(moment.id.uuidString) label='\(moment.label)'")
+        log.debug("[5] moment id=\(moment.id.uuidString) assets=\(moment.assets.count) label='\(moment.label)'")
 
         // 6. Save to graph
         log.debug("[6] saving to graph…")
@@ -282,5 +277,50 @@ private extension CaptureMomentUseCase {
         let fmt = DateFormatter()
         fmt.dateFormat = "MMM d · h:mm a"
         return fmt.string(from: asset.capturedAt)
+    }
+
+    /// Merges `asset` into the most recent compatible moment, or creates a fresh one.
+    /// Compatibility: endTime within 2 h AND centroid within 500 m.
+    func mergedOrNew(
+        asset: Asset,
+        tags: [VibeTag],
+        label: String,
+        preset: String?,
+        recentMoments: [Moment]
+    ) -> Moment {
+        let twoHours: TimeInterval = 7_200
+        let maxMeters: Double = 500
+
+        // Find the most-recent moment that is still within time + space window.
+        let candidate = recentMoments
+            .sorted { $0.endTime > $1.endTime }
+            .first { existing in
+                let timeDelta = asset.capturedAt.timeIntervalSince(existing.endTime)
+                guard timeDelta >= 0, timeDelta <= twoHours else { return false }
+                let dist = IndexingEngine.haversineMeters(asset.location, existing.centroid)
+                return dist <= maxMeters
+            }
+
+        if let existing = candidate {
+            log.debug("[merge] merging asset \(asset.id.uuidString) into moment \(existing.id.uuidString) (now \(existing.assets.count + 1) assets)")
+            let mergedVibes = Array(Set(existing.dominantVibes + tags))
+            var updated = existing
+            updated.assets      = existing.assets + [asset]
+            updated.endTime     = asset.capturedAt
+            updated.dominantVibes = mergedVibes
+            if let preset { updated.selectedPresetName = preset }
+            return updated
+        } else {
+            log.debug("[merge] no compatible moment found — creating new moment for asset \(asset.id.uuidString)")
+            return Moment(
+                label: label,
+                assets: [asset],
+                centroid: asset.location ?? GPSCoordinate(latitude: 0, longitude: 0),
+                startTime: asset.capturedAt,
+                endTime: asset.capturedAt,
+                dominantVibes: tags,
+                selectedPresetName: preset
+            )
+        }
     }
 }

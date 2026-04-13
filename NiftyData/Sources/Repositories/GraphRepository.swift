@@ -450,6 +450,63 @@ public actor GraphRepository: GraphProtocol {
         return moments
     }
 
+    public func fetchAssets(for momentID: UUID) async throws -> [Asset] {
+        log.debug("fetchAssets — momentID=\(momentID.uuidString)")
+        return try await db.read { db in
+            let assetRows = try Row.fetchAll(db, sql: """
+                SELECT a.id, a.type, a.captured_at, a.location_lat, a.location_lon,
+                       a.vibe_tags, a.ambient_weather, a.ambient_temp_c,
+                       a.ambient_sun_pos, a.palette_json, a.preset_name
+                FROM assets a
+                JOIN moment_assets ma ON ma.asset_id = a.id
+                WHERE ma.moment_id = ?
+                ORDER BY a.captured_at ASC
+                """,
+                arguments: [momentID.uuidString]
+            )
+            return assetRows.compactMap { aRow -> Asset? in
+                guard let aIdStr = aRow["id"] as? String,
+                      let aId = UUID(uuidString: aIdStr),
+                      let typeStr = aRow["type"] as? String,
+                      let assetType = AssetType(rawValue: typeStr),
+                      let capturedAtRaw = aRow["captured_at"] as? Double else { return nil }
+
+                let location: GPSCoordinate? = (aRow["location_lat"] as? Double).flatMap { lat in
+                    (aRow["location_lon"] as? Double).map { lon in GPSCoordinate(latitude: lat, longitude: lon) }
+                }
+                let vibeTags: [VibeTag] = {
+                    guard let tagsStr = aRow["vibe_tags"] as? String,
+                          let data = tagsStr.data(using: .utf8),
+                          let rawTags = try? JSONDecoder().decode([String].self, from: data) else { return [] }
+                    return rawTags.compactMap { VibeTag(rawValue: $0) }
+                }()
+                let ambient: AmbientMetadata = {
+                    var a = AmbientMetadata()
+                    if let w = aRow["ambient_weather"] as? String { a.weather = WeatherCondition(rawValue: w) }
+                    if let t = aRow["ambient_temp_c"] as? Double { a.temperatureC = t }
+                    if let s = aRow["ambient_sun_pos"] as? String { a.sunPosition = SunPosition(rawValue: s) }
+                    return a
+                }()
+                let palette: ChromaticPalette? = {
+                    guard let json = aRow["palette_json"] as? String,
+                          let data = json.data(using: .utf8),
+                          let decoded = try? JSONDecoder().decode(ChromaticPalette.self, from: data) else { return nil }
+                    return decoded
+                }()
+                return Asset(
+                    id: aId,
+                    type: assetType,
+                    capturedAt: Date(timeIntervalSince1970: capturedAtRaw),
+                    location: location,
+                    vibeTags: vibeTags,
+                    palette: palette,
+                    ambient: ambient,
+                    selectedPresetName: aRow["preset_name"] as? String
+                )
+            }
+        }
+    }
+
     public func fetchPlaceHistory(limit: Int) async throws -> [PlaceRecord] {
         return try await db.read { db in
             let rows = try Row.fetchAll(db, sql: """
