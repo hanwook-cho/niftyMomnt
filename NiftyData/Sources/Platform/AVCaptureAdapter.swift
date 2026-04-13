@@ -35,8 +35,9 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
     // never needs to change. Initialized as AVCaptureMultiCamSession when:
     //   • config.features.contains(.dualCamera)
     //   • AVCaptureMultiCamSession.isMultiCamSupported (iPhone 13 Pro+)
-    //   • UserDefaults "nifty.dualCameraEnabled" == true
     // Decision is final at init time — the session cannot be swapped after creation.
+    // The user toggle (nifty.dualCameraEnabled) controls whether the secondary output
+    // is wired up in configureDualCameraSession(for:), not which session class is used.
 
     /// Shared session. The UI layer attaches an AVCaptureVideoPreviewLayer to this.
     public let session: AVCaptureSession
@@ -106,19 +107,29 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
         return jpegData
     }
 
-    /// Whether the dual-camera path is gated on at init time.
+    /// Whether to allocate an AVCaptureMultiCamSession at init time.
+    ///
+    /// Decision factors (both must be true):
+    ///   1. `.dualCamera` feature flag is present in `config.features`
+    ///   2. The device hardware supports multi-cam (`AVCaptureMultiCamSession.isMultiCamSupported`)
+    ///
+    /// The user toggle ("nifty.dualCameraEnabled") is intentionally NOT checked here.
+    /// Session type is a `let` — it cannot change after init. Checking a UserDefaults default
+    /// (which is `false` until the user explicitly toggles the switch) would permanently lock
+    /// the device into a standard session. Instead, the toggle is checked in
+    /// `configureDualCameraSession(for:)` to control whether the secondary output is wired up,
+    /// while the session type remains correct from the start.
     private static func shouldUseDualCam(config: AppConfig) -> Bool {
         guard config.features.contains(.dualCamera) else {
-            log.debug("AVCaptureAdapter init — .dualCamera not in feature set; using standard session")
+            log.info("AVCaptureAdapter init — dualCamera: DISABLED (feature flag .dualCamera not in config) → AVCaptureSession")
             return false
         }
         guard AVCaptureMultiCamSession.isMultiCamSupported else {
-            log.info("AVCaptureAdapter init — AVCaptureMultiCamSession.isMultiCamSupported = false on this device; falling back to standard session")
+            log.info("AVCaptureAdapter init — dualCamera: DISABLED (isMultiCamSupported=false — iPhone 13 Pro+ required) → AVCaptureSession")
             return false
         }
-        let toggled = UserDefaults.standard.bool(forKey: "nifty.dualCameraEnabled")
-        log.debug("AVCaptureAdapter init — dualCamera toggle=\(toggled)")
-        return toggled
+        log.info("AVCaptureAdapter init — dualCamera: ENABLED (feature flag ✓ + hardware supports multi-cam ✓) → AVCaptureMultiCamSession")
+        return true
     }
 
     /// Provides GPS coordinate at capture time.
@@ -239,12 +250,13 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
         // This block runs on every still/live capture so §2 of the verification
         // checklist can be confirmed directly from the console without a breakpoint.
         let sessionClass = isDualCamSession ? "AVCaptureMultiCamSession" : "AVCaptureSession"
-        log.info("captureAsset — sessionType=\(sessionClass) isDualCam=\(self.isDualCamSession)")
+        let secondaryWired = secondaryVideoOutput != nil
+        log.info("captureAsset — sessionType=\(sessionClass) isDualCam=\(self.isDualCamSession) secondaryOutputWired=\(secondaryWired)")
         if isDualCamSession {
-            let secondaryInput = secondaryVideoInput?.device.localizedName ?? "none"
+            let secondaryInput = secondaryVideoInput?.device.localizedName ?? "none (toggle off or unsupported)"
             log.info("captureAsset — secondary input=\(secondaryInput)")
             let hasFrame = secondaryFrameLock.withLock { _latestSecondaryFrame != nil }
-            log.info("captureAsset — secondary frame buffer: \(hasFrame ? "HAS FRAME ✓" : "EMPTY — no frame received yet")")
+            log.info("captureAsset — secondary frame buffer: \(hasFrame ? "HAS FRAME ✓" : "EMPTY — no frame yet (normal on first capture or toggle off)")")
         }
         // ─────────────────────────────────────────────────────────────────────
 
@@ -682,6 +694,14 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
             return
         }
 
+        // Check user toggle here (not at init time).
+        // @AppStorage default values never write to UserDefaults, so the key starts as false
+        // until the user explicitly flips the switch. We default to true here so that the
+        // secondary output is wired unless the user has explicitly turned it off.
+        let rawToggle = UserDefaults.standard.object(forKey: "nifty.dualCameraEnabled")
+        let toggleEnabled = rawToggle == nil ? true : UserDefaults.standard.bool(forKey: "nifty.dualCameraEnabled")
+        log.info("configureDualCameraSession — user toggle nifty.dualCameraEnabled=\(toggleEnabled) (rawStored=\(rawToggle != nil ? "set" : "nil→defaultTrue"))")
+
         log.debug("configureDualCameraSession — beginning configuration for mode=\(mode.rawValue)")
         multiSession.beginConfiguration()
         defer {
@@ -719,6 +739,12 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
         // ── Secondary: front / ultra-wide → AVCaptureVideoDataOutput ─────────
         // Priority: front TrueDepth → ultra-wide back → front wide
         // Frames captured for Lab VLM payload only; never written to disk.
+        // Gated on user toggle — but session is already AVCaptureMultiCamSession regardless.
+
+        guard toggleEnabled else {
+            log.info("configureDualCameraSession — secondary output SKIPPED (user toggled off); primary-only dual-cam session active")
+            return
+        }
 
         let secondaryDevice: AVCaptureDevice? = {
             if let d = AVCaptureDevice.default(.builtInTrueDepthCamera, for: .video, position: .front) { return d }
@@ -757,7 +783,7 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
         videoOut.setSampleBufferDelegate(secondaryDelegate, queue: secondaryQ)
         multiSession.addOutput(videoOut)
         secondaryVideoOutput = videoOut
-        log.info("configureDualCameraSession — secondary AVCaptureVideoDataOutput added (frames → latestSecondaryFrame)")
+        log.info("configureDualCameraSession — secondary AVCaptureVideoDataOutput ADDED (frames → latestSecondaryFrame)")
     }
 
     private func resetSessionStateOnQueue() {
