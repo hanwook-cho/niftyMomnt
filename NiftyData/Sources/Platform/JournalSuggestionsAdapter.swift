@@ -73,7 +73,7 @@ public final class JournalSuggestionsAdapter: NudgeEngineProtocol {
             return
         }
         storedSuggestions.append(suggestion)
-        log.info("receiveSuggestion — title=\"\(suggestion.title)\" date=\(suggestion.date?.start.description ?? "nil") stored=\(storedSuggestions.count)")
+        log.info("receiveSuggestion — title=\"\(suggestion.title)\" date=\(suggestion.date?.start.description ?? "nil") stored=\(self.storedSuggestions.count)")
     }
 #endif
 
@@ -132,7 +132,7 @@ public final class JournalSuggestionsAdapter: NudgeEngineProtocol {
 
     @available(iOS 17.2, *)
     private func matchStoredSuggestions(for moment: Moment) async {
-        log.debug("matchStoredSuggestions — stored=\(storedSuggestions.count) momentID=\(moment.id.uuidString)")
+        log.debug("matchStoredSuggestions — stored=\(self.storedSuggestions.count) momentID=\(moment.id.uuidString)")
         evictStaleSuggestions()
 
         let windowStart = moment.startTime.addingTimeInterval(-24 * 3600)
@@ -175,7 +175,7 @@ public final class JournalSuggestionsAdapter: NudgeEngineProtocol {
         }
         let evicted = before - storedSuggestions.count
         if evicted > 0 {
-            log.debug("evictStaleSuggestions — removed \(evicted) stale suggestion(s); remaining=\(storedSuggestions.count)")
+            log.debug("evictStaleSuggestions — removed \(evicted) stale suggestion(s); remaining=\(self.storedSuggestions.count)")
         }
     }
 
