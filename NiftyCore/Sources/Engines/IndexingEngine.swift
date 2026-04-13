@@ -19,19 +19,66 @@ public actor IndexingEngine {
 
     /// Classify a single asset immediately (inline, non-batched).
     /// Vision inference runs on a detached background task to avoid blocking any actor.
-    public func classifyImmediate(id: UUID, imageData: Data) async -> [VibeTag] {
-        log.debug("classifyImmediate — dispatching to background task id=\(id.uuidString)")
+    ///
+    /// - Parameters:
+    ///   - id:                    Asset UUID (used for logging + Vision request tracking).
+    ///   - imageData:             Primary photo JPEG.
+    ///   - supplementaryImageData: Optional secondary-camera JPEG (front TrueDepth / ultra-wide
+    ///                             from dual-cam session). When provided, a concurrent Vision pass
+    ///                             is run and its tags are merged with the primary results.
+    ///                             This lets a face/environment angle supplement scene content tags.
+    /// Classify a single asset immediately (inline, non-batched).
+    /// Vision inference runs on a detached background task to avoid blocking any actor.
+    ///
+    /// - Parameters:
+    ///   - id:                    Asset UUID (used for logging + Vision request tracking).
+    ///   - imageData:             Primary photo JPEG.
+    ///   - supplementaryImageData: Optional secondary-camera JPEG (front TrueDepth / ultra-wide
+    ///                             from a dual-cam session). When provided, a concurrent Vision pass
+    ///                             runs alongside the primary and its unique tags are merged in.
+    public func classifyImmediate(id: UUID, imageData: Data, supplementaryImageData: Data? = nil) async -> [VibeTag] {
+        let suppDesc = supplementaryImageData.map { "\($0.count)B" } ?? "none"
+        log.debug("classifyImmediate — dispatching id=\(id.uuidString) supplementary=\(suppDesc)")
         let adapter = self.adapter
-        let tags = await Task.detached(priority: .userInitiated) {
+
+        // Primary classification — always runs.
+        async let primaryTags: [VibeTag] = Task.detached(priority: .userInitiated) {
             do {
                 return try await adapter.classifyImage(id, imageData: imageData)
             } catch {
-                log.error("classifyImmediate — adapter.classifyImage threw: \(error)")
-                return [] as [VibeTag]
+                log.error("classifyImmediate — primary classifyImage threw: \(error)")
+                return [VibeTag]()
             }
         }.value
-        log.debug("classifyImmediate — done, \(tags.count) tag(s) returned")
-        return tags
+
+        // When no secondary data, skip the concurrent branch immediately.
+        guard let secData = supplementaryImageData else {
+            let tags = await primaryTags
+            log.debug("classifyImmediate — done (primary-only), \(tags.count) tag(s)")
+            return tags
+        }
+
+        // Secondary classification — runs concurrently with primary.
+        async let supplementaryTags: [VibeTag] = Task.detached(priority: .userInitiated) {
+            do {
+                return try await adapter.classifyImage(id, imageData: secData)
+            } catch {
+                log.error("classifyImmediate — supplementary classifyImage threw: \(error)")
+                return [VibeTag]()
+            }
+        }.value
+
+        let (pTags, sTags) = await (primaryTags, supplementaryTags)
+
+        // Merge with deduplication — preserve primary ordering, append unique tags from secondary.
+        var merged = pTags
+        let primarySet = Set(pTags.map(\.rawValue))
+        let addedFromSecondary = sTags.filter { !primarySet.contains($0.rawValue) }
+        merged.append(contentsOf: addedFromSecondary)
+
+        log.debug("classifyImmediate — primary=[\(pTags.map(\.rawValue).joined(separator: ","))] + supplementary=[\(sTags.map(\.rawValue).joined(separator: ","))] → merged=[\(merged.map(\.rawValue).joined(separator: ","))]")
+        log.debug("classifyImmediate — done (dual-cam merge), \(merged.count) tag(s)")
+        return merged
     }
 
     /// Extract chromatic palette immediately (inline, non-batched). Runs on background task.

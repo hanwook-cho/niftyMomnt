@@ -80,7 +80,7 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
         self.secondaryFrameLock.lock()
         self._latestSecondaryFrame = buffer
         self.secondaryFrameLock.unlock()
-        log.debug("AVCaptureAdapter — secondary frame captured (\(CMSampleBufferGetTotalSampleSize(buffer)) bytes)")
+        // Per-frame log is handled inside SecondaryFrameDelegate (throttled to ~1/s).
     }
 
     /// Returns the most recent secondary camera frame as JPEG-compressed Data,
@@ -308,15 +308,16 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
 
         let assetType: AssetType = isLive ? .live : .still
 
-        // ── §2 Secondary frame snapshot post-capture ──────────────────────────
+        // §2 — Confirm secondary frame readiness at capture time.
+        // CaptureMomentUseCase fetches this via latestSecondaryFrameData() to supplement vibe classification.
         if isDualCamSession {
-            if let frameData = latestSecondaryFrameData() {
-                log.info("captureAsset — secondary frame ready for Lab VLM: \(frameData.count) bytes JPEG ✓")
+            let secBytes = secondaryFrameLock.withLock { _latestSecondaryFrame.map { CMSampleBufferGetTotalSampleSize($0) } }
+            if let bytes = secBytes {
+                log.info("captureAsset — secondary frame ready (\(bytes) bytes raw) — available for vibe classification + Lab VLM")
             } else {
-                log.warning("captureAsset — secondary frame still empty after capture (secondary camera may not have started streaming yet)")
+                log.warning("captureAsset — secondary frame still empty (secondary camera may not have started streaming yet)")
             }
         }
-        // ─────────────────────────────────────────────────────────────────────
 
         stateSubject.send(.processing)
         return Asset(id: assetID, type: assetType, capturedAt: Date(), location: gps)
@@ -901,6 +902,10 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
 private final class SecondaryFrameDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, @unchecked Sendable {
     private let onFrame: (CMSampleBuffer) -> Void
 
+    /// Incremented on `secondaryQ` (serial) so no lock needed.
+    private var frameCount = 0
+    private var dropCount  = 0
+
     init(onFrame: @escaping (CMSampleBuffer) -> Void) {
         self.onFrame = onFrame
     }
@@ -910,7 +915,13 @@ private final class SecondaryFrameDelegate: NSObject, AVCaptureVideoDataOutputSa
         didOutput sampleBuffer: CMSampleBuffer,
         from connection: AVCaptureConnection
     ) {
+        frameCount += 1
         onFrame(sampleBuffer)
+        // Log once per ~30 frames (~1 s at 30 fps) so the console isn't flooded.
+        // Use frameCount == 1 for the very first frame so it appears immediately.
+        if frameCount == 1 || frameCount % 30 == 0 {
+            log.debug("AVCaptureAdapter — secondary stream active: frame=\(self.frameCount) (\(CMSampleBufferGetTotalSampleSize(sampleBuffer)) bytes/frame)")
+        }
     }
 
     func captureOutput(
@@ -918,7 +929,11 @@ private final class SecondaryFrameDelegate: NSObject, AVCaptureVideoDataOutputSa
         didDrop sampleBuffer: CMSampleBuffer,
         from connection: AVCaptureConnection
     ) {
-        log.debug("SecondaryFrameDelegate — frame dropped (alwaysDiscardsLateVideoFrames)")
+        dropCount += 1
+        // Only log drops every 30 to keep noise low.
+        if dropCount % 30 == 1 {
+            log.debug("SecondaryFrameDelegate — frame(s) dropped (alwaysDiscardsLateVideoFrames) total=\(self.dropCount)")
+        }
     }
 }
 

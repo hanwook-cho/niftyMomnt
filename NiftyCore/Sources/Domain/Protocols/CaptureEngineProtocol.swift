@@ -22,4 +22,15 @@ public protocol CaptureEngineProtocol: AnyObject {
     func unlockFocusAndExposure() async
     func applyPreset(_ preset: VibePreset) async
     func availableModes() -> [CaptureMode]
+
+    /// Returns the most-recent secondary-camera frame as JPEG-compressed Data.
+    ///
+    /// Non-nil only when:
+    ///   • An `AVCaptureMultiCamSession` is active (dual-camera hardware + feature flag)
+    ///   • The secondary `AVCaptureVideoDataOutput` is wired (user toggle on)
+    ///   • At least one frame has arrived since `startSession` was called
+    ///
+    /// Use this in the capture pipeline to supplement on-device vibe classification
+    /// with an additional viewpoint (front TrueDepth / ultra-wide).
+    func latestSecondaryFrameData() -> Data?
 }

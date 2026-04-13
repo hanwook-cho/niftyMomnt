@@ -84,8 +84,18 @@ public final class CaptureMomentUseCase {
         let assetID = asset.id
         let assetLocation = asset.location
         let assetCapturedAt = asset.capturedAt
+
+        // Fetch secondary-camera frame (non-nil only on dual-cam hardware with toggle on).
+        // Passed to classifyImmediate to supplement scene-content tags with a second viewpoint.
+        let secondaryFrameData = engine.latestSecondaryFrameData()
+        if let sec = secondaryFrameData {
+            log.debug("[3/8] dual-cam secondary frame available (\(sec.count) bytes) — will supplement vibe classification")
+        } else {
+            log.debug("[3/8] no secondary frame (single-cam or toggle off) — primary-only classification")
+        }
+
         log.debug("[3/8] classify + palette + ambient (concurrent)…")
-        async let vibeTags = indexing.classifyImmediate(id: assetID, imageData: imageData)
+        async let vibeTags = indexing.classifyImmediate(id: assetID, imageData: imageData, supplementaryImageData: secondaryFrameData)
         async let palette = indexing.extractPaletteImmediate(id: assetID, imageData: imageData)
         async let ambient = indexing.harvestAmbientImmediate(location: assetLocation, time: assetCapturedAt)
         let (tags, pal, amb) = await (vibeTags, palette, ambient)
