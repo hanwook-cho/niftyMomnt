@@ -1,7 +1,7 @@
 // Apps/niftyMomnt/UI/Settings/SettingsView.swift
 // Spec §8 — AI & Privacy · Presets & Style · Storage & Sync · Capture.
-// TODO: Implement full settings sections per spec §8.
 
+import AVFoundation
 import NiftyCore
 import SwiftUI
 
@@ -45,16 +45,37 @@ struct SettingsView: View {
                 .tint(Color.niftyBrand)
             }
 
-            Toggle(isOn: $dualCameraEnabled) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Contextual context capture")
-                        .font(.niftyBody)
-                    Text("Secondary camera captures scene context — never saved or shown.")
-                        .font(.niftyCaption)
-                        .foregroundStyle(Color.niftyTextSecondary)
+            // Dual-camera toggle — gated on feature flag AND device hardware support.
+            if container.config.features.contains(.dualCamera) {
+                if AVCaptureMultiCamSession.isMultiCamSupported {
+                    Toggle(isOn: $dualCameraEnabled) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Contextual context capture")
+                                .font(.niftyBody)
+                            Text("Secondary camera captures scene context — never saved or shown.")
+                                .font(.niftyCaption)
+                                .foregroundStyle(Color.niftyTextSecondary)
+                        }
+                    }
+                    .tint(Color.niftyBrand)
+                } else {
+                    // Feature flag is set but this device doesn't support multi-cam.
+                    HStack(spacing: NiftySpacing.sm) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Contextual context capture")
+                                .font(.niftyBody)
+                                .foregroundStyle(Color.niftyTextSecondary)
+                            Text("Requires iPhone 13 Pro or later.")
+                                .font(.niftyCaption)
+                                .foregroundStyle(Color.niftyTextSecondary)
+                        }
+                        Spacer()
+                        Image(systemName: "lock.fill")
+                            .font(.niftyLabel)
+                            .foregroundStyle(Color.niftyTextSecondary)
+                    }
                 }
             }
-            .tint(Color.niftyBrand)
 
             if container.config.features.contains(.rollMode) {
                 Toggle(isOn: $rollModeEnabled) {
@@ -120,8 +141,33 @@ struct SettingsView: View {
                 Text("AI Mode is configured per app variant. Contact support to change.")
                     .font(.niftyCaption)
             }
+
+            // On-device LLM capability notice — shown when device is on iOS < 26.
+            if !isOnDeviceLLMAvailable {
+                Section {
+                    HStack(alignment: .top, spacing: NiftySpacing.sm) {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(Color.niftyBrand)
+                            .font(.niftyBody)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("On-Device AI Captions")
+                                .font(.niftyBody)
+                            Text("Upgrade to iOS 26 or later to unlock private, on-device AI captions powered by Apple Intelligence — no network required.")
+                                .font(.niftyCaption)
+                                .foregroundStyle(Color.niftyTextSecondary)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
         }
         .navigationTitle("AI Mode")
+    }
+
+    /// `true` when the device is running iOS 26+, which enables Foundation Models.
+    private var isOnDeviceLLMAvailable: Bool {
+        if #available(iOS 26, *) { return true }
+        return false
     }
 
     private func aiModeRow(title: String, subtitle: String, isActive: Bool) -> some View {

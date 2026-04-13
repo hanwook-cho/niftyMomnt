@@ -53,9 +53,10 @@ public struct FeatureSet: OptionSet, Sendable {
     public static let photoFix        = FeatureSet(rawValue: 1 << 7)  // NEW v1.5
     public static let soundStamp      = FeatureSet(rawValue: 1 << 8)  // NEW v1.5
     public static let l4c             = FeatureSet(rawValue: 1 << 9)  // Life Four Cuts v0.3.5
+    public static let dualCamera      = FeatureSet(rawValue: 1 << 10) // v0.9 AVCaptureMultiCamSession
     public static let all: FeatureSet = [
         .rollMode, .nudgeEngine, .moodMap, .liveActivity,
-        .journalSuggest, .trustedSharing, .widgetKit, .photoFix, .soundStamp, .l4c
+        .journalSuggest, .trustedSharing, .widgetKit, .photoFix, .soundStamp, .l4c, .dualCamera
     ]
 }
 

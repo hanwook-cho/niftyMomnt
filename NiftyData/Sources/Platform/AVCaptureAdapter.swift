@@ -29,8 +29,21 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
     private let sessionQueue = DispatchQueue(label: "com.hwcho99.niftymomnt.sessionQ",
                                              qos: .userInitiated)
 
+    // MARK: Session
+    //
+    // Typed as AVCaptureSession (superclass) so AppContainer.captureSession: AVCaptureSession
+    // never needs to change. Initialized as AVCaptureMultiCamSession when:
+    //   • config.features.contains(.dualCamera)
+    //   • AVCaptureMultiCamSession.isMultiCamSupported (iPhone 13 Pro+)
+    //   • UserDefaults "nifty.dualCameraEnabled" == true
+    // Decision is final at init time — the session cannot be swapped after creation.
+
     /// Shared session. The UI layer attaches an AVCaptureVideoPreviewLayer to this.
-    public let session = AVCaptureSession()
+    public let session: AVCaptureSession
+
+    /// True when `session` is actually an `AVCaptureMultiCamSession`.
+    private let isDualCamSession: Bool
+
     /// Retained so we can remove it cleanly without iterating session.inputs post-stopRunning.
     private var videoDeviceInput: AVCaptureDeviceInput?
     private var photoOutput: AVCapturePhotoOutput?
@@ -49,11 +62,80 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
     /// Retained while Echo is recording audio-only media.
     private var activeEchoRecording: EchoRecordingSession?
 
+    // MARK: Dual-camera secondary stream
+    //
+    // The secondary camera (front / ultra-wide) frames are captured into
+    // `latestSecondaryFrame` via AVCaptureVideoDataOutput.
+    // They are NEVER persisted to disk — only held in memory for Lab VLM payloads.
+
+    private var secondaryVideoInput: AVCaptureDeviceInput?
+    private var secondaryVideoOutput: AVCaptureVideoDataOutput?
+    private let secondaryFrameLock = NSLock()
+    private var _latestSecondaryFrame: CMSampleBuffer?
+
+    /// Secondary frame delegate (retains self via weak ref).
+    private lazy var secondaryDelegate = SecondaryFrameDelegate { [weak self] buffer in
+        guard let self else { return }
+        self.secondaryFrameLock.lock()
+        self._latestSecondaryFrame = buffer
+        self.secondaryFrameLock.unlock()
+        log.debug("AVCaptureAdapter — secondary frame captured (\(CMSampleBufferGetTotalSampleSize(buffer)) bytes)")
+    }
+
+    /// Returns the most recent secondary camera frame as JPEG-compressed Data,
+    /// or `nil` when dual-cam is not active or no frame has been received yet.
+    public func latestSecondaryFrameData() -> Data? {
+        secondaryFrameLock.lock()
+        let buffer = _latestSecondaryFrame
+        secondaryFrameLock.unlock()
+
+        guard let buffer,
+              let imageBuffer = CMSampleBufferGetImageBuffer(buffer) else {
+            log.debug("AVCaptureAdapter.latestSecondaryFrameData — no frame available")
+            return nil
+        }
+        let ciImage = CIImage(cvPixelBuffer: imageBuffer)
+        let context = CIContext()
+        guard let jpegData = context.jpegRepresentation(of: ciImage,
+                                                        colorSpace: CGColorSpaceCreateDeviceRGB(),
+                                                        options: [kCGImageDestinationLossyCompressionQuality as CIImageRepresentationOption: 0.7]) else {
+            log.warning("AVCaptureAdapter.latestSecondaryFrameData — JPEG compression failed")
+            return nil
+        }
+        log.debug("AVCaptureAdapter.latestSecondaryFrameData — \(jpegData.count) bytes")
+        return jpegData
+    }
+
+    /// Whether the dual-camera path is gated on at init time.
+    private static func shouldUseDualCam(config: AppConfig) -> Bool {
+        guard config.features.contains(.dualCamera) else {
+            log.debug("AVCaptureAdapter init — .dualCamera not in feature set; using standard session")
+            return false
+        }
+        guard AVCaptureMultiCamSession.isMultiCamSupported else {
+            log.info("AVCaptureAdapter init — AVCaptureMultiCamSession.isMultiCamSupported = false on this device; falling back to standard session")
+            return false
+        }
+        let toggled = UserDefaults.standard.bool(forKey: "nifty.dualCameraEnabled")
+        log.debug("AVCaptureAdapter init — dualCamera toggle=\(toggled)")
+        return toggled
+    }
+
     /// Provides GPS coordinate at capture time.
     private let locationProvider = LocationProvider()
 
     public init(config: AppConfig) {
         self.config = config
+        let dual = Self.shouldUseDualCam(config: config)
+        if dual {
+            self.session = AVCaptureMultiCamSession()
+            self.isDualCamSession = true
+            log.info("AVCaptureAdapter — initialized with AVCaptureMultiCamSession (dual-camera enabled)")
+        } else {
+            self.session = AVCaptureSession()
+            self.isDualCamSession = false
+            log.debug("AVCaptureAdapter — initialized with standard AVCaptureSession")
+        }
         // locationProvider.start() is called from startSession() — after the app window
         // is active — so the system location permission prompt fires correctly.
     }
@@ -509,14 +591,19 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
     // MARK: - Private helpers
 
     private func configureSession(for mode: CaptureMode) throws {
-        log.debug("configureSession — starting for mode=\(mode.rawValue)")
+        // Dual-camera path: only for still/live photo modes on supported hardware.
+        if isDualCamSession && !isVideoMode(mode) {
+            log.debug("configureSession — dual-camera path for mode=\(mode.rawValue)")
+            try configureDualCameraSession(for: mode)
+            return
+        }
+
+        log.debug("configureSession — standard path for mode=\(mode.rawValue)")
         session.beginConfiguration()
-        defer { 
+        defer {
             session.commitConfiguration()
             log.debug("configureSession — committed")
         }
-
-        //resetSessionStateOnQueue()
 
         session.sessionPreset = resolvedPreset(for: mode)
 
@@ -526,10 +613,12 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
             let input = try? AVCaptureDeviceInput(device: device),
             session.canAddInput(input)
         else {
+            log.error("configureSession — could not add primary video input")
             throw CaptureError.sessionFailed
         }
         session.addInput(input)
         videoDeviceInput = input
+        log.debug("configureSession — primary input added: \(input.device.localizedName)")
 
         // Output — photo or movie
         if isVideoMode(mode) {
@@ -538,6 +627,7 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
             if session.canAddOutput(output) {
                 session.addOutput(output)
                 movieOutput = output
+                log.debug("configureSession — AVCaptureMovieFileOutput added")
             }
         } else {
             let output = AVCapturePhotoOutput()
@@ -548,8 +638,99 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
                     output.isLivePhotoCaptureEnabled = true
                     log.debug("configureSession — Live Photo capture enabled")
                 }
+                log.debug("configureSession — AVCapturePhotoOutput added")
             }
         }
+    }
+
+    /// Configures an `AVCaptureMultiCamSession` with:
+    ///   • Primary back-wide camera → `AVCapturePhotoOutput`  (saved normally)
+    ///   • Secondary front / ultra-wide camera → `AVCaptureVideoDataOutput` (frames only, never persisted)
+    ///
+    /// Called only when `isDualCamSession == true` and mode is a photo class (still / live).
+    private func configureDualCameraSession(for mode: CaptureMode) throws {
+        guard let multiSession = session as? AVCaptureMultiCamSession else {
+            log.error("configureDualCameraSession — session is not AVCaptureMultiCamSession; falling through to standard")
+            try configureSession(for: mode)   // safe fallback
+            return
+        }
+
+        log.debug("configureDualCameraSession — beginning configuration for mode=\(mode.rawValue)")
+        multiSession.beginConfiguration()
+        defer {
+            multiSession.commitConfiguration()
+            log.debug("configureDualCameraSession — configuration committed")
+        }
+
+        // ── Primary: back wide-angle → AVCapturePhotoOutput ──────────────────
+
+        guard
+            let primaryDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+            let primaryInput = try? AVCaptureDeviceInput(device: primaryDevice),
+            multiSession.canAddInput(primaryInput)
+        else {
+            log.error("configureDualCameraSession — could not create primary back-wide input")
+            throw CaptureError.sessionFailed
+        }
+        multiSession.addInput(primaryInput)
+        videoDeviceInput = primaryInput
+        log.debug("configureDualCameraSession — primary input: \(primaryDevice.localizedName)")
+
+        let photoOut = AVCapturePhotoOutput()
+        guard multiSession.canAddOutput(photoOut) else {
+            log.error("configureDualCameraSession — canAddOutput(AVCapturePhotoOutput) false")
+            throw CaptureError.sessionFailed
+        }
+        multiSession.addOutput(photoOut)
+        photoOutput = photoOut
+        if photoOut.isLivePhotoCaptureSupported {
+            photoOut.isLivePhotoCaptureEnabled = true
+            log.debug("configureDualCameraSession — Live Photo enabled on primary output")
+        }
+        log.debug("configureDualCameraSession — primary AVCapturePhotoOutput added")
+
+        // ── Secondary: front / ultra-wide → AVCaptureVideoDataOutput ─────────
+        // Priority: front TrueDepth → ultra-wide back → front wide
+        // Frames captured for Lab VLM payload only; never written to disk.
+
+        let secondaryDevice: AVCaptureDevice? = {
+            if let d = AVCaptureDevice.default(.builtInTrueDepthCamera, for: .video, position: .front) { return d }
+            if let d = AVCaptureDevice.default(.builtInUltraWideCamera, for: .video, position: .back) { return d }
+            return AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front)
+        }()
+
+        guard
+            let secDev = secondaryDevice,
+            let secInput = try? AVCaptureDeviceInput(device: secDev),
+            multiSession.canAddInput(secInput)
+        else {
+            // Non-fatal: primary still works without secondary.
+            log.warning("configureDualCameraSession — could not add secondary input; continuing with primary-only")
+            return
+        }
+        multiSession.addInput(secInput)
+        secondaryVideoInput = secInput
+        log.debug("configureDualCameraSession — secondary input: \(secDev.localizedName)")
+
+        let videoOut = AVCaptureVideoDataOutput()
+        // Reduce memory pressure: discard frames that arrive while processing is ongoing.
+        videoOut.alwaysDiscardsLateVideoFrames = true
+        // BGRA pixel format is friendliest for CIImage → JPEG conversion.
+        videoOut.videoSettings = [
+            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
+        ]
+
+        guard multiSession.canAddOutput(videoOut) else {
+            log.warning("configureDualCameraSession — canAddOutput(secondary VideoDataOutput) false; skipping")
+            return
+        }
+        // Dispatch secondary frame callbacks on a low-priority background queue so they
+        // never compete with the sessionQueue or the main thread.
+        let secondaryQ = DispatchQueue(label: "com.hwcho99.niftymomnt.secondaryCamQ", qos: .utility)
+        videoOut.setSampleBufferDelegate(secondaryDelegate, queue: secondaryQ)
+        multiSession.addOutput(videoOut)
+        secondaryVideoOutput = videoOut
+        log.info("configureDualCameraSession — secondary AVCaptureVideoDataOutput added (frames → latestSecondaryFrame)")
     }
 
     private func resetSessionStateOnQueue() {
@@ -656,6 +837,35 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
         case .landscapeRight: return .landscapeLeft
         default: return nil
         }
+    }
+}
+
+// MARK: - SecondaryFrameDelegate
+
+/// Captures `CMSampleBuffer` frames from the secondary camera stream and forwards them
+/// to the provided closure. Declared `@unchecked Sendable` because CMSampleBuffer
+/// itself is not `Sendable`; access is serialized through `secondaryFrameLock` in the adapter.
+private final class SecondaryFrameDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, @unchecked Sendable {
+    private let onFrame: (CMSampleBuffer) -> Void
+
+    init(onFrame: @escaping (CMSampleBuffer) -> Void) {
+        self.onFrame = onFrame
+    }
+
+    func captureOutput(
+        _ output: AVCaptureOutput,
+        didOutput sampleBuffer: CMSampleBuffer,
+        from connection: AVCaptureConnection
+    ) {
+        onFrame(sampleBuffer)
+    }
+
+    func captureOutput(
+        _ output: AVCaptureOutput,
+        didDrop sampleBuffer: CMSampleBuffer,
+        from connection: AVCaptureConnection
+    ) {
+        log.debug("SecondaryFrameDelegate — frame dropped (alwaysDiscardsLateVideoFrames)")
     }
 }
 

@@ -97,12 +97,13 @@ extension AppConfig {
         storage: StorageConfig(smartArchiveEnabled: false, iCloudSyncEnabled: false)
     )
 
-    /// v0.9 — Adds Enhanced AI (Lab Mode) + Photo Fix.
+    /// v0.9 — Extended Intelligence & Dual-Camera.
+    /// Adds: .enhancedAI + .lab AI modes, .dualCamera + .photoFix features.
     static let v0_9 = AppConfig(
         appVariant: .full,
         assetTypes: .all,
         aiModes: [.onDevice, .enhancedAI, .lab],
-        features: [.l4c, .rollMode, .soundStamp, .nudgeEngine, .trustedSharing, .journalSuggest, .photoFix],
+        features: [.l4c, .rollMode, .soundStamp, .nudgeEngine, .trustedSharing, .journalSuggest, .photoFix, .dualCamera],
         sharing: SharingConfig(maxCircleSize: 10, labEnabled: true),
         storage: StorageConfig(smartArchiveEnabled: true, iCloudSyncEnabled: false)
     )

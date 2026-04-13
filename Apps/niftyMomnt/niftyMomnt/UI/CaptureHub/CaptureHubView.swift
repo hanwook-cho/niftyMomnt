@@ -901,7 +901,23 @@ struct CaptureHubView: View {
 
             shutterInterior
         }
-        .onTapGesture { handleShutterTap() }
+        .onTapGesture {
+            // Roll Mode hard-gate: block capture (not just visual dim) when cap is reached.
+            guard !isRollCapReached else {
+                print("[CaptureHub] Roll Mode cap reached (\(rollModeMax) shots) — shutter blocked")
+                return
+            }
+            handleShutterTap()
+        }
+        // Dim the shutter when the Roll Mode cap is reached so the blocked state is visible.
+        .opacity(isRollCapReached ? 0.38 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: isRollCapReached)
+    }
+
+    /// `true` when Roll Mode is active and the daily shot cap has been reached.
+    /// This computed property is the single source of truth for shutter disablement.
+    private var isRollCapReached: Bool {
+        container.config.features.contains(.rollMode) && rollShotsRemaining == 0
     }
 
     @ViewBuilder

@@ -15,7 +15,7 @@ struct NiftyMomntApp: App {
 
     @MainActor
     init() {
-        let config = AppConfig.v0_8
+        let config = AppConfig.v0_9
 
         // Platform adapters (NiftyData)
         let captureAdapter     = AVCaptureAdapter(config: config)
@@ -26,7 +26,10 @@ struct NiftyMomntApp: App {
         let graphRepo          = GraphRepository(config: config)
         let soundStampAdapter  = SoundStampAdapter(config: config, graph: graphRepo)
         let labClient          = LabNetworkAdapter(config: config)
-        let nudgeTrigger       = JournalSuggestionsAdapter(config: config)
+        // On-device LLM (Foundation Models, iOS 26+). isAvailable is false on older OS;
+        // callers degrade gracefully via the priority ladder in VoiceProseEngine / JournalSuggestionsAdapter.
+        let onDeviceLLM        = FoundationModelAdapter()
+        let nudgeTrigger       = JournalSuggestionsAdapter(config: config, onDeviceLLM: onDeviceLLM)
         let compositingAdapter = CoreImageCompositingAdapter()
 
         // Fix adapter needs vault reference
@@ -55,7 +58,7 @@ struct NiftyMomntApp: App {
             lab: labClient
         )
         let reelComposer = AVReelComposer(vault: vaultRepo)
-        let voiceProseEngine = VoiceProseEngine(lab: labClient)
+        let voiceProseEngine = VoiceProseEngine(lab: labClient, onDeviceLLM: onDeviceLLM)
         let nudgeEngine = NudgeEngine(
             config: config,
             graph: graphRepo,
