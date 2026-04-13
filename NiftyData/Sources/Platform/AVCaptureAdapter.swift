@@ -154,7 +154,9 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
         await MainActor.run { locationProvider.start() }
 
         let authStatus = AVCaptureDevice.authorizationStatus(for: .video)
-        log.debug("startSession mode=\(mode.rawValue) authStatus=\(String(describing: authStatus.rawValue))")
+        // §2 — Log session type clearly so checklist can be verified without a breakpoint.
+        let sessionClass = isDualCamSession ? "AVCaptureMultiCamSession" : "AVCaptureSession"
+        log.info("startSession — sessionType=\(sessionClass) mode=\(mode.rawValue) authStatus=\(authStatus.rawValue)")
         guard authStatus == .authorized else {
             log.error("startSession denied — camera not authorized (status \(authStatus.rawValue))")
             await MainActor.run { stateSubject.send(.error(.unauthorized)) }
@@ -232,6 +234,22 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
             throw CaptureError.sessionFailed
         }
         let isLive = currentMode == .live
+
+        // ── §2 Dual-camera status at capture time ─────────────────────────────
+        // This block runs on every still/live capture so §2 of the verification
+        // checklist can be confirmed directly from the console without a breakpoint.
+        let sessionClass = isDualCamSession ? "AVCaptureMultiCamSession" : "AVCaptureSession"
+        log.info("captureAsset — sessionType=\(sessionClass) isDualCam=\(self.isDualCamSession)")
+        if isDualCamSession {
+            let secondaryInput = secondaryVideoInput?.device.localizedName ?? "none"
+            log.info("captureAsset — secondary input=\(secondaryInput)")
+            secondaryFrameLock.lock()
+            let hasFrame = _latestSecondaryFrame != nil
+            secondaryFrameLock.unlock()
+            log.info("captureAsset — secondary frame buffer: \(hasFrame ? "HAS FRAME ✓" : "EMPTY — no frame received yet")")
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         log.debug("captureAsset — triggering AVCapturePhotoOutput mode=\(self.currentMode.rawValue)")
         stateSubject.send(.capturing(mode: currentMode))
 
@@ -279,6 +297,17 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
         }
 
         let assetType: AssetType = isLive ? .live : .still
+
+        // ── §2 Secondary frame snapshot post-capture ──────────────────────────
+        if isDualCamSession {
+            if let frameData = latestSecondaryFrameData() {
+                log.info("captureAsset — secondary frame ready for Lab VLM: \(frameData.count) bytes JPEG ✓")
+            } else {
+                log.warning("captureAsset — secondary frame still empty after capture (secondary camera may not have started streaming yet)")
+            }
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         stateSubject.send(.processing)
         return Asset(id: assetID, type: assetType, capturedAt: Date(), location: gps)
     }
