@@ -267,11 +267,15 @@ public struct VaultQuery: Sendable {
     public var dateRange: ClosedRange<Date>?
     public var limit: Int?
     public var offset: Int
-    public init(assetTypes: AssetTypeSet = .all, dateRange: ClosedRange<Date>? = nil, limit: Int? = nil, offset: Int = 0) {
+    /// v0.8: when true, only return assets with isPrivate = true.
+    public var showPrivateOnly: Bool
+    public init(assetTypes: AssetTypeSet = .all, dateRange: ClosedRange<Date>? = nil,
+                limit: Int? = nil, offset: Int = 0, showPrivateOnly: Bool = false) {
         self.assetTypes = assetTypes
         self.dateRange = dateRange
         self.limit = limit
         self.offset = offset
+        self.showPrivateOnly = showPrivateOnly
     }
 }
 
@@ -281,10 +285,15 @@ public struct GraphQuery: Sendable {
     public var dateRange: ClosedRange<Date>?
     public var vibeFilter: [VibeTag]
     public var limit: Int?
-    public init(dateRange: ClosedRange<Date>? = nil, vibeFilter: [VibeTag] = [], limit: Int? = nil) {
+    /// v0.8: when true, only return moments/assets with isPrivate = true.
+    /// Default false — journal feed excludes private assets.
+    public var showPrivate: Bool
+    public init(dateRange: ClosedRange<Date>? = nil, vibeFilter: [VibeTag] = [],
+                limit: Int? = nil, showPrivate: Bool = false) {
         self.dateRange = dateRange
         self.vibeFilter = vibeFilter
         self.limit = limit
+        self.showPrivate = showPrivate
     }
 }
 
@@ -340,6 +349,9 @@ public extension Notification.Name {
     /// Posted by SoundStampAdapter after acoustic tags are written for an asset.
     /// Object: asset UUID string. MomentDetailView observes to refresh its tag row.
     static let niftyAcousticTagsUpdated = Notification.Name("com.hwcho99.niftymomnt.acousticTagsUpdated")
+    /// Posted by VaultManager after an asset is moved to the private vault.
+    /// Object: nil. FilmFeedView observes to refresh (private asset disappears from journal).
+    static let niftyVaultChanged = Notification.Name("com.hwcho99.niftymomnt.vaultChanged")
 }
 
 // MARK: - MomentCluster

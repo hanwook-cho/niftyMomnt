@@ -56,6 +56,12 @@ public actor GraphManager {
         try await graph.fetchAssets(for: momentID)
     }
 
+    // MARK: - v0.8
+
+    public func markAssetPrivate(assetID: UUID, isPrivate: Bool) async throws {
+        try await graph.markAssetPrivate(assetID: assetID, isPrivate: isPrivate)
+    }
+
     // MARK: - L4C
 
     public func saveL4CRecord(_ record: L4CRecord) async throws {

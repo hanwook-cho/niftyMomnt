@@ -22,6 +22,9 @@ public protocol GraphProtocol: AnyObject, Sendable {
     func exportForCompanion() async throws -> GraphExport
     // MARK: v0.7
     func fetchAssets(for momentID: UUID) async throws -> [Asset]
+    // MARK: v0.8
+    /// Flips the `is_private` column for a single asset row.
+    func markAssetPrivate(assetID: UUID, isPrivate: Bool) async throws
     // MARK: L4C
     func saveL4CRecord(_ record: L4CRecord) async throws
     func fetchL4CRecords() async throws -> [L4CRecord]

@@ -1,10 +1,13 @@
 // NiftyData/Sources/Repositories/VaultRepository.swift
-// Implements VaultProtocol. FileManager-based backend for v0.1.
+// Implements VaultProtocol. FileManager-based backend.
 // Assets stored at Documents/assets/{id}.jpg (or .mov for video types).
-// Asset metadata stored as JSON sidecar at Documents/assets/{id}.meta.json.
-// Encryption (CryptoKit AES-GCM) deferred to v0.7 per interim_version_plan.md.
+// Asset metadata stored as JSON sidecar at Documents/assets/{id}.json.
+// v0.8: Private assets encrypted with AES-GCM. DEK stored in Keychain.
+//       Encrypted file: Documents/assets/{id}.enc  (12-byte nonce || ciphertext)
+//       Original file deleted after encryption.
 
 import Combine
+import CryptoKit
 import Foundation
 import NiftyCore
 import os
@@ -114,11 +117,55 @@ public actor VaultRepository: VaultProtocol {
             throw VaultError.notFound
         }
         let asset = record.toAsset()
+
+        if record.isPrivate ?? false {
+            // Decrypt AES-GCM encrypted file (12-byte nonce prefix).
+            let encURL = Self.encryptedFileURL(for: assetID)
+            guard let encData = try? Data(contentsOf: encURL) else { throw VaultError.notFound }
+            let plainData = try Self.aesGCMDecrypt(encData)
+            return (asset, plainData)
+        }
+
         let fileURL = Self.fileURL(for: assetID, type: asset.type)
         guard let data = try? Data(contentsOf: fileURL) else {
             throw VaultError.notFound
         }
         return (asset, data)
+    }
+
+    public func moveToVault(assetID: UUID) async throws {
+        let metaURL = Self.metaURL(for: assetID)
+        guard let metaData = try? Data(contentsOf: metaURL),
+              var record = try? JSONDecoder().decode(AssetRecord.self, from: metaData) else {
+            throw VaultError.notFound
+        }
+        guard !(record.isPrivate ?? false) else { return } // already private — idempotent
+
+        let asset = record.toAsset()
+        let fileURL = Self.fileURL(for: assetID, type: asset.type)
+        guard let plainData = try? Data(contentsOf: fileURL) else {
+            throw VaultError.notFound
+        }
+
+        // Encrypt with AES-GCM — 12-byte random nonce prepended to ciphertext.
+        let encData = try Self.aesGCMEncrypt(plainData)
+        let encURL = Self.encryptedFileURL(for: assetID)
+        do {
+            try encData.write(to: encURL, options: .atomic)
+        } catch {
+            log.error("moveToVault — encrypted write failed: \(error)")
+            throw VaultError.encryptionFailed
+        }
+
+        // Remove original file (encrypted copy is now the source of truth).
+        try? FileManager.default.removeItem(at: fileURL)
+
+        // Update sidecar.
+        record.isPrivate = true
+        if let encoded = try? JSONEncoder().encode(record) {
+            try? encoded.write(to: metaURL, options: .atomic)
+        }
+        log.debug("moveToVault done — assetID=\(assetID.uuidString)")
     }
 
     public func loadPrimary(_ assetID: UUID) async throws -> (Asset, Data) {
@@ -141,9 +188,11 @@ public actor VaultRepository: VaultProtocol {
         let fileURL = Self.fileURL(for: assetID, type: asset.type)
         let metaURL = Self.metaURL(for: assetID)
         let derivURL = Self.derivativeFileURL(for: assetID)
+        let encURL = Self.encryptedFileURL(for: assetID)
         try? FileManager.default.removeItem(at: fileURL)
         try? FileManager.default.removeItem(at: metaURL)
         try? FileManager.default.removeItem(at: derivURL)
+        try? FileManager.default.removeItem(at: encURL)
         // Remove Live Photo companion MOV if present.
         if asset.type == .live {
             try? FileManager.default.removeItem(at: Self.liveMovieURL(for: assetID))
@@ -161,6 +210,10 @@ public actor VaultRepository: VaultProtocol {
             guard let data = try? Data(contentsOf: url),
                   let record = try? JSONDecoder().decode(AssetRecord.self, from: data) else { continue }
             let asset = record.toAsset()
+            // v0.8: showPrivateOnly=true → only private; false (default) → only public
+            let isPrivate = record.isPrivate ?? false
+            if query.showPrivateOnly && !isPrivate { continue }
+            if !query.showPrivateOnly && isPrivate { continue }
             guard query.assetTypes.containsAssetType(asset.type) else { continue }
             if let range = query.dateRange {
                 guard range.contains(asset.capturedAt) else { continue }
@@ -263,9 +316,71 @@ private extension VaultRepository {
         assetsDirectory.appendingPathComponent("\(id.uuidString).fix.jpg")
     }
 
+    /// AES-GCM encrypted file: 12-byte nonce || ciphertext (v0.8 private assets).
+    static func encryptedFileURL(for id: UUID) -> URL {
+        assetsDirectory.appendingPathComponent("\(id.uuidString).enc")
+    }
+
     /// Companion MOV for a Live Photo asset. Stored alongside the JPEG in the assets dir.
     static func liveMovieURL(for id: UUID) -> URL {
         assetsDirectory.appendingPathComponent("\(id.uuidString).mov")
+    }
+
+    // MARK: - AES-GCM encryption helpers (v0.8)
+
+    /// Returns the 256-bit Data Encryption Key, generating and storing it in Keychain on first use.
+    /// Keychain item accessibility: `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` — never migrates
+    /// to a new device and is unavailable before the device is first unlocked after reboot.
+    static func vaultDEK() throws -> SymmetricKey {
+        let service = "com.hwcho99.niftymomnt.vaultDEK"
+        let account = "vaultDataEncryptionKey"
+        let query: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: account,
+            kSecReturnData: true,
+        ]
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        if status == errSecSuccess, let data = result as? Data {
+            return SymmetricKey(data: data)
+        }
+        // First use: generate a fresh 256-bit key.
+        let key = SymmetricKey(size: .bits256)
+        let keyData = key.withUnsafeBytes { Data($0) }
+        let addQuery: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: account,
+            kSecValueData: keyData,
+            kSecAttrAccessible: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
+        ]
+        let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
+        guard addStatus == errSecSuccess else {
+            throw VaultError.encryptionFailed
+        }
+        return key
+    }
+
+    /// Encrypts `plainData` with AES-GCM. Returns `nonce (12 bytes) || ciphertext+tag`.
+    static func aesGCMEncrypt(_ plainData: Data) throws -> Data {
+        let key = try vaultDEK()
+        let nonce = try AES.GCM.Nonce()
+        let sealed = try AES.GCM.seal(plainData, using: key, nonce: nonce)
+        // sealed.combined = nonce(12) + ciphertext + tag(16)
+        guard let combined = sealed.combined else { throw VaultError.encryptionFailed }
+        return combined
+    }
+
+    /// Decrypts data produced by `aesGCMEncrypt` (`nonce || ciphertext+tag`).
+    static func aesGCMDecrypt(_ encData: Data) throws -> Data {
+        let key = try vaultDEK()
+        let sealedBox = try AES.GCM.SealedBox(combined: encData)
+        do {
+            return try AES.GCM.open(sealedBox, using: key)
+        } catch {
+            throw VaultError.decryptionFailed
+        }
     }
 
     static func requestPhotoLibraryAddAccessIfNeeded() async throws {
@@ -311,6 +426,8 @@ private struct AssetRecord: Codable {
     let vibeTags: [String]
     let transcript: String?
     let duration: Double?
+    // v0.8: false = public, true = encrypted in vault. Absent in pre-v0.8 sidecars → defaults false.
+    var isPrivate: Bool?
 
     init(from asset: Asset) {
         id = asset.id.uuidString
@@ -321,6 +438,7 @@ private struct AssetRecord: Codable {
         vibeTags = asset.vibeTags.map(\.rawValue)
         transcript = asset.transcript
         duration = asset.duration
+        isPrivate = asset.isPrivate ? true : nil  // omit false (saves space; decodes as nil → false)
     }
 
     func toAsset() -> Asset {
@@ -335,7 +453,8 @@ private struct AssetRecord: Codable {
             location: location,
             vibeTags: tags,
             transcript: transcript,
-            duration: duration
+            duration: duration,
+            isPrivate: isPrivate ?? false
         )
     }
 }

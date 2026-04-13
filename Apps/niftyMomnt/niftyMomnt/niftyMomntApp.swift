@@ -15,7 +15,7 @@ struct NiftyMomntApp: App {
 
     @MainActor
     init() {
-        let config = AppConfig.v0_7
+        let config = AppConfig.v0_8
 
         // Platform adapters (NiftyData)
         let captureAdapter     = AVCaptureAdapter(config: config)
@@ -33,7 +33,8 @@ struct NiftyMomntApp: App {
         let fixAdapter = CoreImageFixAdapter(config: config, vault: vaultRepo)
 
         // Managers (NiftyCore actors)
-        let vaultManager = VaultManager(vault: vaultRepo)
+        // v0.8: VaultManager receives graphRepo so moveToVault can mark assets private in GRDB.
+        let vaultManager = VaultManager(vault: vaultRepo, graph: graphRepo)
         let graphManager = GraphManager(graph: graphRepo)
 
         // Core engines (NiftyCore)

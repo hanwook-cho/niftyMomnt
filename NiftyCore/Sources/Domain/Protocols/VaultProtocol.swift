@@ -21,4 +21,8 @@ public protocol VaultProtocol: AnyObject, Sendable {
     func query(_ query: VaultQuery) async throws -> [Asset]
     func exportToPhotoLibrary(_ assetID: UUID) async throws
     var storageUsedBytes: AnyPublisher<Int64, Never> { get }
+    // MARK: v0.8
+    /// Encrypts the asset file in-place (AES-GCM) and marks the sidecar as private.
+    /// After this call the asset's data is only accessible via `load(_:)` / `loadPrimary(_:)`.
+    func moveToVault(assetID: UUID) async throws
 }

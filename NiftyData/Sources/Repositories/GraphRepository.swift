@@ -334,11 +334,11 @@ public actor GraphRepository: GraphProtocol {
                 guard let idStr = row["id"] as? String,
                       let momentID = UUID(uuidString: idStr) else { continue }
 
-                // Fetch associated assets (including v0.2 ambient + palette columns)
+                // Fetch associated assets (including v0.2 ambient + palette columns, v0.8 is_private)
                 let assetRows = try Row.fetchAll(db, sql: """
                     SELECT a.id, a.type, a.captured_at, a.location_lat, a.location_lon,
                            a.vibe_tags, a.ambient_weather, a.ambient_temp_c,
-                           a.ambient_sun_pos, a.palette_json, a.preset_name
+                           a.ambient_sun_pos, a.palette_json, a.preset_name, a.is_private
                     FROM assets a
                     JOIN moment_assets ma ON ma.asset_id = a.id
                     WHERE ma.moment_id = ?
@@ -347,12 +347,17 @@ public actor GraphRepository: GraphProtocol {
                     arguments: [idStr]
                 )
 
-                var assets: [Asset] = assetRows.compactMap { aRow in
+                var assets: [Asset] = assetRows.compactMap { aRow -> Asset? in
                     guard let aIdStr = aRow["id"] as? String,
                           let aId = UUID(uuidString: aIdStr),
                           let typeStr = aRow["type"] as? String,
                           let assetType = AssetType(rawValue: typeStr),
                           let capturedAtRaw = aRow["captured_at"] as? Double else { return nil }
+
+                    let assetIsPrivate = ((aRow["is_private"] as? Int64) ?? 0) != 0
+                    // v0.8 filter: showPrivate=false → exclude private assets; showPrivate=true → only private
+                    if query.showPrivate && !assetIsPrivate { return nil }
+                    if !query.showPrivate && assetIsPrivate { return nil }
 
                     let location: GPSCoordinate? = (aRow["location_lat"] as? Double).flatMap { lat in
                         (aRow["location_lon"] as? Double).map { lon in GPSCoordinate(latitude: lat, longitude: lon) }
@@ -385,9 +390,13 @@ public actor GraphRepository: GraphProtocol {
                         vibeTags: vibeTags,
                         palette: palette,
                         ambient: ambient,
-                        selectedPresetName: aRow["preset_name"] as? String
+                        selectedPresetName: aRow["preset_name"] as? String,
+                        isPrivate: assetIsPrivate
                     )
                 }
+
+                // Skip moments with no visible assets after privacy filter
+                guard !assets.isEmpty else { continue }
 
                 // Batch-load acoustic tags for this moment's assets (single IN query, no N+1)
                 if !assets.isEmpty {
@@ -450,13 +459,26 @@ public actor GraphRepository: GraphProtocol {
         return moments
     }
 
+    // MARK: v0.8
+
+    public func markAssetPrivate(assetID: UUID, isPrivate: Bool) async throws {
+        log.debug("markAssetPrivate — assetID=\(assetID.uuidString) isPrivate=\(isPrivate)")
+        try await db.write { db in
+            try db.execute(
+                sql: "UPDATE assets SET is_private = ? WHERE id = ?",
+                arguments: [isPrivate ? 1 : 0, assetID.uuidString]
+            )
+        }
+        log.debug("markAssetPrivate done")
+    }
+
     public func fetchAssets(for momentID: UUID) async throws -> [Asset] {
         log.debug("fetchAssets — momentID=\(momentID.uuidString)")
         return try await db.read { db in
             let assetRows = try Row.fetchAll(db, sql: """
                 SELECT a.id, a.type, a.captured_at, a.location_lat, a.location_lon,
                        a.vibe_tags, a.ambient_weather, a.ambient_temp_c,
-                       a.ambient_sun_pos, a.palette_json, a.preset_name
+                       a.ambient_sun_pos, a.palette_json, a.preset_name, a.is_private
                 FROM assets a
                 JOIN moment_assets ma ON ma.asset_id = a.id
                 WHERE ma.moment_id = ?
@@ -501,7 +523,8 @@ public actor GraphRepository: GraphProtocol {
                     vibeTags: vibeTags,
                     palette: palette,
                     ambient: ambient,
-                    selectedPresetName: aRow["preset_name"] as? String
+                    selectedPresetName: aRow["preset_name"] as? String,
+                    isPrivate: ((aRow["is_private"] as? Int64) ?? 0) != 0
                 )
             }
         }
@@ -800,6 +823,8 @@ extension GraphRepository {
             "ALTER TABLE assets ADD COLUMN palette_json    TEXT",
             // v0.4: user-selected preset name
             "ALTER TABLE assets ADD COLUMN preset_name TEXT",
+            // v0.8: private vault flag (0 = public, 1 = private)
+            "ALTER TABLE assets ADD COLUMN is_private INTEGER NOT NULL DEFAULT 0",
         ]
         for sql in migrations {
             try? db.execute(sql: sql) // swallows "duplicate column" on existing DBs

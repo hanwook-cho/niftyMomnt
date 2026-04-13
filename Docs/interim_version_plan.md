@@ -2,7 +2,7 @@
 # v0.1 → v1.0 Feature Ladder
 
 _Reference: PRD v1.6 · UI/UX Spec v1.7 · SRS v1.2_
-_Last updated: 2026-04-12 · v0.2 + v0.3 signed off; v0.3.5 mode-switching performance resolved; v0.4 implementation complete — pending device verification; v0.5 complete (Sound Stamp verified on device); v0.6 AI Nudge Engine — implementation complete, verification in progress; v0.7 Story Engine & Reel Assembler — implementation complete, verification in progress (checklist updated to reflect AVAssetWriter stills-only scope, prose UI deferred to v0.8)_
+_Last updated: 2026-04-12 · v0.2 + v0.3 signed off; v0.3.5 mode-switching performance resolved; v0.4 implementation complete — pending device verification; v0.5 complete (Sound Stamp verified on device); v0.6 AI Nudge Engine — implementation complete, verification in progress; v0.7 Story Engine & Reel Assembler — implementation complete, verification in progress (checklist updated to reflect AVAssetWriter stills-only scope, prose UI deferred to v0.8); v0.8 Private Vault & Face ID — implementation complete; v1.0 Vault Backup & Restore (Option C) design added_
 
 ---
 
@@ -1342,17 +1342,141 @@ shutter tap
 ### Verification Checklist
 
 > Run on a real device after all tasks complete. All rows must pass before starting v0.9.
+>
+> **Pre-conditions before running:**
+> - Build target set to a real device (not Simulator — Face ID policy requires real biometrics).
+> - At least 3 moments with still assets already in the feed from a prior v0.7 run, or capture fresh ones now.
+> - Xcode console open, filter set to subsystem `com.hwcho99.niftymomnt`.
+> - Xcode Device Manager → Files tab open alongside (used to inspect `Documents/assets/`).
 
-| Check | Status |
-|-------|--------|
-| Mark asset private via "Move to Vault" → sidecar `isPrivate = true` + file encrypted on disk | ⬜ |
-| Cold launch → vault locked; DEK not accessible in memory without auth | ⬜ |
-| Face ID pass → vault unlocks; private asset grid loads | ⬜ |
-| Face ID fail → vault stays locked; no assets visible | ⬜ |
-| Lock button → vault re-locks; grid clears | ⬜ |
-| Regular feed excludes private moments when vault is locked | ⬜ |
-| Delete private asset → encrypted file + sidecar + GRDB row all removed | ⬜ |
-| v0.7 reel regression clean | ⬜ |
+---
+
+#### 1 — Move to Vault (happy path)
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 1.1 | Open any moment in the film feed → MomentDetailView opens. Note the moment's first asset ID from console (`loadHeroImage` log line shows `assetID=…`). | MomentDetailView loads the shot normally. | |
+| 1.2 | In the actions row, find and tap **"Move to Vault"**. | Button shows "Moving…" spinner briefly, then an alert appears: "Shot moved to your private vault." | |
+| 1.3 | Tap **OK** on the alert. | MomentDetailView dismisses automatically. | |
+| 1.4 | In Xcode Device Manager → Files → `Documents/assets/`, look for `{assetID}.json` (sidecar). Download and open it. | `isPrivate` key is present and set to `true`. | |
+| 1.5 | In the same `Documents/assets/` directory, verify the file list for that asset ID. | `{assetID}.enc` exists (encrypted file). The original `{assetID}.jpg` (or `.mov` / `.m4a`) is **absent** — it was deleted after encryption. | |
+| 1.6 | In Xcode console, filter category `VaultRepository`. | Log line: `moveToVault done — assetID={id}` is present. No errors. | |
+| 1.7 | In Xcode console, filter category `GraphRepository` (or search `markAssetPrivate`). | Log line: `markAssetPrivate done` is present. | |
+
+---
+
+#### 2 — Feed filtering (private assets hidden)
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 2.1 | Return to the film feed after step 1.3. | The moment that had its shot moved to vault either: (a) still appears in the feed if it has remaining non-private assets, or (b) disappears entirely if it had only one asset. | |
+| 2.2 | If the moment is still visible: open it in MomentDetailView. | The privatised shot is **absent** from the shot list — "Shot N of M" count has decreased by 1. Swiping no longer reaches that shot. | |
+| 2.3 | Move all remaining shots of a multi-shot moment to the vault one by one (repeat steps 1.1–1.3 for each). | After the last shot is moved, the moment card disappears from the film feed entirely. | |
+| 2.4 | Kill and relaunch the app from the home screen. | Film feed still excludes the privatised moment(s). No ghost cards or blank entries. | |
+| 2.5 | In Xcode console, filter category `FilmFeed`. | On each feed reload, log shows `loadFeed — N moment(s)` where N does not include the private-only moments. | |
+
+---
+
+#### 3 — Vault tab: locked state
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 3.1 | Navigate to the Vault tab (tab ② in the Journal sheet). | Locked state UI shows: lock icon, "Private Vault" title, "Unlock with Face ID" button. No asset content visible. | |
+| 3.2 | Do **not** tap the button. Kill and relaunch the app. Navigate back to Vault tab. | Still shows locked state — lock state is not persisted across launches. | |
+| 3.3 | On a device with Face ID **not enrolled** (or use a device/simulator without biometrics): tap "Unlock with Face ID". | Error message appears below the button: "Face ID is not available or not enrolled on this device." Button re-enables. Vault stays locked. | |
+
+---
+
+#### 4 — Vault tab: Face ID unlock
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 4.1 | On a device with Face ID enrolled: tap "Unlock with Face ID". | System Face ID prompt appears with reason string "Access your private archive". | |
+| 4.2 | Authenticate successfully (correct face). | Vault tab transitions to unlocked content. Private assets moved in §1 appear as a 3-column thumbnail grid. Each thumbnail has a small lock badge in its corner. | |
+| 4.3 | In Xcode console, filter category `VaultView`. | Log line: `loadPrivateAssets — N private asset(s)` where N matches the number of shots you moved to vault. | |
+| 4.4 | Tap "Unlock with Face ID" again on a new session (after lock, see §5): deliberately fail authentication (wrong face or cancel). | Alert or system error is dismissed; vault stays locked. Error message from `VaultAuthError.authFailed` appears below the button. | |
+
+---
+
+#### 5 — Lock / re-lock
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 5.1 | While vault is unlocked (after step 4.2): tap the **lock icon** in the top-right toolbar of VaultView. | View transitions back to the locked state immediately. Grid disappears. | |
+| 5.2 | While vault is unlocked: kill the app from the app switcher and relaunch. Navigate to Vault tab. | Vault is locked again (cold launch resets state). | |
+| 5.3 | Background the app (home button / swipe up), wait 5 seconds, foreground it again. Navigate to Vault tab. | Vault is still locked if it was locked; still unlocked if it was unlocked in this session. Background alone does not re-lock. | |
+
+---
+
+#### 6 — Vault thumbnail loading (decryption round-trip)
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 6.1 | Unlock vault and observe the asset grid (step 4.2). | Thumbnails load for still/live/l4c assets. Images appear correctly — upright, not rotated, not corrupted. | |
+| 6.2 | Move a portrait still to vault, then unlock and inspect its thumbnail. | Portrait thumbnail displays upright (same orientation as in the film feed before it was privatised). Confirms AES-GCM decrypt → UIImage path respects EXIF orientation. | |
+| 6.3 | Move a clip (`.mov`) asset to vault, unlock, check grid. | Clip tile shows the video icon + "Video Clip" label placeholder, with a **CLIP** badge top-left and lock badge bottom-right. No JPEG thumbnail (encrypted MOV can't be decoded in-grid — by design). No crash. | |
+| 6.4 | In Xcode console during thumbnail loading, filter category `VaultRepository`. | Log lines show `load` being called for each private asset. No `decryptionFailed` errors. | |
+| 6.5 | Tap any tile in the vault grid (still, clip, echo). | **Nothing happens — expected v0.8 behavior.** Vault tiles are display-only in this version; no detail view or playback. Full vault asset viewer is scoped to v1.0. | |
+
+---
+
+#### 7 — "Move to Vault" edge cases
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 7.1 | Open a MomentDetailView for a shot that was already moved to vault (navigate back to it via a multi-asset moment where only some shots are private). | **"Move to Vault" button is absent** for that shot (`asset.isPrivate == true` hides the button). | |
+| 7.2 | Rapidly double-tap "Move to Vault" on a shot. | Only one `moveToVault` call executes; second tap is a no-op (idempotency: `guard !(record.isPrivate ?? false) else { return }`). No duplicate `.enc` files or double-write errors in console. | |
+| 7.3 | Move the only shot of a single-asset moment to vault. | Alert fires, detail view dismisses, and the film feed refreshes: that moment card disappears. | |
+| 7.4 | Attempt to move an Echo (audio) asset to vault. | "Move to Vault" button is present for Echo assets. Tap it → `moveToVault` runs. In `Documents/assets/`, verify `{id}.enc` exists and `{id}.m4a` is gone. | |
+
+---
+
+#### 8 — Encryption integrity (file-level verification)
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 8.1 | Download a `{assetID}.enc` file via Xcode Device Manager. Open it in a hex editor. | First 12 bytes are the AES-GCM nonce (random, non-zero). Bytes 13+ are opaque ciphertext. The file is **not** a valid JPEG (no `FF D8 FF` magic bytes at offset 0). | |
+| 8.2 | Download the same asset's `{assetID}.json` sidecar. | `isPrivate` is `true`. `type`, `capturedAt`, and other metadata fields are present in plaintext (sidecar is not encrypted). | |
+| 8.3 | Kill the app, manually rename `{assetID}.enc` to something else using Xcode Device Manager (breaking the decrypt path). Relaunch and unlock vault. | Vault grid shows the asset tile with a placeholder icon (no crash). Console shows `notFound` or similar — `load()` returns nil for the missing `.enc`. | |
+| 8.4 | Restore the original filename (rename back). Relaunch, unlock vault. | Thumbnail loads correctly again — decryption succeeds. | |
+
+---
+
+#### 9 — Delete private asset
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 9.1 | Navigate to the film feed. Find a moment where only some shots are private (mix of private + public assets). Open MomentDetailView and navigate to a **non-private** shot. Tap **Delete** (trash icon). Confirm the deletion dialog. | Moment is deleted. Both public and private files for that moment are removed. Console shows `deleteMoment done`. | |
+| 9.2 | In `Documents/assets/`, verify for the deleted moment's private asset. | `{id}.enc` is **absent** (delete path removes `.enc` alongside `.jpg` and `.json`). | |
+| 9.3 | Navigate to Vault tab and unlock. | The deleted asset's thumbnail is absent from the private grid. No ghost entry. | |
+
+---
+
+#### 10 — Regression (v0.7 features unaffected)
+
+| # | Step | Expected result | Result |
+|---|------|-----------------|--------|
+| 10.1 | Capture 3 stills at the same location within 10 minutes. | Console shows `[merge]` lines; single moment with 3 shots in feed. "Play Reel" button appears. | |
+| 10.2 | Tap "Play Reel" on a moment with ≥2 non-private stills. | Reel assembles and plays correctly. No crash. | |
+| 10.3 | Move 1 of 3 stills in a moment to vault. Tap "Play Reel" on the same moment. | Reel assembles from the **2 remaining non-private** stills only. `StoryEngine.assembleReel` fetches via `graph.fetchAssets` which returns all assets including private ones — reel may include private stills (v0.8 does not filter them from reel scoring; that is a v0.9 concern). No crash. | |
+| 10.4 | Post-capture nudge card (v0.6). | Nudge card still fires after capture. "Move to Vault" and nudge coexist without interference. | |
+| 10.5 | Shot swipe in MomentDetailView for a moment with mixed public/private shots. | Swipe navigates all assets including the private shot's position (the moment model still includes private assets in its `assets` array — the feed just hides the card when all are private). No crash. | |
+
+---
+
+### v0.8 Sign-off
+
+| Item | Status |
+|------|--------|
+| All §1–§10 verification rows passing | ⬜ |
+| `{assetID}.enc` present, original file absent, sidecar `isPrivate: true` for moved assets | ⬜ |
+| Film feed hides moments where all assets are private (cold-launch verified) | ⬜ |
+| Face ID unlock succeeds; face fail / cancel stays locked with error message shown | ⬜ |
+| Lock button and cold-launch both reset vault to locked state | ⬜ |
+| Thumbnail decryption round-trip: image displayed correctly (upright, not corrupted) | ⬜ |
+| `.enc` file is not valid JPEG (hex-verified) | ⬜ |
+| Delete removes `.enc` file from disk (Xcode Device Manager verified) | ⬜ |
+| v0.7 reel assembly and merge-on-capture regression clean | ⬜ |
 | **v0.8 complete — ready for v0.9** | ⬜ |
 
 ---
@@ -1361,26 +1485,132 @@ shutter tap
 
 **Verification goal:** Dual-camera capture works on supported devices; Lab Mode (Mode-2) sends encrypted visual data to cloud VLM; Journaling Suggestions API surfaces relevant moments; AI caption generated from ambient metadata.
 
-**AppConfig:** `aiModes: .full` (adds `.enhancedAI`, `.lab`), adds dual-camera feature flag
+**AppConfig:** `AppConfig.v0_9` — `aiModes: [.onDevice, .enhancedAI, .lab]`, `features: [..., .dualCamera]`
 
 ### Features In Scope
 
 - `AVCaptureAdapter`: dual-camera session (`AVCaptureMultiCamSession`) on iPhone 15+
-- `LabClient` / `LabNetworkAdapter`: encrypted visual payload → cloud VLM response (Mode-2)
-- `JournalSuggestionsAdapter`: `JournalingSuggestions` framework → surface recent moments
-- AI caption generator: ambient metadata + vibe tags → `EnhancedAIClient` text completion
-- `SettingsView`: Dual Camera toggle gated on device capability
-- Roll Mode: daily cap enforcement via `GraphManager` count
+- `LabNetworkAdapter`: encrypted visual payload → cloud VLM response (Mode-2); AI caption via Mode-1
+- `JournalSuggestionsAdapter`: `JournalingSuggestions` framework → surface relevant moments as `NudgeCard`
+- `VoiceProseEngine`: `generateAICaption(for:tone:config:)` — ambient + vibe → `EnhancedAI` text completion with on-device fallback
+- `SettingsView`: Dual Camera toggle gated on `.dualCamera` feature flag + `AVCaptureMultiCamSession.isMultiCamSupported`
+- Roll Mode: confirm shutter hard-disabled at daily cap (verification + fix if needed)
 
 ### Implementation Tasks
 
+#### Dependency Order
+
+```
+Phase 1 — Foundation
+  Task 1: FeatureSet.dualCamera flag
+
+Phase 2 — Core (parallel after Task 1)
+  Task 2: AVCaptureAdapter dual-camera
+  Task 3: LabNetworkAdapter stubs → real implementation
+  Task 4: JournalSuggestionsAdapter JSDataFetcher integration
+  Task 5: VoiceProseEngine generateAICaption
+
+Phase 3 — UI + wiring (after Phase 2)
+  Task 6: SettingsView dual camera gate
+  Task 7: Roll Mode shutter cap enforcement
+  Task 8: Config bump → AppConfig.v0_9
+```
+
+#### Task Table
+
 | # | Task | File(s) | Status |
 |---|------|---------|--------|
-| 1 | `AVCaptureAdapter`: `AVCaptureMultiCamSession` dual-camera | `NiftyData/Sources/Platform/AVCaptureAdapter.swift` | ⬜ |
-| 2 | `LabNetworkAdapter`: encrypted payload + VLM response parse | `NiftyData/Sources/Network/LabNetworkAdapter.swift` | ⬜ |
-| 3 | `JournalSuggestionsAdapter`: `JournalingSuggestions` framework integration | `NiftyData/Sources/Platform/JournalSuggestionsAdapter.swift` | ⬜ |
-| 4 | AI caption generator: ambient + vibe → text | `NiftyCore/Sources/Engines/VoiceProseEngine.swift` | ⬜ |
-| 5 | `SettingsView`: Dual Camera toggle capability check | `Apps/niftyMomnt/niftyMomnt/UI/` | ⬜ |
+| 1 | Add `FeatureSet.dualCamera` (rawValue `1 << 10`); add to `FeatureSet.all`; add to `AppConfig.v0_9` features array | `NiftyCore/Sources/Domain/AppConfig.swift`, `NiftyData/Sources/Config/AppConfig+Interim.swift` | ⬜ |
+| 2 | `AVCaptureAdapter`: `AVCaptureMultiCamSession` dual-camera — session type selected at `init` time; secondary camera → `AVCaptureVideoDataOutput` (frames only, never persisted); `latestSecondaryFrameData() -> Data?` for Lab VLM payload | `NiftyData/Sources/Platform/AVCaptureAdapter.swift` | ⬜ |
+| 3 | `LabNetworkAdapter`: fill `generateCaption` (Mode-1 URLSession POST `/v1/caption`, JSON ambient+vibe, guarded by `.enhancedAI`); fill `requestLabSession` (CryptoKit P256 DH key exchange, AES-256-GCM per-asset encryption); fill `processLabSession` (POST multipart, parse `LabResult`); fill `verifyPurge` (DELETE `/v1/lab/{sessionID}`); placeholder URL + stub fallback when network unavailable | `NiftyData/Sources/Network/LabNetworkAdapter.swift` | ⬜ |
+| 4 | `JournalSuggestionsAdapter`: implement `evaluateTriggers` (`JSDataFetcher.requestAuthorization` + `fetchSuggestions(limit:5)`, filter by recency within 24h of moment, map to `NudgeCard`) and `refresh` (re-fetch + publish or nil); `@available(iOS 17.2, *)` guards throughout | `NiftyData/Sources/Platform/JournalSuggestionsAdapter.swift` | ⬜ |
+| 5 | `VoiceProseEngine`: add `generateAICaption(for:tone:config:) async throws -> [CaptionCandidate]` — routes to `lab.generateCaption` when `config.aiModes.contains(.enhancedAI)`, else on-device template fallback | `NiftyCore/Sources/Engines/VoiceProseEngine.swift` | ⬜ |
+| 6 | `SettingsView`: wrap `dualCameraEnabled` toggle in `config.features.contains(.dualCamera) && AVCaptureMultiCamSession.isMultiCamSupported`; show locked row with "Requires iPhone 15 or later." when flag set but hardware unsupported; add `import AVFoundation` | `Apps/niftyMomnt/niftyMomnt/UI/Settings/SettingsView.swift` | ⬜ |
+| 7 | `CaptureHubView`: confirm shutter button action is hard-disabled (not just visually dimmed) when `rollShotsRemaining == 0 && config.features.contains(.rollMode)`; add guard if missing | `Apps/niftyMomnt/niftyMomnt/UI/CaptureHub/CaptureHubView.swift` | ⬜ |
+| 8 | Bump composition root to `AppConfig.v0_9`; verify `AppContainer` requires no new injections (Lab + JournalSuggestions adapters already wired) | `Apps/niftyMomnt/niftyMomnt/niftyMomntApp.swift` | ⬜ |
+
+#### Implementation Notes
+
+**Task 2 — `AVCaptureAdapter` init constraint.** `AVCaptureSession` vs `AVCaptureMultiCamSession` must be decided at `init` time — the session is `let` and cannot be replaced. Check `AVCaptureMultiCamSession.isMultiCamSupported && config.features.contains(.dualCamera)` in `init` and initialize accordingly. Typed as `AVCaptureSession` in the property declaration; `AppContainer.captureSession: AVCaptureSession` continues to work without change.
+
+**Task 3 — No separate `EnhancedAIClient`.** `LabNetworkAdapter` already implements `LabClientProtocol` which covers both Mode-1 (caption/prose) and Mode-2 (encrypted visual). A second class would duplicate protocol machinery. `generateCaption` on `LabNetworkAdapter` is the enhanced-AI path.
+
+**Task 3 — Backend not live.** Implement crypto path fully (P256 DH + AES-GCM), but use a placeholder endpoint URL and return a stub `LabResult` on any network failure. This matches the existing stub pattern and avoids blocking device verification on backend readiness.
+
+**Task 4 — Entitlement required.** `com.apple.developer.journaling-suggestion` must be added to `niftyMomnt.entitlements` in Xcode (capability checkbox) before device testing. No code change, but a test run without it will crash on the `JournalingSuggestions` framework call.
+
+---
+
+### Verification Checklist
+
+> Run on a real device after all tasks complete. All rows must pass before starting v1.0.
+
+#### §1 — Config & Feature Flags
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 1.1 | Build and launch. Open Settings. | App boots on `AppConfig.v0_9` without crash. | |
+| 1.2 | On iPhone 15 or later, check Settings → Dual Camera row. | Toggle is visible and interactive. | |
+| 1.3 | On iPhone 14 or earlier (or simulator), check Settings → Dual Camera row. | Row shows "Requires iPhone 15 or later." with lock icon; no toggle. | |
+| 1.4 | In `AppConfig+Interim.swift`, confirm `v0_9.aiModes` contains `.onDevice`, `.enhancedAI`, `.lab`. | Build-time assertion or log output confirms all three modes active. | |
+
+#### §2 — Dual-Camera Capture (iPhone 15+ only)
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 2.1 | Enable Dual Camera toggle in Settings. Navigate to CaptureHub. | No crash. Camera preview shows primary (back wide) feed. | |
+| 2.2 | Capture a still. | Photo saved normally. No secondary frame appears in Camera Roll or in `graph.fetchAssets`. | |
+| 2.3 | Call `captureAdapter.latestSecondaryFrameData()` in a debug breakpoint immediately after capture. | Returns non-nil JPEG-compressed `Data`. | |
+| 2.4 | Disable Dual Camera toggle in Settings. Restart app. Capture a still. | Single-camera session used. `latestSecondaryFrameData()` returns `nil`. | |
+| 2.5 | Run on simulator (multi-cam unsupported). Enable Dual Camera toggle (should not be visible — §1.3 gate). | Settings row absent. `AVCaptureAdapter` uses standard `AVCaptureSession`. | |
+
+#### §3 — Lab Mode / LabNetworkAdapter
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 3.1 | With network available, trigger `LabNetworkAdapter.generateCaption(for:tone:)` via `VoiceProseEngine.generateAICaption` on a moment with at least one vibe tag. | Method completes. Returns `[CaptionCandidate]` (stub or real). No crash. | |
+| 3.2 | With network unavailable (Airplane Mode), call `generateAICaption` with `config.aiModes.contains(.enhancedAI) == true`. | Graceful fallback: returns `[CaptionCandidate]` from on-device template. No crash. | |
+| 3.3 | Call `LabNetworkAdapter.requestLabSession(assets:consent:)` with 2 asset UUIDs. | Method completes. CryptoKit P256 key pair generated (verify in debugger). AES-GCM encryption applied. No crash. | |
+| 3.4 | Call `verifyPurge(sessionID:)` with a test session ID. | DELETE request fired (verify in Proxyman/Charles or network logs). Returns `PurgeConfirmation` (stub). No crash. | |
+| 3.5 | Confirm `requestLabSession` / `processLabSession` are gated: call them when `config.aiModes.contains(.lab) == false`. | Methods return early or throw a gating error. No network call made. | |
+
+#### §4 — Journaling Suggestions
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 4.1 | First launch after adding `com.apple.developer.journaling-suggestion` entitlement. Open app. | System authorization prompt appears for Journaling Suggestions. | |
+| 4.2 | Deny authorization. Trigger `evaluateTriggers(for:)` (e.g. capture a moment). | Method returns early. No crash. No nudge card shown. | |
+| 4.3 | Grant authorization. Capture a moment with a timestamp matching a recent Journal suggestion (within 24h). | `NudgeEngine` surfaces a `NudgeCard` derived from the matching suggestion. | |
+| 4.4 | Call `refresh()` with no recent Journal suggestions. | Nudge card cleared or remains absent. No crash. | |
+| 4.5 | On iOS < 17.2 (if tested). | `@available` guard prevents any `JournalingSuggestions` API call. No crash. | |
+
+#### §5 — AI Caption (VoiceProseEngine)
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 5.1 | Open a moment with at least one vibe tag. Trigger "Generate Caption" action. `config.aiModes.contains(.enhancedAI) == true`. | `generateAICaption` calls `lab.generateCaption`. Returns `[CaptionCandidate]`. Caption text displayed. | |
+| 5.2 | Temporarily set `aiModes` to `[.onDevice]` only. Trigger "Generate Caption" on same moment. | On-device template prose returned as single `CaptionCandidate`. No network call made. Caption text displayed. | |
+| 5.3 | Trigger "Generate Caption" on a moment with no vibe tags. | Returns at minimum one caption candidate (template fallback). No empty state crash. | |
+
+#### §6 — Roll Mode Cap
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 6.1 | Enable Roll Mode in Settings. Set debug daily cap to 3. Capture 3 stills. | Roll counter reads `0 / 3`. | |
+| 6.2 | Tap shutter button when `rollShotsRemaining == 0`. | Shutter button is non-interactive (disabled, not just dimmed). No capture occurs. No crash. | |
+| 6.3 | Disable Roll Mode in Settings. Tap shutter. | Capture proceeds normally. No cap enforced. | |
+
+#### §7 — Regression
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| 7.1 | Capture a still (single-camera). Verify it appears in Timeline. | Asset saved and displayed. No regression from v0.8. | |
+| 7.2 | Move an asset to Vault. Unlock Vault (Face ID). Verify asset visible in Vault. | Vault lock/unlock flow intact. | |
+| 7.3 | Trigger Sound Stamp recording. | Sound Stamp captured and linked to moment. | |
+| 7.4 | Trigger `NudgeEngine` via `NudgeEngineAdapter` (non-Journal path). | Nudge card appears without crash. JournalSuggestionsAdapter changes did not break existing nudge sources. | |
+| 7.5 | Open Settings. Verify all v0.8 toggles still function. | No settings regression. | |
+
+| **v0.9 complete — ready for v1.0** | ⬜ |
 
 ---
 
@@ -1390,6 +1620,7 @@ shutter tap
 
 ### Features In Scope
 
+- **Vault Backup & Restore** (Option C — user-driven portable archive)
 - Live Activities + Lock Screen quick-capture actions (`ActivityKit`)
 - Home Screen widget (3 types via `WidgetKit`)
 - Self-timer (3s / 10s) in `CaptureHubView` Zone A
@@ -1399,18 +1630,74 @@ shutter tap
 - Performance: cold launch < 1.5s; capture-to-preview < 300ms; classification < 500ms on A16+
 - App Store: Privacy Nutrition Labels, App Tracking Transparency, export compliance
 
+---
+
+### Vault Backup & Restore Design (v1.0)
+
+**Why this is needed:** The v0.8 vault DEK uses `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` — it is deliberately excluded from all iCloud and iTunes/Finder backups. The encrypted `.enc` files live in `Documents/assets/` and would be backed up, but without the DEK they are unrecoverable. Net result: vault content is permanently lost if the app is deleted or the user moves to a new phone. This feature closes that gap with an intentional, user-controlled export/import flow.
+
+**Design decisions:**
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Transport format | Password-encrypted ZIP archive (`vault-backup-{date}.niftyvault`) | Portable, inspectable, no proprietary container needed |
+| Archive encryption | AES-256-GCM with a key derived from user passphrase via HKDF-SHA256 | Passphrase-based; no dependency on device Keychain |
+| Passphrase KDF | HKDF with a random 32-byte salt (stored unencrypted at start of archive) | HKDF is available via CryptoKit; no scrypt/Argon2 dependency needed |
+| Archive contents | Decrypted asset files + JSON manifest (asset ID, type, capturedAt, vibeTags, momentID) | Decrypted at export time; re-encrypted at import time with new device's DEK |
+| DEK handling | NOT exported — new DEK generated (or existing reused) on target device at import | DEK is device-local by design; archive passphrase is the portability layer |
+| iCloud/AirDrop | `UIActivityViewController` with the `.niftyvault` file | User chooses where to send it (Files app, AirDrop, iMessage, etc.) |
+| Minimum passphrase | 8 characters, enforced at export UI | Prevents trivially weak archives |
+
+**Archive format (`vault-backup-{date}.niftyvault`):**
+
+```
+niftyvault/
+  manifest.json          ← asset list + moment associations (plaintext)
+  salt.bin               ← 32-byte random KDF salt (plaintext)
+  assets/
+    {assetID}.jpg        ← decrypted asset files (AES-GCM re-encrypted with passphrase-derived key)
+    {assetID}.mov
+    ...
+```
+
+> `manifest.json` is itself encrypted with the passphrase-derived key. `salt.bin` is the only plaintext data in the archive.
+
+**Implementation Tasks:**
+
+| # | Task | File(s) | Status |
+|---|------|---------|--------|
+| V1 | `VaultArchiver` (NiftyData) — `export(assets:passphrase:) async throws -> URL` · decrypt `.enc` files with DEK · re-encrypt each with HKDF-derived key · write manifest · ZIP via `ZIPFoundation` or `libcompression` | `NiftyData/Sources/Platform/VaultArchiver.swift` (new) | ⬜ |
+| V2 | `VaultArchiver.import(archiveURL:passphrase:) async throws` — validate manifest, decrypt assets with passphrase key, re-encrypt with device DEK, write `.enc` + JSON sidecars, re-insert moment rows in GRDB | `NiftyData/Sources/Platform/VaultArchiver.swift` | ⬜ |
+| V3 | `VaultProtocol` + `VaultManager`: `exportArchive(passphrase:) async throws -> URL` and `importArchive(url:passphrase:) async throws` passthroughs | `VaultProtocol.swift`, `VaultManager.swift` | ⬜ |
+| V4 | `VaultExportView` — passphrase entry (min 8 chars, strength meter), export progress, `UIActivityViewController` share sheet | `Apps/niftyMomnt/niftyMomnt/UI/Vault/VaultExportView.swift` (new) | ⬜ |
+| V5 | `VaultImportView` — file picker (`fileImporter` for `.niftyvault` UTType), passphrase entry, import progress + success/error state | `Apps/niftyMomnt/niftyMomnt/UI/Vault/VaultImportView.swift` (new) | ⬜ |
+| V6 | `VaultView` (v1.0): add "Backup Vault" + "Restore Vault" buttons to unlocked content toolbar | `VaultView.swift` | ⬜ |
+| V7 | Register `.niftyvault` UTType in `Info.plist` (`com.hwcho99.niftymomnt.vault-archive`) so Files app can open it directly into the import flow | `Info.plist`, `UTExportedTypeDeclarations` | ⬜ |
+| V8 | Exclude `.enc` files from iCloud/iTunes backup (`URLResourceValues.isExcludedFromBackup = true` in `VaultRepository.moveToVault`) — makes device-local-only behavior explicit and prevents the misleading "backed up but unrestorable" state from v0.8 | `VaultRepository.swift` | ⬜ |
+
+> **Note on V8:** Task V8 (exclude `.enc` from backup) is a correctness fix for the v0.8 inconsistency described above. It should be treated as the first task of v1.0, not deferred — it has no UX surface and closes the data-loss-by-confusion vector.
+
+**Key constraints:**
+- Export requires vault to be unlocked (Face ID authenticated) — enforced by checking `isVaultLocked` before starting
+- Import does not require prior unlock — a fresh install with no vault can import
+- Archive passphrase is never stored anywhere on device
+- Progress is shown for both export and import (asset count / total)
+
+---
+
 ### Implementation Tasks
 
 | # | Task | File(s) | Status |
 |---|------|---------|--------|
-| 1 | `ActivityKit`: Live Activity for active capture session | `Apps/niftyMomnt/` | ⬜ |
-| 2 | `WidgetKit`: 3 widget types (last moment, streak, daily prompt) | `Apps/Widgets/` | ⬜ |
-| 3 | Self-timer: 3s/10s countdown in Zone A | `Apps/niftyMomnt/niftyMomnt/UI/CaptureHub/CaptureHubView.swift` | ⬜ |
-| 4 | Onboarding flow: gesture tutorial + daily prompt opt-in | `Apps/niftyMomnt/niftyMomnt/UI/` | ⬜ |
-| 5 | `AppConfig.lite` E2E smoke test | `Apps/niftyMomntLite/` | ⬜ |
-| 6 | Accessibility audit: Dynamic Type, VoiceOver, reduceMotion | All UI files | ⬜ |
-| 7 | Performance profiling: launch, capture, classification | Instruments | ⬜ |
-| 8 | Privacy manifest + App Store metadata | `Apps/niftyMomnt/` | ⬜ |
+| 1 | Vault Backup & Restore — see §Vault Backup & Restore Design above (tasks V1–V8) | Multiple | ⬜ |
+| 2 | `ActivityKit`: Live Activity for active capture session | `Apps/niftyMomnt/` | ⬜ |
+| 3 | `WidgetKit`: 3 widget types (last moment, streak, daily prompt) | `Apps/Widgets/` | ⬜ |
+| 4 | Self-timer: 3s/10s countdown in Zone A | `Apps/niftyMomnt/niftyMomnt/UI/CaptureHub/CaptureHubView.swift` | ⬜ |
+| 5 | Onboarding flow: gesture tutorial + daily prompt opt-in | `Apps/niftyMomnt/niftyMomnt/UI/` | ⬜ |
+| 6 | `AppConfig.lite` E2E smoke test | `Apps/niftyMomntLite/` | ⬜ |
+| 7 | Accessibility audit: Dynamic Type, VoiceOver, reduceMotion | All UI files | ⬜ |
+| 8 | Performance profiling: launch, capture, classification | Instruments | ⬜ |
+| 9 | Privacy manifest + App Store metadata | `Apps/niftyMomnt/` | ⬜ |
 
 ---
 

@@ -52,6 +52,7 @@ public struct Asset: Identifiable, Equatable, Sendable {
     public var duration: TimeInterval?    // Clip / Echo / Atmosphere
     public var derivative: DerivativeAsset? // Set by Fix — nil if no fix applied
     public var selectedPresetName: String? // v0.4: user-chosen preset name at capture time
+    public var isPrivate: Bool             // v0.8: true when asset is in the private vault
 
     public init(
         id: UUID = UUID(),
@@ -66,7 +67,8 @@ public struct Asset: Identifiable, Equatable, Sendable {
         score: AssetScore? = nil,
         duration: TimeInterval? = nil,
         derivative: DerivativeAsset? = nil,
-        selectedPresetName: String? = nil
+        selectedPresetName: String? = nil,
+        isPrivate: Bool = false
     ) {
         self.id = id
         self.type = type
@@ -81,5 +83,6 @@ public struct Asset: Identifiable, Equatable, Sendable {
         self.duration = duration
         self.derivative = derivative
         self.selectedPresetName = selectedPresetName
+        self.isPrivate = isPrivate
     }
 }

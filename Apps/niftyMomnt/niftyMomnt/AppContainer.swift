@@ -19,6 +19,8 @@ public final class AppContainer {
     public let nudgeEngine: any NudgeEngineProtocol
     public let vaultManager: VaultManager
     public let graphManager: GraphManager
+    /// Convenience: true while the private vault is locked (no Face ID auth this session).
+    public var isVaultLocked: Bool { get async { await vaultManager.isVaultLocked } }
     /// The AVCaptureSession owned by AVCaptureAdapter. Views attach preview layers to this.
     public let captureSession: AVCaptureSession
     /// Set by CaptureMomentUseCase after geocoding completes. Read by CaptureHubView overlay.

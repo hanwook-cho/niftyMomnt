@@ -261,6 +261,10 @@ struct FilmFeedView: View {
             log.debug("FilmFeedView received niftyMomentDeleted — refreshing")
             Task { await loadFeed() }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .niftyVaultChanged)) { _ in
+            log.debug("FilmFeedView received niftyVaultChanged — refreshing")
+            Task { await loadFeed() }
+        }
     }
 
     private func loadFeed() async {
@@ -518,6 +522,10 @@ struct MomentDetailView: View {
     @State private var reelURL: URL? = nil
     @State private var isReelPlayerPresented: Bool = false
     @State private var reelError: String? = nil
+    // v0.8 — Move to Vault
+    @State private var isMovingToVault: Bool = false
+    @State private var vaultActionMessage: String? = nil
+    @State private var dismissAfterVaultAlert: Bool = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -589,6 +597,19 @@ struct MomentDetailView: View {
         } message: {
             Text(reelError ?? "")
         }
+        .alert(
+            "Private Vault",
+            isPresented: Binding(get: { vaultActionMessage != nil }, set: { if !$0 { vaultActionMessage = nil } })
+        ) {
+            Button("OK", role: .cancel) {
+                if dismissAfterVaultAlert {
+                    dismissAfterVaultAlert = false
+                    dismiss()
+                }
+            }
+        } message: {
+            Text(vaultActionMessage ?? "")
+        }
         .sheet(isPresented: $isReelPlayerPresented) {
             if let url = reelURL {
                 ReelPlayerView(url: url)
@@ -609,6 +630,36 @@ struct MomentDetailView: View {
                 reelError = "Could not assemble reel: \(error.localizedDescription)"
             }
             isAssemblingReel = false
+        }
+    }
+
+    private func moveCurrentAssetToVault() {
+        guard !isMovingToVault else { return }
+        guard moment.assets.indices.contains(currentAssetIndex) else { return }
+        let asset = moment.assets[currentAssetIndex]
+        guard !asset.isPrivate else {
+            vaultActionMessage = "This shot is already in your private vault."
+            return
+        }
+        isMovingToVault = true
+        detailLog.debug("moveToVault — assetID=\(asset.id.uuidString)")
+        Task {
+            do {
+                try await container.vaultManager.moveToVault(assetID: asset.id)
+                detailLog.debug("moveToVault done — assetID=\(asset.id.uuidString)")
+                await MainActor.run {
+                    isMovingToVault = false
+                    dismissAfterVaultAlert = true
+                    vaultActionMessage = "Shot moved to your private vault."
+                    // dismiss() is called in the alert OK button, not here
+                }
+            } catch {
+                detailLog.error("moveToVault failed — \(error)")
+                await MainActor.run {
+                    isMovingToVault = false
+                    vaultActionMessage = "Could not move to vault: \(error.localizedDescription)"
+                }
+            }
         }
     }
 
@@ -1086,6 +1137,19 @@ struct MomentDetailView: View {
                         assembleAndPlayReel()
                     }
                     .disabled(isAssemblingReel)
+                }
+                // v0.8 — Move to Vault (only for non-private assets)
+                let currentAsset = moment.assets.indices.contains(currentAssetIndex)
+                    ? moment.assets[currentAssetIndex] : nil
+                if let currentAsset, !currentAsset.isPrivate {
+                    actionButton(
+                        title: isMovingToVault ? "Moving…" : "Move to Vault",
+                        icon: isMovingToVault ? nil : "lock.fill",
+                        isGlass: true
+                    ) {
+                        moveCurrentAssetToVault()
+                    }
+                    .disabled(isMovingToVault)
                 }
                 if currentAssetType != .echo {
                     actionButton(

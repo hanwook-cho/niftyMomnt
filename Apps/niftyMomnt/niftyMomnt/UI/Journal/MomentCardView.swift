@@ -47,7 +47,9 @@ struct MomentCardView: View {
                 )
         )
         .clipShape(RoundedRectangle(cornerRadius: 18))
-        .task(id: moment.id) { await loadImages() }
+        // Key on first asset ID, not moment ID: when the hero asset changes (e.g. moved to vault
+        // and excluded from the feed-visible asset list), the task re-fires and reloads the hero.
+        .task(id: moment.assets.first?.id) { await loadImages() }
     }
 
     // MARK: - Hero
