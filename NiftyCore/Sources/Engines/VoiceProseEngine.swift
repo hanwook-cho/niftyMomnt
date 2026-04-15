@@ -7,6 +7,9 @@
 //   3. On-device templates — always available as final fallback
 
 import Foundation
+import os
+
+private let log = Logger(subsystem: "com.hwcho99.niftymomnt", category: "VoiceProseEngine")
 
 public final class VoiceProseEngine: Sendable {
     private let lab: any LabClientProtocol
@@ -75,34 +78,47 @@ public final class VoiceProseEngine: Sendable {
         config: AppConfig
     ) async -> (candidates: [CaptionCandidate], llmUnavailabilityReason: String?) {
 
+        let vibeDesc = moment.dominantVibes.map(\.rawValue).joined(separator: ",")
+        let llmAvail = onDeviceLLM?.isAvailable == true
+        let hasNetwork = config.aiModes.contains(.enhancedAI)
+        log.info("generateAICaption — moment=\(moment.id.uuidString) tone=\(tone.rawValue) vibes=[\(vibeDesc)] llmAvailable=\(llmAvail) enhancedAI=\(hasNetwork)")
+
         // ── 1. On-device LLM (iOS 26+) ────────────────────────────────────────
         if let llm = onDeviceLLM, llm.isAvailable {
+            log.debug("generateAICaption — path: on-device LLM (iOS 26+)")
             let prompt = Self.buildCaptionPrompt(for: moment, tone: tone)
             do {
                 let text = try await llm.respond(to: prompt)
                 let cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                log.info("generateAICaption — ✓ on-device LLM returned \(cleaned.count) chars: \"\(cleaned.prefix(60))\"")
                 return (candidates: [CaptionCandidate(text: cleaned, tone: tone)],
                         llmUnavailabilityReason: nil)
             } catch {
-                // LLM failed mid-inference — fall through to network or template.
-                // (Not an iOS version issue; no unavailability notice needed.)
+                log.warning("generateAICaption — on-device LLM threw: \(error) — falling through to network/template")
             }
+        } else {
+            log.debug("generateAICaption — on-device LLM: skipped (isAvailable=\(llmAvail))")
         }
 
         // ── 2. Enhanced AI network (Mode-1) ───────────────────────────────────
         if config.aiModes.contains(.enhancedAI) {
+            log.debug("generateAICaption — path: enhanced AI network (Mode-1)")
             do {
                 let networkCandidates = try await lab.generateCaption(for: moment, tone: tone)
                 if !networkCandidates.isEmpty {
+                    log.info("generateAICaption — ✓ network returned \(networkCandidates.count) candidate(s): \"\(networkCandidates.first?.text.prefix(60) ?? "")\"")
                     return (candidates: networkCandidates, llmUnavailabilityReason: nil)
                 }
-                // Network returned empty — fall through to templates.
+                log.warning("generateAICaption — network returned empty candidates — falling through to template")
             } catch {
-                // Network error — fall through to templates.
+                log.warning("generateAICaption — network generateCaption threw: \(error) — falling through to template")
             }
+        } else {
+            log.debug("generateAICaption — network: skipped (enhancedAI not in aiModes)")
         }
 
         // ── 3. On-device template fallback ────────────────────────────────────
+        log.debug("generateAICaption — path: on-device template fallback")
         let prose = generateProse(for: moment)
         let templateCandidate = prose.first.map { variant in
             CaptionCandidate(text: variant.text, tone: tone)
@@ -116,6 +132,7 @@ public final class VoiceProseEngine: Sendable {
             ? "Enhanced AI captions require iOS 26 or later. Update iOS to unlock on-device AI."
             : nil
 
+        log.info("generateAICaption — ✓ template fallback: \"\(templateCandidate.text.prefix(60))\" upgradeNotice=\(reason != nil)")
         return (candidates: [templateCandidate], llmUnavailabilityReason: reason)
     }
 

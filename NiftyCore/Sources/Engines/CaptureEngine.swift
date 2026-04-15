@@ -130,6 +130,10 @@ public final class CaptureEngine: CaptureEngineProtocol {
         }
     }
 
+    public func latestSecondaryFrameData() -> Data? {
+        return captureAdapter.latestSecondaryFrameData()
+    }
+
     private func currentMode() -> CaptureMode {
         if case .ready(let mode) = captureStateSubject.value { return mode }
         if case .capturing(let mode) = captureStateSubject.value { return mode }

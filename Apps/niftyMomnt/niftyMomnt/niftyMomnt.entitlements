@@ -4,5 +4,11 @@
 <dict>
 	<!-- App Group deferred to v0.9+ when a widget/extension target is added.
 	     DB and assets live in Documents/ — no shared container needed until then. -->
+
+	<!-- v0.9 Journaling Suggestions: ADD VIA XCODE ONLY, not by hand.
+	     Target → Signing & Capabilities → + Capability → "Journaling Suggestions".
+	     Xcode writes the correct entitlement key + updates provisioning profile atomically.
+	     Manually adding the key here causes build error: "Entitlement ... not found and could
+	     not be included in profile". -->
 </dict>
 </plist>

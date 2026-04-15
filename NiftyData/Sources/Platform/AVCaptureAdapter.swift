@@ -95,6 +95,11 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
             log.debug("AVCaptureAdapter.latestSecondaryFrameData — no frame available")
             return nil
         }
+        let w = CVPixelBufferGetWidth(imageBuffer)
+        let h = CVPixelBufferGetHeight(imageBuffer)
+        let secDeviceName = secondaryVideoInput?.device.localizedName ?? "unknown"
+        let secPosition = secondaryVideoInput?.device.position == .front ? "front" : "back"
+        log.info("AVCaptureAdapter.latestSecondaryFrameData — device='\(secDeviceName)' position=\(secPosition) pixelBuffer=\(w)×\(h)")
         let ciImage = CIImage(cvPixelBuffer: imageBuffer)
         let context = CIContext()
         guard let jpegData = context.jpegRepresentation(of: ciImage,
@@ -103,7 +108,7 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
             log.warning("AVCaptureAdapter.latestSecondaryFrameData — JPEG compression failed")
             return nil
         }
-        log.debug("AVCaptureAdapter.latestSecondaryFrameData — \(jpegData.count) bytes")
+        log.info("AVCaptureAdapter.latestSecondaryFrameData — JPEG \(jpegData.count) bytes (prefix: \(jpegData.prefix(4).map { String(format: "%02x", $0) }.joined()))")
         return jpegData
     }
 
@@ -164,14 +169,26 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
     public func startSession(mode: CaptureMode, config: AppConfig) async throws {
         await MainActor.run { locationProvider.start() }
 
-        let authStatus = AVCaptureDevice.authorizationStatus(for: .video)
         // §2 — Log session type clearly so checklist can be verified without a breakpoint.
         let sessionClass = isDualCamSession ? "AVCaptureMultiCamSession" : "AVCaptureSession"
-        log.info("startSession — sessionType=\(sessionClass) mode=\(mode.rawValue) authStatus=\(authStatus.rawValue)")
-        guard authStatus == .authorized else {
-            log.error("startSession denied — camera not authorized (status \(authStatus.rawValue))")
-            await MainActor.run { stateSubject.send(.error(.unauthorized)) }
-            throw CaptureError.unauthorized
+
+        // Request camera access if not yet determined — first launch shows the system prompt.
+        let initialStatus = AVCaptureDevice.authorizationStatus(for: .video)
+        log.info("startSession — sessionType=\(sessionClass) mode=\(mode.rawValue) authStatus=\(initialStatus.rawValue)")
+        if initialStatus == .notDetermined {
+            log.info("startSession — authStatus=notDetermined; requesting camera access")
+            let granted = await AVCaptureDevice.requestAccess(for: .video)
+            log.info("startSession — camera access request result: \(granted ? "granted ✓" : "denied ✗")")
+            if !granted {
+                await MainActor.run { stateSubject.send(.error(.unauthorized)) }
+                throw CaptureError.unauthorized
+            }
+        } else {
+            guard initialStatus == .authorized else {
+                log.error("startSession denied — camera not authorized (status \(initialStatus.rawValue))")
+                await MainActor.run { stateSubject.send(.error(.unauthorized)) }
+                throw CaptureError.unauthorized
+            }
         }
         try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
             sessionQueue.async { [self] in
@@ -477,7 +494,11 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
                             self.audioDeviceInput = nil
                         log.debug("switchMode — audio input removed")
                     }
-                    session.sessionPreset = wasVideoMode ? .photo : resolvedPreset(for: mode)
+                    // AVCaptureMultiCamSession forbids sessionPreset — skip entirely.
+                    // Format is controlled per-device via activeFormat, not a session-level preset.
+                    if !isDualCamSession {
+                        session.sessionPreset = wasVideoMode ? .photo : resolvedPreset(for: mode)
+                    }
                     if willBeVideoMode {
                         try? addAudioInput()
                         let output = AVCaptureMovieFileOutput()
@@ -503,10 +524,13 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
                     let now = CACurrentMediaTime()
                     log.debug("switchMode — commitConfiguration: \(String(format: "%.3f", now - tBegin))s  total from gesture: \(String(format: "%.3f", now - gestureTime))s")
                 } else {
-                    // Same class — preset-only update, always fast
+                    // Same class — preset-only update (skipped for AVCaptureMultiCamSession
+                    // which forbids all sessionPreset assignments).
                     let tBegin = CACurrentMediaTime()
                     session.beginConfiguration()
-                    session.sessionPreset = resolvedPreset(for: mode)
+                    if !isDualCamSession {
+                        session.sessionPreset = resolvedPreset(for: mode)
+                    }
                     session.commitConfiguration()
                     self.currentMode = mode
                     let now = CACurrentMediaTime()
@@ -645,7 +669,12 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
             log.debug("configureSession — committed")
         }
 
-        session.sessionPreset = resolvedPreset(for: mode)
+        // AVCaptureMultiCamSession rejects all sessionPreset assignments.
+        // For video modes on a dual-cam session the standard path is used (no dual-cam
+        // video config path exists yet), so skip the preset silently.
+        if !isDualCamSession {
+            session.sessionPreset = resolvedPreset(for: mode)
+        }
 
         // Video input (camera)
         guard

@@ -4,6 +4,7 @@
 import AVFoundation
 import Combine
 import NiftyCore
+import NiftyData
 import Observation
 import SwiftUI
 
@@ -17,6 +18,9 @@ public final class AppContainer {
     public let shareUseCase: ShareMomentUseCase
     public let voiceProseEngine: VoiceProseEngine
     public let nudgeEngine: any NudgeEngineProtocol
+    /// The JournalSuggestionsAdapter instance — exposed so UI can present
+    /// JournalingSuggestionsPicker and forward selected suggestions into the nudge pipeline.
+    public let journalSuggestionsAdapter: JournalSuggestionsAdapter
     public let vaultManager: VaultManager
     public let graphManager: GraphManager
     /// Convenience: true while the private vault is locked (no Face ID auth this session).
@@ -40,6 +44,7 @@ public final class AppContainer {
         shareUseCase: ShareMomentUseCase,
         voiceProseEngine: VoiceProseEngine,
         nudgeEngine: any NudgeEngineProtocol,
+        journalSuggestionsAdapter: JournalSuggestionsAdapter,
         vaultManager: VaultManager,
         graphManager: GraphManager,
         captureSession: AVCaptureSession,
@@ -53,6 +58,7 @@ public final class AppContainer {
         self.shareUseCase = shareUseCase
         self.voiceProseEngine = voiceProseEngine
         self.nudgeEngine = nudgeEngine
+        self.journalSuggestionsAdapter = journalSuggestionsAdapter
         self.vaultManager = vaultManager
         self.graphManager = graphManager
         self.captureSession = captureSession

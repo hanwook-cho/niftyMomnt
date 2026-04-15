@@ -89,7 +89,7 @@ public final class CaptureMomentUseCase {
         // Passed to classifyImmediate to supplement scene-content tags with a second viewpoint.
         let secondaryFrameData = engine.latestSecondaryFrameData()
         if let sec = secondaryFrameData {
-            log.debug("[3/8] dual-cam secondary frame available (\(sec.count) bytes) — will supplement vibe classification")
+            log.info("[3/8] dual-cam: primary=\(imageData.count)B secondary=\(sec.count)B (different sizes = different cameras ✓)")
         } else {
             log.debug("[3/8] no secondary frame (single-cam or toggle off) — primary-only classification")
         }

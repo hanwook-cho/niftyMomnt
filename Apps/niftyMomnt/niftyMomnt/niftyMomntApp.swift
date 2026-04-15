@@ -99,6 +99,7 @@ struct NiftyMomntApp: App {
             shareUseCase: shareUseCase,
             voiceProseEngine: voiceProseEngine,
             nudgeEngine: nudgeEngine,
+            journalSuggestionsAdapter: nudgeTrigger,
             vaultManager: vaultManager,
             graphManager: graphManager,
             captureSession: captureAdapter.session,

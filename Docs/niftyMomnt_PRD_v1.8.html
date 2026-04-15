@@ -140,6 +140,25 @@ hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
   </table>
 </div>
 
+<div class="change-log">
+  <h3>Implementation Alignment Pass — Build v0.9 (2026-04-14)</h3>
+  <table>
+    <thead><tr><th>Section</th><th>Change</th><th>Driven by</th></tr></thead>
+    <tbody>
+      <tr><td>§6.2 Mode 1 — Enhanced AI</td><td>On-device fallback updated: iOS 26 Foundation Models (<code>FoundationModelAdapter</code>) is now the primary on-device LLM; server Enhanced AI is secondary; template prose is final fallback. Applies to captions, Voice-to-Prose, and nudge questions.</td><td>v0.9 implementation (FoundationModelAdapter)</td></tr>
+      <tr><td>§3.7 Journaling Suggestions API</td><td>v0.9 build uses <code>JournalingSuggestionsPicker</code> (user-triggered system UI) rather than a programmatic background trigger. No special entitlement required. Info.plist key: <code>NSJournalingApplicationSuggestionsUsageDescription</code>.</td><td>v0.9 implementation discovery</td></tr>
+      <tr><td>§7.2 AI Reel Assembler</td><td>Current build produces stills/live/l4c output only via <code>AVAssetWriter</code> (JPEG → H.264). Clip, Echo, and Atmosphere tracks excluded. Full <code>AVMutableComposition</code> with all asset types targeted for v1.0.</td><td>v0.7 / v0.9 implementation scope</td></tr>
+      <tr><td>§3.6 Live Activities</td><td>Not yet implemented — targeted for v1.0.</td><td>v0.9 build state</td></tr>
+      <tr><td>§3.5 Self-timer</td><td>Not yet implemented — targeted for v1.0.</td><td>v0.9 build state</td></tr>
+      <tr><td>§12 WidgetKit Widgets</td><td>Not yet implemented — targeted for v1.0.</td><td>v0.9 build state</td></tr>
+      <tr><td>§14.1 Q7</td><td>Resolved: always-on pre-roll buffer when Sound Stamp enabled in Still mode (same model as Live Photo). Implemented v0.5.</td><td>v0.5 implementation</td></tr>
+      <tr><td>§14.1 Q8</td><td>Resolved: free crop only for v1.0. Locked ratios (1:1, 4:5, 16:9) deferred to v1.5.</td><td>v0.5 implementation</td></tr>
+      <tr><td>§14.1 Q9</td><td>Resolved: Fix derivatives always-local for v1.0; <code>isExcludedFromBackup = true</code> applied to vault-encrypted files in VaultRepository.</td><td>v0.8 implementation</td></tr>
+      <tr><td>§16 (new)</td><td>Build Status section added — tracks implemented features v0.1–v0.9, unimplemented v1.0 targets, and Post-MVP items.</td><td>v0.9 build state (2026-04-14)</td></tr>
+    </tbody>
+  </table>
+</div>
+
 <!-- ══════════════════════════════════════════ -->
 <h1>1. Overview &amp; Scope</h1>
 
@@ -397,7 +416,7 @@ hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
   <li><strong>Viewfinder chrome:</strong> Minimal. Only shutter, mode anchor zone, preset bar, and top bar controls. No persistent full mode label, no grid overlay by default.</li>
   <li><strong>Preset bar (replaces preset strip):</strong> A single full-width Liquid Glass bar at the bottom of the viewfinder shows the active preset name in spaced caps with a 5pt accent dot and a 2pt accent color strip running the full top edge. Swipe left/right to cycle presets. Long-press to expand full picker overlay. The five-circle always-visible strip is replaced by this model in v1.5.</li>
   <li><strong>Preset bar auto-hide during recording:</strong> During Clip and Echo recording, the preset bar collapses to its 2pt accent color line only after 5s of active recording. The color line remains visible as a passive preset indicator. Single tap restores the bar. Bar always returns to full height when recording ends.</li>
-  <li><strong>Self-timer:</strong> Accessible via top bar. Options: Off (default), 3s, 10s. When active, a countdown ring overlays the shutter and a large center countdown number appears in the viewfinder. Both primary and secondary cameras — and Sound Stamp if enabled — fire simultaneously at countdown completion.</li>
+  <li><strong>Self-timer:</strong> Accessible via top bar. Options: Off (default), 3s, 10s. When active, a countdown ring overlays the shutter and a large center countdown number appears in the viewfinder. Both primary and secondary cameras — and Sound Stamp if enabled — fire simultaneously at countdown completion. <em>(Not yet implemented — targeted for v1.0.)</em></li>
   <li><strong>Roll Mode indicator:</strong> When Roll Mode is active, remaining shot count displayed top-center (e.g., "24 remaining").</li>
   <li><strong>Secondary camera indicator:</strong> When dual-camera contextual capture is active, a subtle dual-lens icon appears top-left of viewfinder. Tapping shows tooltip: "Also capturing context for richer moment tagging."</li>
   <li><strong>Sound Stamp indicator:</strong> When Sound Stamp is enabled, a subtle ≋ icon appears inside the shutter button in Still mode only, in the active preset accent color at 70% opacity. Post-capture, the three-arc pulse animation fires (§2.6). No indicator in other modes.</li>
@@ -426,6 +445,7 @@ hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
 <code>background: rgba(8,8,8,.22); backdrop-filter: blur(28px) saturate(200%) brightness(1.12)</code> with dual inner-edge glows: <code>inset 0 1px 0 rgba(255,255,255,.07)</code> and <code>inset 0 -1px 0 rgba(255,255,255,.04)</code>. This replaces the flat <code>rgba(0,0,0,.36) blur(20px)</code> from the v1.5 spec — flat frosted glass is iOS 17/18 only; iOS 26 requires the saturate+brightness Liquid Glass formula.</p>
 
 <h2>3.6 Live Activities &amp; Lock Screen Integration</h2>
+<div class="callout coral"><strong>Not yet implemented — targeted for v1.0.</strong> ActivityKit, Dynamic Island, and Lock Screen quick-action features are not present in the current build (v0.9).</div>
 <p>niftyMomnt extends its capture surface to the iOS Lock Screen and Dynamic Island via ActivityKit Live Activities — enabling capture actions without unlocking the phone, consistent with the JOMO philosophy.</p>
 
 <table>
@@ -452,6 +472,7 @@ hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
 </table>
 
 <p><strong>Permission model:</strong> Single iOS system prompt — niftyMomnt receives authorized suggestion clusters only, never raw data. User can revoke at any time: iOS Settings → Privacy → Journaling Suggestions.</p>
+<div class="callout amber"><strong>v0.9 implementation note:</strong> The build uses <code>JournalingSuggestionsPicker</code> — a user-triggered system UI sheet — rather than the programmatic background trigger described above. Suggestions surface after the user explicitly opens the picker from the Film feed. No special entitlement is required; the required Info.plist key is <code>NSJournalingApplicationSuggestionsUsageDescription</code>. The background-trigger approach (programmatic <code>JSDataFetcher.requestAuthorization</code> + <code>fetchSuggestions</code>) remains the long-term target for a future build.</div>
 
 <div class="new-section">
 <div class="new-section-label">New in v1.5</div>
@@ -770,6 +791,7 @@ hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
 <p><strong>What is sent — nudge questions:</strong> Vibe tags, acoustic tags, place name, vibe shift delta, ambient metadata. No image or audio data.</p>
 <p><strong>Offline fallback:</strong> When Enhanced AI is enabled but the device is offline, features fall back silently to on-device Apple AI. A subtle indicator ("Using on-device AI") confirms the fallback — no error, no blocked feature.</p>
 <p><strong>Free tier:</strong> 10 Enhanced AI uses per month. A use counter is shown in Settings. At 10, an upsell card appears: "Unlock unlimited Enhanced AI with niftyMomnt Pro." Feature continues working with on-device AI after the cap is reached.</p>
+<div class="callout amber"><strong>v0.9 implementation note — on-device priority ladder:</strong> The on-device fallback is now a three-level priority chain: (1) <strong>iOS 26 Foundation Models</strong> (<code>FoundationModelAdapter</code>, <code>isAvailable</code> gated on iOS 26+) as the primary on-device LLM; (2) server Enhanced AI (Mode-1, when network is available and the toggle is on); (3) template prose as the final offline fallback. This is more capable than the original spec's single on-device Apple AI tier. The server LLM path remains the Pro upsell mechanism. Features degrade silently down the chain — no blocked state, no error shown to the user.</div>
 
 <h2>6.3 Mode 2 — The Hybrid Lab (Encrypted Visual)</h2>
 <p><strong>Privacy guarantee:</strong> Assets sent to the Lab are AES-256 encrypted on-device before transmission. Processing occurs in an ephemeral, isolated sandbox. All assets and intermediate data are cryptographically purged immediately after the metadata graph is returned — verified by a timestamped audit log shown to the user. No asset is retained, logged, or used for model training. Per-session explicit consent is required every time — the Lab Settings toggle only controls whether the option is surfaced, never whether it runs silently.</p>
@@ -834,6 +856,7 @@ hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
   <li><strong>Voice note overlay:</strong> If one or more Echo assets exist within the Moment cluster, their transcribed text (or Voice-to-Prose "Minimalist" variant) can be overlaid as animated text on the Reel. The overlay is optional — user toggles it before render. Typography style matches the active vibe preset.</li>
 </ul>
 <p><strong>Duration match:</strong> Clip durations are trimmed to fit the music's phrase boundaries where possible (beat-matched at 1-bar intervals).</p>
+<div class="callout amber"><strong>Current build (v0.9) — stills-only reel:</strong> The assembler uses <code>AVAssetWriter</code> to produce a JPEG → H.264 composition from Still, Live, and L4C assets only. Clip, Echo, and Atmosphere tracks are excluded from reel output in this build. Voice note text overlay (Echo transcript) is also deferred. Full <code>AVMutableComposition</code> with all asset types and voice overlay is targeted for v1.0.</div>
 
 <h2>7.3 Film Archive — Moment Organization <span class="updated-badge">UPDATED v1.6</span></h2>
 <p>The Film Archive is the primary organizational view — a reverse-chronological timeline of Moment clusters, each represented as a card with a hero image (highest-scoring Still or Live), asset count, place label, date, and dominant vibe tags. Tapping a card expands to the full Moment view with all assets in a masonry grid. Earlier drafts used the working name “Auto Moment Journal”; the shipping name is <strong>Film Archive</strong> (see §5 and UI/UX Spec v1.7 §5).</p>
@@ -1211,6 +1234,7 @@ hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
 <h1>12. Widgets — Home Screen &amp; Lock Screen</h1>
 
 <h2>12.1 Overview</h2>
+<div class="callout coral"><strong>Not yet implemented — targeted for v1.0.</strong> WidgetKit widget targets are not yet added to the Xcode project. All specifications below are design-ready but unbuilt in the current build (v0.9).</div>
 <p>niftyMomnt ships three WidgetKit widgets at launch — two Home Screen sizes and one Lock Screen widget. Widgets are a critical surface for between-session retention: a user who sees their last Moment on their Home Screen is far more likely to open the app and capture something new. All widget content is served from the on-device vault; no network call is required to render any widget.</p>
 
 <h2>12.2 Widget Specifications</h2>
@@ -1315,6 +1339,21 @@ hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
   Decision: Add "Live Vibe Preview" toggle in Settings → Capture → Live Vibe Preview. Default: On. Engineering may ship with it On and advise users to disable if they notice capture lag on iPhone 15 minimum target. The toggle gives engineering a product-sanctioned mitigation path without removing the feature entirely. See §2.3 for the full settings row specification.
 </div>
 
+<div class="resolved">
+  <strong>Q7 — Sound Stamp pre-roll buffer timing: RESOLVED (v0.5)</strong><br/>
+  Decision: Always-on pre-roll buffer active whenever the app is foregrounded in Still mode with Sound Stamp enabled — same model as Live Photo pre-roll. This produces the most natural timing and ambient character. iOS orange mic indicator is expected and correct behaviour. Implemented in v0.5.
+</div>
+
+<div class="resolved">
+  <strong>Q8 — Fix crop aspect ratio locking: RESOLVED (v0.5)</strong><br/>
+  Decision: Free crop only for v1.0 — fits the "correction, not creative tool" framing. Locked aspect ratios (1:1, 4:5, 16:9) deferred to v1.5 pending usage data. Implemented in v0.5 with free crop only.
+</div>
+
+<div class="resolved">
+  <strong>Q9 — Fix derivatives and iCloud offload: RESOLVED (v0.8)</strong><br/>
+  Decision: Fix derivatives are always-local for v1.0 — excluded from iCloud/iTunes backup via <code>URLResourceValues.isExcludedFromBackup = true</code> on vault-encrypted files in VaultRepository. This ensures the derivative is always immediately accessible offline and avoids the "backed up but unrestorable" ambiguity. Evaluate Smart Archive / iCloud offload inclusion at v1.5 once derivative usage patterns are established.
+</div>
+
 <h2>14.2 External Dependencies</h2>
 <table>
   <thead><tr><th>Dependency</th><th>Purpose</th><th>Risk</th></tr></thead>
@@ -1399,9 +1438,71 @@ hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
   </tbody>
 </table>
 
+<!-- ══════════════════════════════════════════ -->
+<h1>16. Build Status — v0.9 (2026-04-14)</h1>
+
+<h2>16.1 Implemented Features (v0.1 – v0.9)</h2>
+<table>
+  <thead><tr><th>Feature</th><th>Build</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>Still capture · on-device classification · vault persistence · Film feed · UIActivityViewController share</td><td>v0.1</td><td>✅ Verified on device</td></tr>
+    <tr><td>Location chip (MapKit reverse geocode) · weather (Open-Meteo) · chromatic palette · vibe tags in feed</td><td>v0.2</td><td>✅ Verified on device</td></tr>
+    <tr><td>All 5 asset types: Still, Live, Clip, Echo, Atmosphere (JPEG + M4A — matches §2.2)</td><td>v0.3</td><td>✅ Verified on device</td></tr>
+    <tr><td>Life Four Cuts — 4-shot countdown, strip composite, StripPreviewSheet, L4CMomentCardView, GRDB l4c_records table</td><td>v0.3.5</td><td>🔄 Implementation complete. Featured Frame PNG art assets pending (design deliverable). Preview-to-capture framing being refined.</td></tr>
+    <tr><td>Vibe Preset System — preset bar, accent theming (shutter ring, Dynamic Island dot, top strip, accent dot), swipe-to-cycle, long-press picker</td><td>v0.4</td><td>🔄 Partially verified on device</td></tr>
+    <tr><td>Sound Stamp — PCM pre-roll buffer, on-device acoustic classifier, acoustic→vibe tag merge into intelligence graph</td><td>v0.5</td><td>✅ Verified on device (rows 1, 2, 3.2, 4.1 confirmed)</td></tr>
+    <tr><td>AI Nudge Engine — post-capture card (Quick emoji / Full text), GRDB nudge_responses table, 3-way mode setting, trigger sequencing per §8.2</td><td>v0.6</td><td>✅ Implementation complete. Full device verification in progress.</td></tr>
+    <tr><td>Story Engine — merge-on-capture clustering (2h / 500m), 3 arc templates, asset scoring; Reel assembler (AVAssetWriter, stills/live/l4c only); MomentDetailView "Play Reel"; VoiceProseEngine on-device templates</td><td>v0.7</td><td>✅ Implementation complete. Device verified (4 bugs fixed).</td></tr>
+    <tr><td>Private Vault — AES-GCM (CryptoKit), Keychain DEK, LAContext Face ID gate, feed filtering (is_private), VaultView private-asset grid, "Move to Vault" action</td><td>v0.8</td><td>✅ Implementation complete. Device verification in progress (4 bugs fixed — §1/§6 re-test pending).</td></tr>
+    <tr><td>Foundation Models captions (iOS 26, FoundationModelAdapter) · VoiceProseEngine priority ladder (FM → server → template) · JournalingSuggestionsPicker wiring · dual-camera AVCaptureMultiCamSession + secondary classification · Roll Mode shutter cap enforcement</td><td>v0.9</td><td>✅ Implementation complete. Device verification in progress (7 bugs fixed — §4 / §5 pending clean reinstall).</td></tr>
+  </tbody>
+</table>
+
+<h2>16.2 Not Yet Implemented — v1.0 Targets</h2>
+<table>
+  <thead><tr><th>Feature</th><th>PRD Reference</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Vault Backup &amp; Restore</strong></td><td>§9.1</td><td>Passphrase-encrypted <code>.niftyvault</code> archive (HKDF + AES-256-GCM). 8 tasks planned in interim_version_plan.md §v1.0. First task: set <code>isExcludedFromBackup = true</code> on <code>.enc</code> files in VaultRepository.</td></tr>
+    <tr><td><strong>Live Activities + Lock Screen integration</strong></td><td>§3.6</td><td>ActivityKit. Dynamic Island compact/expanded, Lock Screen quick actions (star location, voice note, star moment).</td></tr>
+    <tr><td><strong>WidgetKit widgets (3 types)</strong></td><td>§12</td><td>Last Memory (2×2 home), Daily Streak (1×1 home), Quick Record (Lock Screen circular). Widget extension targets not yet added to the project.</td></tr>
+    <tr><td><strong>Self-timer (3s / 10s)</strong></td><td>§3.5, §2.3</td><td>Zone A access, countdown overlay, simultaneous dual-cam + Sound Stamp fire at end of countdown.</td></tr>
+    <tr><td><strong>Onboarding flow</strong></td><td>§1.3, §8.4</td><td>Interactive gesture tutorial, Sound Stamp opt-in (Step 5), personalized daily capture prompt opt-in, Enhanced AI toggle introduction.</td></tr>
+    <tr><td><strong>Still Photo Fix — CoreImageFixAdapter</strong></td><td>§3.8</td><td>Fix entry points wired in MomentDetailView (long-press context menu + Fix pill). <code>CoreImageFixAdapter</code> is a stub — actual crop/rotate/flip image write not yet implemented.</td></tr>
+    <tr><td><strong>Reel — full asset type support</strong></td><td>§7.2</td><td>Current build: stills/live/l4c only (AVAssetWriter). Full AVMutableComposition with Clip, Echo, and Atmosphere tracks, plus Echo transcript voice overlay, deferred to v1.0.</td></tr>
+    <tr><td><strong>Lab Mode backend (Mode 2)</strong></td><td>§6.3, §6.4</td><td>CryptoKit P256 DH + AES-GCM encryption path fully implemented. Endpoint is a placeholder URL — backend server not yet live. Stub fallback returns mock LabResult on any network failure.</td></tr>
+    <tr><td><strong>Duplicate cleanup</strong></td><td>§1.3</td><td>Deduplication of near-identical captures. Not started.</td></tr>
+    <tr><td><strong>niftyMomntLite variant E2E smoke test</strong></td><td>§1.3</td><td><code>AppConfig.lite</code> defined (<code>assetTypes: .basic</code>, <code>aiModes: .onDevice</code>). End-to-end smoke test not yet run.</td></tr>
+    <tr><td><strong>Accessibility audit</strong></td><td>§13.3</td><td>Dynamic Type, VoiceOver labels, reduceMotion — specified but not yet verified across all views.</td></tr>
+    <tr><td><strong>Performance profiling</strong></td><td>§13.1</td><td>Cold launch (&lt;1.5s), capture-to-preview (&lt;300ms), classification (&lt;3s background) — targets defined but not yet measured with Instruments.</td></tr>
+    <tr><td><strong>Privacy manifest + App Store metadata</strong></td><td>§13.2</td><td>Privacy Nutrition Labels, App Tracking Transparency declaration, export compliance. Not started.</td></tr>
+    <tr><td><strong>L4C Featured Frame PNG art assets</strong></td><td>§3.10, §2.3</td><td>3 frame overlays (Minimalist Black, Spring Blossom, Retro Neon) — design deliverable not yet produced. Picker UI is implemented; "None" is the only functional option currently.</td></tr>
+  </tbody>
+</table>
+
+<h2>16.3 Post-MVP — Not In Scope for v1.0</h2>
+<table>
+  <thead><tr><th>Feature</th><th>PRD Reference</th><th>Target</th></tr></thead>
+  <tbody>
+    <tr><td>Trusted Circle Sharing — named recipients, persistent albums, link revocation, reactions</td><td>§9.2</td><td>v1.5</td></tr>
+    <tr><td>Mood Map &amp; Emotional Palette visualization</td><td>§7.5</td><td>v1.5</td></tr>
+    <tr><td>Annual Review</td><td>§6.2 (Mode-1 feature)</td><td>v1.5</td></tr>
+    <tr><td>Semantic "search by feeling" (natural language → vibe tag vector query)</td><td>§7.3</td><td>v1.5</td></tr>
+    <tr><td>Close-circle live-updating shared albums</td><td>§1.3</td><td>v1.5</td></tr>
+    <tr><td>Pre-trip shot planner AI</td><td>§1.3</td><td>v1.5</td></tr>
+    <tr><td>niftyMomnt community Feed</td><td>§1.3</td><td>v1.5</td></tr>
+    <tr><td>Locked aspect ratios in Fix (1:1, 4:5, 16:9)</td><td>§3.8, Q8</td><td>v1.5</td></tr>
+    <tr><td>Intelligence Graph companion app access — App Group shared container (Phase 1) / niftyMomntKit SDK (Phase 2)</td><td>§15b.4</td><td>v2.0</td></tr>
+    <tr><td>iCloud CloudKit sync for intelligence graph (Phase 3)</td><td>§15b.4</td><td>v2.0+</td></tr>
+    <tr><td>Preset marketplace</td><td>§1.3</td><td>v2.0+</td></tr>
+    <tr><td>"Just Live" passive capture</td><td>§1.3</td><td>v2.0+</td></tr>
+    <tr><td>Post scheduler &amp; cross-platform publish</td><td>§1.3</td><td>v2.0+</td></tr>
+    <tr><td>Android port</td><td>§1.3</td><td>v2.0+</td></tr>
+  </tbody>
+</table>
+
 <hr/>
 <div style="text-align:center;color:#888780;font-size:13px;margin-top:48px;padding-top:24px;border-top:1px solid #D3D1C7;">
-  niftyMomnt Product Requirements Document v1.7 · April 2026 · Confidential — includes L4C v0.3.5<br/>
+  niftyMomnt Product Requirements Document v1.8 · April 2026 · Confidential — includes L4C v0.3.5 · Implementation Alignment v0.9<br/>
   Companion: UI/UX Specification v1.8 · Market: MRD v1.5<br/>
   Author: Han Wook Cho · hwcho99@gmail.com
 </div>

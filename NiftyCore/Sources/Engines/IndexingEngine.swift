@@ -37,6 +37,14 @@ public actor IndexingEngine {
     ///                             from a dual-cam session). When provided, a concurrent Vision pass
     ///                             runs alongside the primary and its unique tags are merged in.
     public func classifyImmediate(id: UUID, imageData: Data, supplementaryImageData: Data? = nil) async -> [VibeTag] {
+        let primaryHex = imageData.prefix(4).map { String(format: "%02x", $0) }.joined()
+        if let sec = supplementaryImageData {
+            let secHex = sec.prefix(4).map { String(format: "%02x", $0) }.joined()
+            let sameData = imageData == sec
+            log.info("classifyImmediate — primary=\(imageData.count)B prefix=\(primaryHex) | secondary=\(sec.count)B prefix=\(secHex) | identical=\(sameData)")
+        } else {
+            log.debug("classifyImmediate — primary=\(imageData.count)B prefix=\(primaryHex) | secondary=none")
+        }
         let suppDesc = supplementaryImageData.map { "\($0.count)B" } ?? "none"
         log.debug("classifyImmediate — dispatching id=\(id.uuidString) supplementary=\(suppDesc)")
         let adapter = self.adapter

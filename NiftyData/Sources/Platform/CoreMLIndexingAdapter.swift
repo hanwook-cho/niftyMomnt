@@ -327,7 +327,15 @@ private extension CoreMLIndexingAdapter {
             return .nostalgic
         }
 
-        // ── Cozy ── indoor, home, food, warm materials (wood, textile, furniture)
+        // ── Cozy ── indoor, home, food, warm materials (wood, textile, furniture), human presence
+        // Person/face identifiers appear when the front TrueDepth camera frames a portrait.
+        // Vision uses: "person", "face", "portrait", "man", "woman", "baby", "child", "couple".
+        if id.contains("person")    || id.contains("face")      || id.contains("portrait")
+        || id.contains("man")       || id.contains("woman")     || id.contains("baby")
+        || id.contains("child")     || id.contains("couple")    || id.contains("skin")
+        || id.contains("selfie")    || id.contains("body")      || id.contains("adult") {
+            return .cozy
+        }
         if id.contains("indoor")    || id.contains("interior")  || id.contains("home")
         || id.contains("food")      || id.contains("drink")     || id.contains("cafe")
         || id.contains("coffee")    || id.contains("candle")    || id.contains("kitchen")

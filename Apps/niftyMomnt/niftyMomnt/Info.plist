@@ -31,7 +31,7 @@
 	<string>niftyMomnt uses your camera to capture moments.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>niftyMomnt uses Face ID to protect your private vault. Only you can access your private shots.</string>
-	<key>NSJournalingSuggestionsUsageDescription</key>
+	<key>NSJournalingApplicationSuggestionsUsageDescription</key>
 	<string>niftyMomnt surfaces your life context as nudges to help you remember and reflect on moments worth capturing.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>niftyMomnt uses your location to tag moments and organise your journal.</string>

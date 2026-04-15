@@ -7,7 +7,11 @@
 // Detail:  MomentDetailView sheet on card tap
 
 import NiftyCore
+import NiftyData
 import os
+#if canImport(JournalingSuggestions)
+import JournalingSuggestions
+#endif
 import AVFoundation
 import AVKit
 import Photos
@@ -526,43 +530,58 @@ struct MomentDetailView: View {
     @State private var isMovingToVault: Bool = false
     @State private var vaultActionMessage: String? = nil
     @State private var dismissAfterVaultAlert: Bool = false
+    // v0.9 — AI Caption
+    @State private var isGeneratingCaption: Bool = false
+    @State private var generatedCaption: String? = nil
+    @State private var captionUpgradeNotice: String? = nil
+    // v0.9 — Journaling Suggestions picker
+    @State private var isJournalPickerPresented: Bool = false
+    @State private var isFixing: Bool = false
+    @State private var fixResultMessage: String? = nil
 
     var body: some View {
         ZStack(alignment: .bottom) {
             Color(hex: "#100C08").ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                // Zone A — detail nav bar
-                detailNavBar
+            GeometryReader { geo in
+                VStack(spacing: 0) {
+                    // Zone A — detail nav bar
+                    detailNavBar
 
-                // Photo zone — full bleed with sticker overlays
-                ZStack(alignment: .bottom) {
-                    heroPhoto
-                    paginationIndicator
-                        .padding(.bottom, NiftySpacing.lg)
-                }
-                .frame(maxHeight: .infinity)
-                .gesture(
-                    DragGesture(minimumDistance: 30)
-                        .onEnded { value in
-                            guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                            if value.translation.width < 0 {
-                                // swipe left → next asset
-                                if currentAssetIndex < moment.assets.count - 1 {
-                                    currentAssetIndex += 1
-                                }
-                            } else {
-                                // swipe right → previous asset
-                                if currentAssetIndex > 0 {
-                                    currentAssetIndex -= 1
+                    // Photo zone — constrained to a fraction of the available height
+                    ZStack(alignment: .bottom) {
+                        heroPhoto
+                        paginationIndicator
+                            .padding(.bottom, NiftySpacing.lg)
+                    }
+                    .frame(height: max(160, geo.size.height * 0.72))
+                    .clipped()
+                    .gesture(
+                        DragGesture(minimumDistance: 30)
+                            .onEnded { value in
+                                guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                                if value.translation.width < 0 {
+                                    // swipe left → next asset
+                                    if currentAssetIndex < moment.assets.count - 1 {
+                                        currentAssetIndex += 1
+                                    }
+                                } else {
+                                    // swipe right → previous asset
+                                    if currentAssetIndex > 0 {
+                                        currentAssetIndex -= 1
+                                    }
                                 }
                             }
-                        }
-                )
+                    )
 
-                // Glass bottom sheet
-                glassBottomSheet
+                    Spacer(minLength: 0)
+                }
             }
+        }
+        // safeAreaInset pins the bottom sheet above the home indicator regardless of
+        // sheet presentation context — more reliable than hardcoded padding(bottom: 34).
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            glassBottomSheet
         }
         .preferredColorScheme(.dark)
         .task(id: moment.id) {
@@ -610,11 +629,29 @@ struct MomentDetailView: View {
         } message: {
             Text(vaultActionMessage ?? "")
         }
+        .alert(
+            "Photo Fix",
+            isPresented: Binding(get: { fixResultMessage != nil }, set: { if !$0 { fixResultMessage = nil } })
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(fixResultMessage ?? "")
+        }
         .sheet(isPresented: $isReelPlayerPresented) {
             if let url = reelURL {
                 ReelPlayerView(url: url)
             }
         }
+        // v0.9 — Journaling Suggestions picker.
+        // Must be on the outermost view so SwiftUI has a full-screen presentation anchor.
+        // bottomPanel is too small a subview — picker silently fails to present from there.
+#if canImport(JournalingSuggestions)
+        .journalingSuggestionsPicker(isPresented: $isJournalPickerPresented) { suggestion in
+            detailLog.info("journalSuggestionsPicker — received: \"\(suggestion.title)\" date=\(suggestion.date?.start.description ?? "nil")")
+            await container.journalSuggestionsAdapter.receiveSuggestion(suggestion)
+            detailLog.info("journalSuggestionsPicker — forwarded to adapter ✓")
+        }
+#endif
     }
 
     private func assembleAndPlayReel() {
@@ -808,6 +845,25 @@ struct MomentDetailView: View {
         } catch {
             detailLog.error("resolvedVideoAspectRatio — failed: \(error)")
             return nil
+        }
+    }
+
+    // v0.9 — Generate Caption via VoiceProseEngine priority ladder
+    private func generateCaption() async {
+        isGeneratingCaption = true
+        generatedCaption = nil
+        captionUpgradeNotice = nil
+        detailLog.info("generateCaption — triggered for momentID=\(moment.id.uuidString) vibes=[\(moment.dominantVibes.map(\.rawValue).joined(separator: ","))]")
+        let result = await container.voiceProseEngine.generateAICaption(
+            for: moment,
+            tone: .poetic,
+            config: container.config
+        )
+        await MainActor.run {
+            generatedCaption = result.candidates.first?.text
+            captionUpgradeNotice = result.llmUnavailabilityReason
+            isGeneratingCaption = false
+            detailLog.info("generateCaption — done: \"\(result.candidates.first?.text.prefix(60) ?? "(nil)")\" candidates=\(result.candidates.count) upgradeNotice=\(result.llmUnavailabilityReason != nil)")
         }
     }
 
@@ -1120,49 +1176,91 @@ struct MomentDetailView: View {
                 .padding(.top, NiftySpacing.xs)
             }
 
-            // Actions row
+            // v0.9 — AI Caption (capped at 3 lines so it never pushes buttons off-screen)
+            if let caption = generatedCaption {
+                VStack(alignment: .leading, spacing: NiftySpacing.xs) {
+                    Text(caption)
+                        .font(.system(size: 13, weight: .regular, design: .serif))
+                        .foregroundStyle(Color.white.opacity(0.85))
+                        .lineLimit(3)
+                    if let notice = captionUpgradeNotice {
+                        Text(notice)
+                            .font(.system(size: 10, weight: .regular))
+                            .foregroundStyle(Color.white.opacity(0.4))
+                            .lineLimit(2)
+                    }
+                }
+                .padding(.horizontal, NiftySpacing.lg)
+                .padding(.top, NiftySpacing.xs)
+            }
+
+            // Actions row — scrollable so buttons never overflow on narrow screens.
+            // Trash is pinned outside the scroll area so it's always reachable.
             HStack(spacing: NiftySpacing.sm) {
-                if currentAssetSupportsFix {
-                    actionButton(title: "Fix this shot", icon: "checkmark.circle", isGlass: true)
-                }
-                // v0.7 — Play Reel (visible when moment has ≥2 still-type assets)
-                let reelableCount = moment.assets.filter { [.still, .live, .l4c].contains($0.type) }.count
-                if reelableCount >= 2 {
-                    actionButton(
-                        title: isAssemblingReel ? "Assembling…" : "Play Reel",
-                        icon: isAssemblingReel ? nil : "play.circle",
-                        isGlass: false,
-                        tinted: true
-                    ) {
-                        assembleAndPlayReel()
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: NiftySpacing.sm) {
+                        if currentAssetSupportsFix {
+                            actionButton(title: "Fix", icon: "checkmark.circle", isGlass: true) {
+                                Task { await quickApplyFix() }
+                            }
+                            .disabled(isFixing)
+                        }
+                        // v0.7 — Play Reel (visible when moment has ≥2 still-type assets)
+                        let reelableCount = moment.assets.filter { [.still, .live, .l4c].contains($0.type) }.count
+                        if reelableCount >= 2 {
+                            actionButton(
+                                title: isAssemblingReel ? "Assembling…" : "Play Reel",
+                                icon: isAssemblingReel ? nil : "play.circle",
+                                isGlass: false,
+                                tinted: true
+                            ) {
+                                assembleAndPlayReel()
+                            }
+                            .disabled(isAssemblingReel)
+                        }
+                        // v0.8 — Move to Vault (only for non-private assets)
+                        let currentAsset = moment.assets.indices.contains(currentAssetIndex)
+                            ? moment.assets[currentAssetIndex] : nil
+                        if let currentAsset, !currentAsset.isPrivate {
+                            actionButton(
+                                title: isMovingToVault ? "Moving…" : "Vault",
+                                icon: isMovingToVault ? nil : "lock.fill",
+                                isGlass: true
+                            ) {
+                                moveCurrentAssetToVault()
+                            }
+                            .disabled(isMovingToVault)
+                        }
+                        // v0.9 — Generate Caption
+                        actionButton(
+                            title: isGeneratingCaption ? "Writing…" : (generatedCaption == nil ? "Caption" : "New Caption"),
+                            icon: isGeneratingCaption ? nil : "text.quote",
+                            isGlass: true
+                        ) {
+                            Task { await generateCaption() }
+                        }
+                        .disabled(isGeneratingCaption)
+                        // v0.9 — Journaling Suggestions picker
+                        journalPickerButton
+                        // Export — label kept short to fit comfortably
+                        if currentAssetType != .echo {
+                            actionButton(
+                                title: isExportingToPhotoLibrary ? "Exporting…" : "Save to Photos",
+                                icon: isExportingToPhotoLibrary ? nil : "square.and.arrow.down",
+                                isGlass: false,
+                                tinted: true
+                            ) {
+                                exportCurrentAssetToPhotoLibrary()
+                            }
+                        }
                     }
-                    .disabled(isAssemblingReel)
+                    .padding(.leading, NiftySpacing.lg)
+                    .padding(.trailing, NiftySpacing.lg)
                 }
-                // v0.8 — Move to Vault (only for non-private assets)
-                let currentAsset = moment.assets.indices.contains(currentAssetIndex)
-                    ? moment.assets[currentAssetIndex] : nil
-                if let currentAsset, !currentAsset.isPrivate {
-                    actionButton(
-                        title: isMovingToVault ? "Moving…" : "Move to Vault",
-                        icon: isMovingToVault ? nil : "lock.fill",
-                        isGlass: true
-                    ) {
-                        moveCurrentAssetToVault()
-                    }
-                    .disabled(isMovingToVault)
-                }
-                if currentAssetType != .echo {
-                    actionButton(
-                        title: isExportingToPhotoLibrary ? "Exporting..." : "Export to Photo Library",
-                        icon: isExportingToPhotoLibrary ? nil : "square.and.arrow.down",
-                        isGlass: false,
-                        tinted: true
-                    ) {
-                        exportCurrentAssetToPhotoLibrary()
-                    }
-                }
-                Spacer()
-                // Delete button
+                // Actions button — long-press (contextMenu) for overflow actions
+                actionsButton
+
+                // Trash — always visible, pinned to trailing edge
                 Button { isDeleteConfirmPresented = true } label: {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color.red.opacity(0.08))
@@ -1184,6 +1282,7 @@ struct MomentDetailView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(isDeleting)
+                .padding(.trailing, NiftySpacing.lg)
                 .confirmationDialog("Delete this photo?", isPresented: $isDeleteConfirmPresented, titleVisibility: .visible) {
                     Button("Delete Photo", role: .destructive) {
                         Task { await deleteMoment() }
@@ -1192,7 +1291,6 @@ struct MomentDetailView: View {
                     Text("This will permanently remove the photo and its data.")
                 }
             }
-            .padding(.horizontal, NiftySpacing.lg)
             .padding(.vertical, NiftySpacing.lg)
         }
         .frame(maxWidth: .infinity)
@@ -1204,7 +1302,6 @@ struct MomentDetailView: View {
                     Rectangle().fill(.white.opacity(0.12)).frame(height: 0.5)
                 }
         )
-        .padding(.bottom, 34) // home indicator
     }
 
     private func acousticChip(_ tag: AcousticTag) -> some View {
@@ -1243,6 +1340,23 @@ struct MomentDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
+    /// "From Journal" action button — sets isJournalPickerPresented = true.
+    /// The actual picker is attached via .journalingSuggestionsPicker(isPresented:) modifier
+    /// on the bottom panel container so the SwiftUI system has a full-view presentation anchor.
+    @ViewBuilder
+    private var journalPickerButton: some View {
+        if container.config.features.contains(.journalSuggest) {
+            actionButton(
+                title: "From Journal",
+                icon: "book.closed",
+                isGlass: true
+            ) {
+                detailLog.info("journalPickerButton — tapped; setting isJournalPickerPresented=true")
+                isJournalPickerPresented = true
+            }
+        }
+    }
+
     private func actionButton(
         title: String, icon: String?, isGlass: Bool, tinted: Bool = false,
         action: @escaping () -> Void = {}
@@ -1274,6 +1388,58 @@ struct MomentDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
+    }
+
+    private var actionsButton: some View {
+        actionButton(title: "Actions", icon: "ellipsis", isGlass: true) {}
+            .contextMenu {
+                if currentAssetSupportsFix {
+                    Button(action: { Task { await quickApplyFix() } }) {
+                        Label(isFixing ? "Fixing…" : "Fix", systemImage: "wand.and.stars")
+                    }
+                }
+                let reelableCount = moment.assets.filter { [.still, .live, .l4c].contains($0.type) }.count
+                if reelableCount >= 2 {
+                    Button(action: { assembleAndPlayReel() }) {
+                        Label(isAssemblingReel ? "Assembling…" : "Play Reel", systemImage: "play.circle")
+                    }
+                }
+                if let currentAsset = moment.assets.indices.contains(currentAssetIndex) ? moment.assets[currentAssetIndex] : nil,
+                   !currentAsset.isPrivate {
+                    Button(action: { moveCurrentAssetToVault() }) {
+                        Label(isMovingToVault ? "Moving…" : "Vault", systemImage: "lock.fill")
+                    }
+                }
+                Button(action: { Task { await generateCaption() } }) {
+                    Label(isGeneratingCaption ? "Writing…" : (generatedCaption == nil ? "Caption" : "New Caption"), systemImage: "text.quote")
+                }
+                if container.config.features.contains(.journalSuggest) {
+                    Button(action: { isJournalPickerPresented = true }) {
+                        Label("From Journal", systemImage: "book.closed")
+                    }
+                }
+                if currentAssetType != .echo {
+                    Button(action: { exportCurrentAssetToPhotoLibrary() }) {
+                        Label(isExportingToPhotoLibrary ? "Exporting…" : "Save to Photos", systemImage: "square.and.arrow.down")
+                    }
+                }
+            }
+    }
+
+    private func quickApplyFix() async {
+        guard !isFixing else { return }
+        guard moment.assets.indices.contains(currentAssetIndex) else { return }
+        let asset = moment.assets[currentAssetIndex]
+        isFixing = true
+        fixResultMessage = nil
+        do {
+            _ = try await container.fixUseCase.applyFix(to: asset.id, cropRect: nil, rotationDegrees: 0, flipH: false, flipV: false)
+            Task { await loadHeroImage(at: currentAssetIndex) }
+            fixResultMessage = "Fix applied successfully."
+        } catch {
+            fixResultMessage = "Could not apply fix: \(error.localizedDescription)"
+        }
+        isFixing = false
     }
 
     private var dateTimeString: String {
