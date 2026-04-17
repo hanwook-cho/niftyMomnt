@@ -1,0 +1,94 @@
+# .github/workflows/ci-piqd.yml
+# v0.1 plan §4.14 — build the Piqd scheme and run the §5 automated suite on the
+# iPhone 17 simulator (iOS 26.4) which matches local dev. The plan originally
+# spec'd "iPhone 15 Pro" but that runtime is no longer available on the
+# `macos-15`/`macos-26` runners — iPhone 17 is the v0.1 sign-off target.
+#
+# Jobs:
+#   1. unit        — NiftyCore + NiftyData SPM test bundles (U1–U7, PiqdNamespaceTests)
+#   2. ui          — PiqdUITests UI1–UI6 + P2 cold-launch perf
+#   3. perf-data   — PiqdPerformanceTests P1 + P3 (measure blocks — reported, non-gating)
+
+name: Piqd v0.1 CI
+
+on:
+  push:
+    branches: [main, Piqd, "claude/**"]
+    paths:
+      - "Apps/Piqd/**"
+      - "NiftyCore/**"
+      - "NiftyData/**"
+      - ".github/workflows/ci-piqd.yml"
+  pull_request:
+    paths:
+      - "Apps/Piqd/**"
+      - "NiftyCore/**"
+      - "NiftyData/**"
+      - ".github/workflows/ci-piqd.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-piqd-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DESTINATION: "platform=iOS Simulator,name=iPhone 17,OS=26.4"
+
+jobs:
+  unit-niftycore:
+    name: Unit — NiftyCore
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.app
+      - name: xcodebuild test (NiftyCore)
+        working-directory: NiftyCore
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -scheme NiftyCore \
+            -destination "${{ env.DESTINATION }}" \
+            -skipPackagePluginValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify
+
+  unit-niftydata:
+    name: Unit — NiftyData (incl. PiqdNamespaceTests + perf P1/P3)
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.app
+      - name: xcodebuild test (NiftyData)
+        working-directory: NiftyData
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -scheme NiftyData \
+            -destination "${{ env.DESTINATION }}" \
+            -skipPackagePluginValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify
+
+  ui:
+    name: UI — PiqdUITests (UI1–UI6 + P2)
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.app
+      - name: Resolve Swift packages
+        working-directory: Apps/Piqd
+        run: xcodebuild -resolvePackageDependencies -project Piqd.xcodeproj
+      - name: xcodebuild test (Piqd + PiqdUITests)
+        working-directory: Apps/Piqd
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project Piqd.xcodeproj \
+            -scheme Piqd \
+            -destination "${{ env.DESTINATION }}" \
+            -only-testing:PiqdUITests \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify
