@@ -1,18 +1,20 @@
 // Tests/Mocks/MockCaptureAdapter.swift
 
 import Combine
+import CoreGraphics
 import Foundation
 @testable import NiftyCore
 
+@MainActor
 final class MockCaptureAdapter: CaptureEngineProtocol {
-    private let stateSubject = CurrentValueSubject<CaptureState, Never>(.idle)
-    private let telemetrySubject = PassthroughSubject<CaptureTelemetry, Never>()
+    nonisolated(unsafe) private let stateSubject = CurrentValueSubject<CaptureState, Never>(.idle)
+    nonisolated(unsafe) private let telemetrySubject = PassthroughSubject<CaptureTelemetry, Never>()
 
-    var captureState: AnyPublisher<CaptureState, Never> {
+    nonisolated var captureState: AnyPublisher<CaptureState, Never> {
         stateSubject.eraseToAnyPublisher()
     }
 
-    var telemetry: AnyPublisher<CaptureTelemetry, Never> {
+    nonisolated var telemetry: AnyPublisher<CaptureTelemetry, Never> {
         telemetrySubject.eraseToAnyPublisher()
     }
 
@@ -21,7 +23,15 @@ final class MockCaptureAdapter: CaptureEngineProtocol {
     func captureAsset() async throws -> Asset {
         Asset(type: .still, capturedAt: Date())
     }
-    func switchMode(to mode: CaptureMode) async throws {}
+    func startRecording(mode: CaptureMode) async throws {}
+    func stopRecording() async throws -> Asset {
+        Asset(type: .clip, capturedAt: Date())
+    }
+    func switchMode(to mode: CaptureMode, gestureTime: Double) async throws {}
+    func switchCamera() async throws {}
+    func focusAndLock(at point: CGPoint, frameSize: CGSize) async throws {}
+    func unlockFocusAndExposure() async {}
     func applyPreset(_ preset: VibePreset) async {}
     func availableModes() -> [CaptureMode] { CaptureMode.allCases }
+    func latestSecondaryFrameData() -> Data? { nil }
 }

@@ -113,7 +113,7 @@ public final class StoryEngine: Sendable {
         for ra in assets {
             let duration: Double
             switch ra.asset.type {
-            case .clip, .atmosphere, .echo:
+            case .clip, .atmosphere, .echo, .sequence, .dual:
                 duration = ra.asset.duration ?? 2.5
             default:
                 duration = 2.5
@@ -133,6 +133,9 @@ public final class StoryEngine: Sendable {
         case .atmosphere:  return 0.6
         case .echo:        return 0.5
         case .still, .live, .l4c: return 0.4
+        // Piqd asset types — only reachable when Piqd uses StoryEngine (v0.8+).
+        case .sequence, .dual:    return 0.85
+        case .movingStill:         return 0.5
         }
     }
 

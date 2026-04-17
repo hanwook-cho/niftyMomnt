@@ -1,0 +1,118 @@
+// NiftyCore/Tests/AppConfigPiqdTests.swift
+// Confirms the Piqd AppConfig variants expose the shape promised by piqd_SRS_v1.0.md §2.
+// v0.1 mask locks the feature set to Snap Still only — a regression in this file indicates a
+// feature leaked out of the interim plan.
+
+import XCTest
+@testable import NiftyCore
+
+final class AppConfigPiqdTests: XCTestCase {
+
+    // MARK: - Full piqd (v1.0 target)
+
+    func test_piqd_full_hasAllPiqdFeatures() {
+        let c = piqdFull()
+        XCTAssertEqual(c.appVariant, .piqd)
+        XCTAssertTrue(c.features.contains(.snapMode))
+        XCTAssertTrue(c.features.contains(.rollMode))
+        XCTAssertTrue(c.features.contains(.trustedSharing))
+        XCTAssertTrue(c.features.contains(.sequenceCapture))
+        XCTAssertTrue(c.features.contains(.p2pSharing))
+        XCTAssertTrue(c.features.contains(.iCloudRollPackage))
+    }
+
+    func test_piqd_full_hasPiqdAllAssetTypes() {
+        let c = piqdFull()
+        XCTAssertTrue(c.assetTypes.contains(.still))
+        XCTAssertTrue(c.assetTypes.contains(.clip))
+        XCTAssertTrue(c.assetTypes.contains(.sequence))
+        XCTAssertTrue(c.assetTypes.contains(.movingStill))
+        XCTAssertTrue(c.assetTypes.contains(.dual))
+    }
+
+    func test_piqd_full_ephemeralPolicyIsSnap() {
+        XCTAssertEqual(piqdFull().sharing.ephemeralPolicy, .snap)
+    }
+
+    // MARK: - v0.1 mask
+
+    func test_piqd_v0_1_onlySnapMode() {
+        let c = piqdV01()
+        XCTAssertEqual(c.features, [.snapMode])
+    }
+
+    func test_piqd_v0_1_stillAssetsOnly() {
+        XCTAssertEqual(piqdV01().assetTypes, .still)
+    }
+
+    func test_piqd_v0_1_noSharingNoStorage() {
+        let c = piqdV01()
+        XCTAssertEqual(c.sharing.maxCircleSize, 0)
+        XCTAssertFalse(c.storage.smartArchiveEnabled)
+        XCTAssertFalse(c.storage.iCloudSyncEnabled)
+        XCTAssertNil(c.sharing.ephemeralPolicy)
+        XCTAssertNil(c.storage.clipQuality)
+    }
+
+    func test_piqd_namespace_isPiqd() {
+        XCTAssertEqual(piqdFull().namespace, "piqd")
+        XCTAssertEqual(piqdV01().namespace, "piqd")
+    }
+
+    func test_legacy_namespace_isNil() {
+        // niftyMomnt full/lite keep the flat Documents/ layout via nil namespace.
+        let lite = AppConfig.lite
+        XCTAssertNil(lite.namespace)
+    }
+
+    // MARK: - U3: FeatureSet bit uniqueness
+
+    func test_featureSet_piqdFlags_haveUniqueRawValues() {
+        // Every named FeatureSet flag must map to a distinct bit. Regression guard: if someone
+        // renumbers flags and collides, this test catches it before runtime config bugs.
+        let allFlags: [FeatureSet] = [
+            .rollMode, .nudgeEngine, .moodMap, .liveActivity, .journalSuggest,
+            .trustedSharing, .widgetKit, .photoFix, .soundStamp, .l4c, .dualCamera,
+            .snapMode, .sequenceCapture, .p2pSharing, .iCloudRollPackage
+        ]
+        let raws = allFlags.map { $0.rawValue }
+        XCTAssertEqual(Set(raws).count, raws.count, "FeatureSet raw values must be unique")
+
+        // Piqd flags occupy bits 11–14 per SRS §2.2.
+        XCTAssertEqual(FeatureSet.snapMode.rawValue,          1 << 11)
+        XCTAssertEqual(FeatureSet.sequenceCapture.rawValue,   1 << 12)
+        XCTAssertEqual(FeatureSet.p2pSharing.rawValue,        1 << 13)
+        XCTAssertEqual(FeatureSet.iCloudRollPackage.rawValue, 1 << 14)
+    }
+
+    // MARK: - Helpers
+    // Piqd variants live in the Apps/Piqd target, not in NiftyCore. We reconstruct them locally
+    // so this test exercises the config values without a cross-target dependency.
+
+    private func piqdFull() -> AppConfig {
+        AppConfig(
+            appVariant: .piqd,
+            assetTypes: .piqdAll,
+            aiModes: .onDevice,
+            features: [.snapMode, .rollMode, .trustedSharing, .sequenceCapture,
+                       .p2pSharing, .iCloudRollPackage],
+            sharing: SharingConfig(maxCircleSize: 10, labEnabled: false, ephemeralPolicy: .snap),
+            storage: StorageConfig(
+                smartArchiveEnabled: true,
+                iCloudSyncEnabled: true,
+                clipQuality: ClipQualityConfig(maxResolution: .uhd4K, maxFrameRate: 60, proOnlyHighFPS: true)
+            )
+        )
+    }
+
+    private func piqdV01() -> AppConfig {
+        AppConfig(
+            appVariant: .piqd,
+            assetTypes: .still,
+            aiModes: .onDevice,
+            features: [.snapMode],
+            sharing: SharingConfig(maxCircleSize: 0, labEnabled: false),
+            storage: StorageConfig(smartArchiveEnabled: false, iCloudSyncEnabled: false)
+        )
+    }
+}

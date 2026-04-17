@@ -17,7 +17,7 @@ public actor GraphRepository: GraphProtocol {
 
     public init(config: AppConfig) {
         self.config = config
-        self.db = GraphRepository.openDatabase()
+        self.db = GraphRepository.openDatabase(namespace: config.namespace)
     }
 
     // MARK: - GraphProtocol
@@ -671,9 +671,9 @@ public actor GraphRepository: GraphProtocol {
 // MARK: - Database setup
 
 extension GraphRepository {
-    private static func openDatabase() -> DatabaseQueue {
+    private static func openDatabase(namespace: String?) -> DatabaseQueue {
         do {
-            let dbURL = databaseURL()
+            let dbURL = databaseURL(namespace: namespace)
             log.debug("GraphRepository — opening DB at: \(dbURL.path)")
             var config = Configuration()
             config.prepareDatabase { db in
@@ -696,10 +696,21 @@ extension GraphRepository {
         }
     }
 
-    private static func databaseURL() -> URL {
+    /// DB path derived from `AppConfig.namespace`.
+    /// - `nil` namespace → legacy niftyMomnt flat layout: `Documents/graph.sqlite`
+    /// - non-nil namespace → scoped: `Documents/{ns}/graph.sqlite` (e.g. `Documents/piqd/graph.sqlite`)
+    private static func databaseURL(namespace: String?) -> URL {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        log.debug("GraphRepository — DB path: \(docs.appendingPathComponent("graph.sqlite").path)")
-        return docs.appendingPathComponent("graph.sqlite")
+        let base: URL
+        if let ns = namespace {
+            base = docs.appendingPathComponent(ns, isDirectory: true)
+            try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        } else {
+            base = docs
+        }
+        let url = base.appendingPathComponent("graph.sqlite")
+        log.debug("GraphRepository — DB path: \(url.path)")
+        return url
     }
 
     private static func createSchema(_ db: Database) throws {

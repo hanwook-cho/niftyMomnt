@@ -11,7 +11,11 @@ public enum AssetType: String, CaseIterable, Sendable {
     case clip
     case echo
     case atmosphere
-    case l4c        // Life Four Cuts composite strip
+    case l4c        // niftyMomnt — Life Four Cuts composite strip
+    // Piqd additions — SRS §3.1
+    case sequence      // 6-frame strip assembled into looping MP4
+    case movingStill   // Live Photo with background-warped MP4 (v2.0 Piqd)
+    case dual          // simultaneous front+rear composite MP4
 }
 
 // MARK: - CaptureMode
@@ -23,6 +27,9 @@ public enum CaptureMode: String, CaseIterable, Sendable {
     case echo
     case atmosphere
     case photoBooth  // Life Four Cuts photo-booth mode
+    // Piqd additions
+    case snap        // Piqd Snap Mode — reactive/ephemeral
+    case roll        // Piqd Roll Mode — delayed 9 PM ritual
 }
 
 // MARK: - GPSCoordinate

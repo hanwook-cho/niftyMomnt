@@ -203,9 +203,9 @@ struct MomentCardView: View {
     /// Loads a UIImage thumbnail for an asset regardless of type (still/live → JPEG, video → first frame).
     private func loadThumbnail(for asset: Asset) async -> UIImage? {
         switch asset.type {
-        case .still, .live, .l4c:
+        case .still, .live, .l4c, .movingStill:
             return loadJPEGFromVault(assetID: asset.id)
-        case .clip, .atmosphere:
+        case .clip, .atmosphere, .sequence, .dual:
             return await extractVideoThumbnail(assetID: asset.id)
         case .echo:
             return Self.echoPlaceholderImage()

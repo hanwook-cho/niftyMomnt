@@ -947,7 +947,7 @@ struct MomentDetailView: View {
         let audioURL = assetsDir.appendingPathComponent("\(asset.id.uuidString).m4a")
 
         switch asset.type {
-        case .still, .l4c:
+        case .still, .l4c, .movingStill:
             return FileManager.default.fileExists(atPath: jpegURL.path) ? [jpegURL] : nil
         case .live:
             if FileManager.default.fileExists(atPath: jpegURL.path),
@@ -955,7 +955,7 @@ struct MomentDetailView: View {
                 return [jpegURL, movURL]
             }
             return FileManager.default.fileExists(atPath: jpegURL.path) ? [jpegURL] : nil
-        case .clip, .atmosphere:
+        case .clip, .atmosphere, .sequence, .dual:
             return FileManager.default.fileExists(atPath: movURL.path) ? [movURL] : nil
         case .echo:
             return FileManager.default.fileExists(atPath: audioURL.path) ? [audioURL] : nil

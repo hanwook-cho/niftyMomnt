@@ -899,6 +899,8 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
         case .echo:       return .echo
         case .atmosphere: return .atmosphere
         case .photoBooth: return .still   // individual booth shots are stills
+        case .snap:       return .still   // Piqd v0.1 — Snap Still default; format selector lands in v0.3
+        case .roll:       return .still   // Piqd Roll Mode — stills primary
         }
     }
 

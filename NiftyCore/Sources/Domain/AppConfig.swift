@@ -8,6 +8,7 @@ import Foundation
 public enum AppVariant: String, Sendable {
     case full
     case lite
+    case piqd
 }
 
 // MARK: - AssetTypeSet
@@ -16,13 +17,21 @@ public struct AssetTypeSet: OptionSet, Sendable {
     public let rawValue: Int
     public init(rawValue: Int) { self.rawValue = rawValue }
 
-    public static let still      = AssetTypeSet(rawValue: 1 << 0)
-    public static let live       = AssetTypeSet(rawValue: 1 << 1)
-    public static let clip       = AssetTypeSet(rawValue: 1 << 2)
-    public static let echo       = AssetTypeSet(rawValue: 1 << 3)
-    public static let atmosphere = AssetTypeSet(rawValue: 1 << 4)
+    public static let still       = AssetTypeSet(rawValue: 1 << 0)
+    public static let live        = AssetTypeSet(rawValue: 1 << 1)
+    public static let clip        = AssetTypeSet(rawValue: 1 << 2)
+    public static let echo        = AssetTypeSet(rawValue: 1 << 3)
+    public static let atmosphere  = AssetTypeSet(rawValue: 1 << 4)
+    // Piqd additions — SRS §3.1
+    public static let sequence    = AssetTypeSet(rawValue: 1 << 5)
+    public static let movingStill = AssetTypeSet(rawValue: 1 << 6)
+    public static let dual        = AssetTypeSet(rawValue: 1 << 7)
+
+    /// Legacy niftyMomnt capture types. Preserved for AppConfig.v0_9 back-compat.
     public static let all: AssetTypeSet = [.still, .live, .clip, .echo, .atmosphere]
     public static let basic: AssetTypeSet = [.still, .clip]
+    /// Piqd capture types — SRS §2.1.
+    public static let piqdAll: AssetTypeSet = [.still, .live, .clip, .sequence, .movingStill, .dual]
 }
 
 // MARK: - AIModeSet
@@ -54,6 +63,12 @@ public struct FeatureSet: OptionSet, Sendable {
     public static let soundStamp      = FeatureSet(rawValue: 1 << 8)  // NEW v1.5
     public static let l4c             = FeatureSet(rawValue: 1 << 9)  // Life Four Cuts v0.3.5
     public static let dualCamera      = FeatureSet(rawValue: 1 << 10) // v0.9 AVCaptureMultiCamSession
+    // Piqd additions — SRS §2.2
+    public static let snapMode          = FeatureSet(rawValue: 1 << 11)
+    public static let sequenceCapture   = FeatureSet(rawValue: 1 << 12)
+    public static let p2pSharing        = FeatureSet(rawValue: 1 << 13)
+    public static let iCloudRollPackage = FeatureSet(rawValue: 1 << 14)
+
     public static let all: FeatureSet = [
         .rollMode, .nudgeEngine, .moodMap, .liveActivity,
         .journalSuggest, .trustedSharing, .widgetKit, .photoFix, .soundStamp, .l4c, .dualCamera
@@ -65,9 +80,13 @@ public struct FeatureSet: OptionSet, Sendable {
 public struct SharingConfig: Sendable {
     public let maxCircleSize: Int
     public let labEnabled: Bool
-    public init(maxCircleSize: Int, labEnabled: Bool) {
+    /// Piqd ephemeral policy (nil for niftyMomnt variants).
+    public let ephemeralPolicy: EphemeralPolicy?
+
+    public init(maxCircleSize: Int, labEnabled: Bool, ephemeralPolicy: EphemeralPolicy? = nil) {
         self.maxCircleSize = maxCircleSize
         self.labEnabled = labEnabled
+        self.ephemeralPolicy = ephemeralPolicy
     }
 }
 
@@ -76,9 +95,13 @@ public struct SharingConfig: Sendable {
 public struct StorageConfig: Sendable {
     public let smartArchiveEnabled: Bool
     public let iCloudSyncEnabled: Bool
-    public init(smartArchiveEnabled: Bool, iCloudSyncEnabled: Bool) {
+    /// Piqd clip quality ceiling (nil for niftyMomnt variants).
+    public let clipQuality: ClipQualityConfig?
+
+    public init(smartArchiveEnabled: Bool, iCloudSyncEnabled: Bool, clipQuality: ClipQualityConfig? = nil) {
         self.smartArchiveEnabled = smartArchiveEnabled
         self.iCloudSyncEnabled = iCloudSyncEnabled
+        self.clipQuality = clipQuality
     }
 }
 
@@ -106,5 +129,15 @@ public struct AppConfig: Sendable {
         self.features = features
         self.sharing = sharing
         self.storage = storage
+    }
+
+    /// Subdirectory under `Documents/` for this app variant's vault and GRDB files.
+    /// Returns `nil` for the legacy niftyMomnt flat layout (`Documents/assets/`, `Documents/graph.sqlite`).
+    /// Piqd uses `"piqd"` → `Documents/piqd/assets/`, `Documents/piqd/graph.sqlite`.
+    public var namespace: String? {
+        switch appVariant {
+        case .piqd: return "piqd"
+        case .full, .lite: return nil
+        }
     }
 }

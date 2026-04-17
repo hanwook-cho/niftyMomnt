@@ -17,16 +17,27 @@ private let log = Logger(subsystem: "com.hwcho99.niftymomnt", category: "VaultRe
 
 public actor VaultRepository: VaultProtocol {
     private let config: AppConfig
+    private let assetsDirectory: URL
     nonisolated(unsafe) private let storageSubject = CurrentValueSubject<Int64, Never>(0)
 
     public init(config: AppConfig) {
         self.config = config
+        self.assetsDirectory = Self.resolveAssetsDirectory(namespace: config.namespace)
         do {
-            try FileManager.default.createDirectory(at: Self.assetsDirectory, withIntermediateDirectories: true)
-            log.debug("VaultRepository init — assets dir: \(Self.assetsDirectory.path)")
+            try FileManager.default.createDirectory(at: assetsDirectory, withIntermediateDirectories: true)
+            log.debug("VaultRepository init — assets dir: \(self.assetsDirectory.path)")
         } catch {
             log.error("VaultRepository init — failed to create assets dir: \(error)")
         }
+    }
+
+    /// Computes the assets directory for a given app namespace.
+    /// - `nil` namespace → legacy niftyMomnt flat layout: `Documents/assets/`
+    /// - non-nil namespace → scoped: `Documents/{ns}/assets/`
+    private static func resolveAssetsDirectory(namespace: String?) -> URL {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let base = namespace.map { docs.appendingPathComponent($0, isDirectory: true) } ?? docs
+        return base.appendingPathComponent("assets", isDirectory: true)
     }
 
     public nonisolated var storageUsedBytes: AnyPublisher<Int64, Never> {
@@ -36,8 +47,8 @@ public actor VaultRepository: VaultProtocol {
     // MARK: - VaultProtocol
 
     public func save(_ asset: Asset, data: Data) async throws {
-        let fileURL = Self.fileURL(for: asset.id, type: asset.type)
-        let metaURL = Self.metaURL(for: asset.id)
+        let fileURL = fileURL(for: asset.id, type: asset.type)
+        let metaURL = metaURL(for: asset.id)
         log.debug("save — writing \(data.count)B to \(fileURL.lastPathComponent)")
         do {
             try data.write(to: fileURL, options: .atomic)
@@ -58,7 +69,7 @@ public actor VaultRepository: VaultProtocol {
     }
 
     public func saveVideoFile(_ asset: Asset, sourceURL: URL) async throws {
-        let destURL = Self.fileURL(for: asset.id, type: asset.type)
+        let destURL = fileURL(for: asset.id, type: asset.type)
         log.debug("saveVideoFile — moving \(sourceURL.lastPathComponent) → \(destURL.lastPathComponent)")
         do {
             try FileManager.default.moveItem(at: sourceURL, to: destURL)
@@ -68,14 +79,14 @@ public actor VaultRepository: VaultProtocol {
         }
         let record = AssetRecord(from: asset)
         let encoded = try JSONEncoder().encode(record)
-        let metaURL = Self.metaURL(for: asset.id)
+        let metaURL = metaURL(for: asset.id)
         try encoded.write(to: metaURL, options: .atomic)
         storageSubject.send(storageSubject.value + Int64((try? destURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0))
         log.debug("saveVideoFile done — \(destURL.lastPathComponent)")
     }
 
     public func saveAudioFile(_ asset: Asset, sourceURL: URL) async throws {
-        let destURL = Self.fileURL(for: asset.id, type: asset.type)
+        let destURL = fileURL(for: asset.id, type: asset.type)
         log.debug("saveAudioFile — moving \(sourceURL.lastPathComponent) → \(destURL.lastPathComponent)")
         do {
             try FileManager.default.moveItem(at: sourceURL, to: destURL)
@@ -85,14 +96,14 @@ public actor VaultRepository: VaultProtocol {
         }
         let record = AssetRecord(from: asset)
         let encoded = try JSONEncoder().encode(record)
-        let metaURL = Self.metaURL(for: asset.id)
+        let metaURL = metaURL(for: asset.id)
         try encoded.write(to: metaURL, options: .atomic)
         storageSubject.send(storageSubject.value + Int64((try? destURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0))
         log.debug("saveAudioFile done — \(destURL.lastPathComponent)")
     }
 
     public func saveLiveMovieFile(_ asset: Asset, sourceURL: URL) async throws {
-        let destURL = Self.liveMovieURL(for: asset.id)
+        let destURL = liveMovieURL(for: asset.id)
         log.debug("saveLiveMovieFile — moving \(sourceURL.lastPathComponent) → \(destURL.lastPathComponent)")
         do {
             try FileManager.default.moveItem(at: sourceURL, to: destURL)
@@ -106,12 +117,12 @@ public actor VaultRepository: VaultProtocol {
 
     public func saveDerivative(_ derivative: DerivativeAsset, data: Data, sourceAssetID: UUID) async throws {
         // v0.7: AES-GCM encryption with source asset DEK
-        let derivURL = Self.derivativeFileURL(for: sourceAssetID)
+        let derivURL = derivativeFileURL(for: sourceAssetID)
         try data.write(to: derivURL, options: .atomic)
     }
 
     public func load(_ assetID: UUID) async throws -> (Asset, Data) {
-        let metaURL = Self.metaURL(for: assetID)
+        let metaURL = metaURL(for: assetID)
         guard let metaData = try? Data(contentsOf: metaURL),
               let record = try? JSONDecoder().decode(AssetRecord.self, from: metaData) else {
             throw VaultError.notFound
@@ -120,13 +131,13 @@ public actor VaultRepository: VaultProtocol {
 
         if record.isPrivate ?? false {
             // Decrypt AES-GCM encrypted file (12-byte nonce prefix).
-            let encURL = Self.encryptedFileURL(for: assetID)
+            let encURL = encryptedFileURL(for: assetID)
             guard let encData = try? Data(contentsOf: encURL) else { throw VaultError.notFound }
             let plainData = try Self.aesGCMDecrypt(encData)
             return (asset, plainData)
         }
 
-        let fileURL = Self.fileURL(for: assetID, type: asset.type)
+        let fileURL = fileURL(for: assetID, type: asset.type)
         guard let data = try? Data(contentsOf: fileURL) else {
             throw VaultError.notFound
         }
@@ -134,7 +145,7 @@ public actor VaultRepository: VaultProtocol {
     }
 
     public func moveToVault(assetID: UUID) async throws {
-        let metaURL = Self.metaURL(for: assetID)
+        let metaURL = metaURL(for: assetID)
         guard let metaData = try? Data(contentsOf: metaURL),
               var record = try? JSONDecoder().decode(AssetRecord.self, from: metaData) else {
             throw VaultError.notFound
@@ -142,14 +153,14 @@ public actor VaultRepository: VaultProtocol {
         guard !(record.isPrivate ?? false) else { return } // already private — idempotent
 
         let asset = record.toAsset()
-        let fileURL = Self.fileURL(for: assetID, type: asset.type)
+        let fileURL = fileURL(for: assetID, type: asset.type)
         guard let plainData = try? Data(contentsOf: fileURL) else {
             throw VaultError.notFound
         }
 
         // Encrypt with AES-GCM — 12-byte random nonce prepended to ciphertext.
         let encData = try Self.aesGCMEncrypt(plainData)
-        let encURL = Self.encryptedFileURL(for: assetID)
+        let encURL = encryptedFileURL(for: assetID)
         do {
             try encData.write(to: encURL, options: .atomic)
         } catch {
@@ -170,7 +181,7 @@ public actor VaultRepository: VaultProtocol {
 
     public func loadPrimary(_ assetID: UUID) async throws -> (Asset, Data) {
         // Returns derivative bytes if a derivative file exists, else original.
-        let derivURL = Self.derivativeFileURL(for: assetID)
+        let derivURL = derivativeFileURL(for: assetID)
         let (asset, originalData) = try await load(assetID)
         if let derivData = try? Data(contentsOf: derivURL) {
             return (asset, derivData)
@@ -179,28 +190,28 @@ public actor VaultRepository: VaultProtocol {
     }
 
     public func deleteDerivative(for assetID: UUID) async throws {
-        let derivURL = Self.derivativeFileURL(for: assetID)
+        let derivURL = derivativeFileURL(for: assetID)
         try? FileManager.default.removeItem(at: derivURL)
     }
 
     public func delete(_ assetID: UUID) async throws {
         let (asset, _) = try await load(assetID)
-        let fileURL = Self.fileURL(for: assetID, type: asset.type)
-        let metaURL = Self.metaURL(for: assetID)
-        let derivURL = Self.derivativeFileURL(for: assetID)
-        let encURL = Self.encryptedFileURL(for: assetID)
+        let fileURL = fileURL(for: assetID, type: asset.type)
+        let metaURL = metaURL(for: assetID)
+        let derivURL = derivativeFileURL(for: assetID)
+        let encURL = encryptedFileURL(for: assetID)
         try? FileManager.default.removeItem(at: fileURL)
         try? FileManager.default.removeItem(at: metaURL)
         try? FileManager.default.removeItem(at: derivURL)
         try? FileManager.default.removeItem(at: encURL)
         // Remove Live Photo companion MOV if present.
         if asset.type == .live {
-            try? FileManager.default.removeItem(at: Self.liveMovieURL(for: assetID))
+            try? FileManager.default.removeItem(at: liveMovieURL(for: assetID))
         }
     }
 
     public func query(_ query: VaultQuery) async throws -> [Asset] {
-        let dir = Self.assetsDirectory
+        let dir = assetsDirectory
         let files = (try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)) ?? []
         let metaFiles = files.filter { $0.pathExtension == "json" }
         log.debug("query — scanning \(metaFiles.count) sidecar file(s) in assets dir")
@@ -234,7 +245,7 @@ public actor VaultRepository: VaultProtocol {
 
     public func exportToPhotoLibrary(_ assetID: UUID) async throws {
         let (asset, _) = try await load(assetID)
-        let fileURL = Self.fileURL(for: assetID, type: asset.type)
+        let fileURL = fileURL(for: assetID, type: asset.type)
 
         try await Self.requestPhotoLibraryAddAccessIfNeeded()
 
@@ -251,7 +262,7 @@ public actor VaultRepository: VaultProtocol {
             }
 
         case .live:
-            let movURL = Self.liveMovieURL(for: assetID)
+            let movURL = liveMovieURL(for: assetID)
             guard FileManager.default.fileExists(atPath: fileURL.path),
                   FileManager.default.fileExists(atPath: movURL.path) else {
                 throw VaultError.notFound
@@ -268,7 +279,7 @@ public actor VaultRepository: VaultProtocol {
                 request.addResource(with: .pairedVideo, fileURL: movURL, options: videoOptions)
             }
 
-        case .clip, .atmosphere:
+        case .clip, .atmosphere, .sequence, .dual, .movingStill:
             guard FileManager.default.fileExists(atPath: fileURL.path) else {
                 throw VaultError.notFound
             }
@@ -289,18 +300,12 @@ public actor VaultRepository: VaultProtocol {
 // MARK: - File layout
 
 private extension VaultRepository {
-    static var assetsDirectory: URL {
-        FileManager.default
-            .urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("assets", isDirectory: true)
-    }
-
-    static func fileURL(for id: UUID, type: AssetType) -> URL {
+    func fileURL(for id: UUID, type: AssetType) -> URL {
         let ext: String
         switch type {
-        case .still, .live, .l4c:
+        case .still, .live, .l4c, .movingStill:
             ext = "jpg"
-        case .clip, .atmosphere:
+        case .clip, .atmosphere, .sequence, .dual:
             ext = "mov"
         case .echo:
             ext = "m4a"
@@ -308,21 +313,21 @@ private extension VaultRepository {
         return assetsDirectory.appendingPathComponent("\(id.uuidString).\(ext)")
     }
 
-    static func metaURL(for id: UUID) -> URL {
+    func metaURL(for id: UUID) -> URL {
         assetsDirectory.appendingPathComponent("\(id.uuidString).json")
     }
 
-    static func derivativeFileURL(for id: UUID) -> URL {
+    func derivativeFileURL(for id: UUID) -> URL {
         assetsDirectory.appendingPathComponent("\(id.uuidString).fix.jpg")
     }
 
     /// AES-GCM encrypted file: 12-byte nonce || ciphertext (v0.8 private assets).
-    static func encryptedFileURL(for id: UUID) -> URL {
+    func encryptedFileURL(for id: UUID) -> URL {
         assetsDirectory.appendingPathComponent("\(id.uuidString).enc")
     }
 
     /// Companion MOV for a Live Photo asset. Stored alongside the JPEG in the assets dir.
-    static func liveMovieURL(for id: UUID) -> URL {
+    func liveMovieURL(for id: UUID) -> URL {
         assetsDirectory.appendingPathComponent("\(id.uuidString).mov")
     }
 
@@ -464,12 +469,15 @@ private struct AssetRecord: Codable {
 private extension AssetTypeSet {
     func containsAssetType(_ type: AssetType) -> Bool {
         switch type {
-        case .still:      return contains(.still)
-        case .live:       return contains(.live)
-        case .clip:       return contains(.clip)
-        case .echo:       return contains(.echo)
-        case .atmosphere: return contains(.atmosphere)
-        case .l4c:        return contains(.still)   // L4C composite stored as JPEG; query as .still bucket
+        case .still:       return contains(.still)
+        case .live:        return contains(.live)
+        case .clip:        return contains(.clip)
+        case .echo:        return contains(.echo)
+        case .atmosphere:  return contains(.atmosphere)
+        case .l4c:         return contains(.still)        // L4C composite stored as JPEG; query as .still bucket
+        case .sequence:    return contains(.sequence)     // Piqd
+        case .movingStill: return contains(.movingStill)  // Piqd
+        case .dual:        return contains(.dual)         // Piqd
         }
     }
 }

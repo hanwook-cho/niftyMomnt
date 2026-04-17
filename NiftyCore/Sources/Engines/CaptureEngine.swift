@@ -126,6 +126,8 @@ public final class CaptureEngine: CaptureEngineProtocol {
             case .echo:       return config.assetTypes.contains(.echo)
             case .atmosphere: return config.assetTypes.contains(.atmosphere)
             case .photoBooth: return config.features.contains(.l4c)
+            case .snap:       return config.features.contains(.snapMode)
+            case .roll:       return config.features.contains(.rollMode)
             }
         }
     }

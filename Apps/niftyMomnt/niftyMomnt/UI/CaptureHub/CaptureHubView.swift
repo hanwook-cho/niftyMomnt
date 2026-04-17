@@ -2185,6 +2185,7 @@ struct CaptureHubView: View {
             case .echo:       return container.config.assetTypes.contains(.echo)
             case .atmosphere: return container.config.assetTypes.contains(.atmosphere)
             case .photoBooth: return container.config.features.contains(.l4c)
+            case .snap, .roll: return false  // niftyMomnt CaptureHub does not offer Piqd modes
             }
         }
     }
