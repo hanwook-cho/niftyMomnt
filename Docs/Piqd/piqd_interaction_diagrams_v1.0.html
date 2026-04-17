@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Piqd — Interaction & Data Flow Diagrams v1.0</title>
+<style>
+  :root {
+    --bg: #ffffff; --text: #1a1a18; --text-2: #5f5e5a; --text-3: #9a9890;
+    --border: rgba(0,0,0,0.1); --surface: #f8f7f4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111110; --text: #e8e6df; --text-2: #9a9890; --text-3: #5f5e5a; --border: rgba(255,255,255,0.1); --surface: #1a1a18; }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; background: var(--bg); color: var(--text); padding: 48px 40px; max-width: 1000px; margin: 0 auto; }
+  header { margin-bottom: 48px; padding-bottom: 24px; border-bottom: 0.5px solid var(--border); }
+  .doc-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); margin-bottom: 8px; }
+  h1 { font-size: 28px; font-weight: 500; letter-spacing: -0.5px; margin-bottom: 6px; }
+  .doc-meta { font-size: 13px; color: var(--text-2); display: flex; gap: 24px; flex-wrap: wrap; }
+  h2 { font-size: 16px; font-weight: 500; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 0.5px solid var(--border); }
+  .diagram-section { margin-bottom: 48px; }
+  .diagram-desc { font-size: 13px; color: var(--text-2); line-height: 1.7; margin-bottom: 20px; max-width: 720px; }
+  .diagram-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: 12px; padding: 24px; overflow-x: auto; }
+  svg { display: block; width: 100%; }
+  .legend { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 16px; padding-top: 16px; border-top: 0.5px solid var(--border); }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .phase-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 20px; }
+  .phase-table th { text-align: left; font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); padding: 8px 12px; border-bottom: 0.5px solid var(--border); }
+  .phase-table td { padding: 10px 12px; border-bottom: 0.5px solid var(--border); color: var(--text-2); vertical-align: top; line-height: 1.6; }
+  .phase-table td:first-child { font-weight: 500; color: var(--text); white-space: nowrap; width: 140px; }
+  .phase-table td:last-child { font-family: 'SF Mono', monospace; font-size: 11px; color: var(--text-3); }
+  footer { margin-top: 64px; padding-top: 24px; border-top: 0.5px solid var(--border); font-size: 12px; color: var(--text-3); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="doc-label">Piqd · Technical Reference</div>
+  <h1>Interaction & Data Flow Diagrams</h1>
+  <div class="doc-meta">
+    <span>Version 1.0</span>
+    <span>April 2026</span>
+    <span>PRD ref: piqd_PRD_v1.1.md</span>
+    <span>SRS ref: piqd_SRS_v1.0.md</span>
+    <span>UIUX Spec ref: piqd_UIUX_Spec_v1.0.md</span>
+    <span>Reference UI: piqd_reference_ui_v1.1.html</span>
+    <span>Onboarding: piqd_onboarding_v1.0.html</span>
+    <span>Confidential</span>
+  </div>
+</header>
+
+<div class="diagram-section">
+  <h2>1. Snap Mode — full sender / receiver interaction flow</h2>
+  <p class="diagram-desc">Complete sequence from capture through share, APNs notification, inbox, viewing, reaction, and purge on both sides. All photo and video content is end-to-end encrypted — no content ever touches a Piqd server.</p>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 860 860" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+      <rect x="40" y="20" width="200" height="40" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+      <text x="140" y="40" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#712B13">Sender device</text>
+      <rect x="290" y="20" width="280" height="40" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="430" y="40" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#444441">Transport / infrastructure</text>
+      <rect x="620" y="20" width="200" height="40" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="720" y="40" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#085041">Receiver device</text>
+      <line x1="140" y1="60" x2="140" y2="840" stroke="#d0cec6" stroke-width="0.5" stroke-dasharray="4 3"/>
+      <line x1="430" y1="60" x2="430" y2="840" stroke="#d0cec6" stroke-width="0.5" stroke-dasharray="4 3"/>
+      <line x1="720" y1="60" x2="720" y2="840" stroke="#d0cec6" stroke-width="0.5" stroke-dasharray="4 3"/>
+      <text x="40" y="88" font-size="11" fill="#9a9890" font-weight="500">1 · capture</text>
+      <text x="40" y="222" font-size="11" fill="#9a9890" font-weight="500">2 · send</text>
+      <text x="40" y="374" font-size="11" fill="#9a9890" font-weight="500">3 · notify</text>
+      <text x="40" y="462" font-size="11" fill="#9a9890" font-weight="500">4 · view</text>
+      <text x="40" y="574" font-size="11" fill="#9a9890" font-weight="500">5 · respond</text>
+      <text x="40" y="684" font-size="11" fill="#9a9890" font-weight="500">6 · purge</text>
+      <text x="40" y="774" font-size="11" fill="#9a9890" font-weight="500">7 · expire (if unviewed)</text>
+      <line x1="40" y1="96" x2="820" y2="96" stroke="#e0ddd6" stroke-width="0.5" stroke-dasharray="2 5"/>
+      <line x1="40" y1="230" x2="820" y2="230" stroke="#e0ddd6" stroke-width="0.5" stroke-dasharray="2 5"/>
+      <line x1="40" y1="382" x2="820" y2="382" stroke="#e0ddd6" stroke-width="0.5" stroke-dasharray="2 5"/>
+      <line x1="40" y1="470" x2="820" y2="470" stroke="#e0ddd6" stroke-width="0.5" stroke-dasharray="2 5"/>
+      <line x1="40" y1="582" x2="820" y2="582" stroke="#e0ddd6" stroke-width="0.5" stroke-dasharray="2 5"/>
+      <line x1="40" y1="692" x2="820" y2="692" stroke="#e0ddd6" stroke-width="0.5" stroke-dasharray="2 5"/>
+      <line x1="40" y1="782" x2="820" y2="782" stroke="#e0ddd6" stroke-width="0.5" stroke-dasharray="2 5"/>
+      <!-- phase 1 -->
+      <rect x="50" y="104" width="180" height="50" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+      <text x="140" y="124" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#712B13">Capture asset</text>
+      <text x="140" y="142" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">still · seq · clip · dual</text>
+      <rect x="50" y="164" width="180" height="50" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+      <text x="140" y="184" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#712B13">Encrypt + vault</text>
+      <text x="140" y="202" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">AES-256-GCM local</text>
+      <line x1="140" y1="154" x2="140" y2="162" stroke="#993C1D" stroke-width="1.2" marker-end="url(#a1)"/>
+      <!-- phase 2 -->
+      <rect x="50" y="236" width="180" height="50" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+      <text x="140" y="256" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#712B13">Select circle</text>
+      <text x="140" y="274" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">tap friends to send</text>
+      <line x1="140" y1="214" x2="140" y2="234" stroke="#993C1D" stroke-width="1.2" marker-end="url(#a1)"/>
+      <line x1="232" y1="298" x2="288" y2="298" stroke="#D85A30" stroke-width="1.2" marker-end="url(#a1)"/>
+      <text x="260" y="292" text-anchor="middle" font-size="10" fill="#9a9890">E2EE payload</text>
+      <rect x="290" y="278" width="280" height="50" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="430" y="298" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#444441">Transport select</text>
+      <text x="430" y="316" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">LAN · WebRTC · deferred</text>
+      <rect x="290" y="338" width="280" height="36" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="430" y="356" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#085041">LAN — MultipeerConnectivity (nearby)</text>
+      <line x1="430" y1="328" x2="430" y2="336" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#a1)"/>
+      <line x1="572" y1="356" x2="618" y2="356" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#a1)"/>
+      <text x="595" y="350" text-anchor="middle" font-size="10" fill="#9a9890">encrypted</text>
+      <!-- phase 3 -->
+      <rect x="290" y="388" width="280" height="50" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="430" y="408" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#444441">APNs ping</text>
+      <text x="430" y="426" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">metadata only — no content</text>
+      <line x1="430" y1="374" x2="430" y2="386" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#a1)"/>
+      <line x1="572" y1="412" x2="618" y2="412" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#a1)"/>
+      <rect x="620" y="388" width="200" height="50" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="720" y="408" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">Lock screen notif</text>
+      <text x="720" y="426" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">name sent you something</text>
+      <!-- phase 4 -->
+      <rect x="620" y="476" width="200" height="50" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="720" y="496" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">Open inbox item</text>
+      <text x="720" y="514" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">decrypt + display asset</text>
+      <line x1="720" y1="438" x2="720" y2="474" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#a1)"/>
+      <line x1="618" y1="500" x2="572" y2="500" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#a1)"/>
+      <rect x="290" y="476" width="280" height="50" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="430" y="496" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#444441">Viewed confirmation APNs</text>
+      <text x="430" y="514" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">delivery confirmed</text>
+      <line x1="288" y1="500" x2="232" y2="500" stroke="#D85A30" stroke-width="1.2" marker-end="url(#a1)"/>
+      <rect x="50" y="476" width="180" height="50" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+      <text x="140" y="496" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#712B13">Viewed receipt</text>
+      <text x="140" y="514" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">seen indicator on asset</text>
+      <!-- phase 5 -->
+      <rect x="620" y="588" width="200" height="56" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="720" y="608" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">React or reply</text>
+      <text x="720" y="626" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">chip tap or short text</text>
+      <line x1="720" y1="526" x2="720" y2="586" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#a1)"/>
+      <line x1="618" y1="616" x2="572" y2="616" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#a1)"/>
+      <rect x="290" y="588" width="280" height="56" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="430" y="608" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#444441">Reaction APNs</text>
+      <text x="430" y="626" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">text metadata only</text>
+      <line x1="288" y1="616" x2="232" y2="616" stroke="#D85A30" stroke-width="1.2" marker-end="url(#a1)"/>
+      <rect x="50" y="588" width="180" height="56" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+      <text x="140" y="608" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#712B13">Sender notified</text>
+      <text x="140" y="626" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">name reacted: haha</text>
+      <!-- phase 6 -->
+      <rect x="50" y="698" width="180" height="56" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+      <text x="140" y="718" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#712B13">Sender purge</text>
+      <text x="140" y="736" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">5min after viewed confirm</text>
+      <line x1="140" y1="644" x2="140" y2="696" stroke="#993C1D" stroke-width="1.2" marker-end="url(#a1)"/>
+      <rect x="620" y="698" width="200" height="56" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="720" y="718" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">Receiver purge</text>
+      <text x="720" y="736" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">on view session close</text>
+      <line x1="720" y1="644" x2="720" y2="696" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#a1)"/>
+      <!-- phase 7 -->
+      <rect x="290" y="788" width="280" height="50" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="430" y="808" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#444441">24h hard ceiling</text>
+      <text x="430" y="826" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">both purged if never viewed</text>
+      <line x1="140" y1="754" x2="140" y2="814" stroke="#c0bdb6" stroke-width="0.5" stroke-dasharray="3 3"/>
+      <line x1="140" y1="814" x2="288" y2="814" stroke="#c0bdb6" stroke-width="0.5" stroke-dasharray="3 3" marker-end="url(#a1)"/>
+      <line x1="720" y1="754" x2="720" y2="814" stroke="#c0bdb6" stroke-width="0.5" stroke-dasharray="3 3"/>
+      <line x1="720" y1="814" x2="572" y2="814" stroke="#c0bdb6" stroke-width="0.5" stroke-dasharray="3 3" marker-end="url(#a1)"/>
+    </svg>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#D85A30;"></div>Sender → transport</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1D9E75;"></div>Transport → receiver</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#c0bdb6;border:1px dashed #9a9890;"></div>24h unviewed expiry</div>
+  </div>
+  <table class="phase-table" style="margin-top:24px;">
+    <thead><tr><th>Phase</th><th>Action</th><th>Data in transit</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>1 · Capture</td><td>Asset captured, encrypted, written to local vault</td><td>None — local only</td><td>Immediate</td></tr>
+      <tr><td>2 · Send</td><td>Circle selected, transport auto-chosen, E2EE payload transmitted</td><td>Encrypted asset bytes · sender ID · message ID · EphemeralPolicy</td><td>Immediate</td></tr>
+      <tr><td>3 · Notify</td><td>APNs metadata ping to receiver after delivery</td><td>Sender name · message ID · reason string — no content</td><td>&lt;2s after delivery</td></tr>
+      <tr><td>4 · View</td><td>Receiver opens inbox, asset decrypted and displayed. Viewed flag returned to sender.</td><td>Viewed APNs — no content</td><td>On tap</td></tr>
+      <tr><td>5 · Respond</td><td>Reaction chip or short text reply</td><td>Reaction word or reply text — no asset re-transmitted</td><td>On tap</td></tr>
+      <tr><td>6 · Purge</td><td>Receiver copy deleted on view close. Sender copy deleted 5min after viewed confirm. Thread cleared.</td><td>None</td><td>Receiver: on close · Sender: +5min</td></tr>
+      <tr><td>7 · Expire</td><td>Both copies purged if never viewed. Sender notified "expired unviewed".</td><td>None</td><td>24h from send</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="diagram-section">
+  <h2>2. Roll Mode — full sender / receiver interaction flow</h2>
+  <p class="diagram-desc">All-day capture through StoryEngine assembly, iCloud encrypted package delivery, 9 PM group unlock ritual, reactions, and permanent Film Archive storage on both sides. Roll assets never expire.</p>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 860 900" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+      <rect x="40" y="20" width="200" height="40" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="140" y="40" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#3C3489">Sender device</text>
+      <rect x="290" y="20" width="280" height="40" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="430" y="40" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#444441">iCloud + APNs</text>
+      <rect x="620" y="20" width="200" height="40" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="720" y="40" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#085041">Receiver device</text>
+      <line x1="140" y1="60" x2="140" y2="880" stroke="#d0cec6" stroke-width="0.5" stroke-dasharray="4 3"/>
+      <line x1="430" y1="60" x2="430" y2="880" stroke="#d0cec6" stroke-width="0.5" stroke-dasharray="4 3"/>
+      <line x1="720" y1="60" x2="720" y2="880" stroke="#d0cec6" stroke-width="0.5" stroke-dasharray="4 3"/>
+      <text x="40" y="88" font-size="11" fill="#9a9890" font-weight="500">1 · all-day capture</text>
+      <text x="40" y="250" font-size="11" fill="#9a9890" font-weight="500">2 · 9PM unlock</text>
+      <text x="40" y="430" font-size="11" fill="#9a9890" font-weight="500">3 · iCloud delivery</text>
+      <text x="40" y="570" font-size="11" fill="#9a9890" font-weight="500">4 · group reveal</text>
+      <text x="40" y="694" font-size="11" fill="#9a9890" font-weight="500">5 · response</text>
+      <text x="40" y="804" font-size="11" fill="#9a9890" font-weight="500">6 · archive</text>
+      <line x1="40" y1="96" x2="820" y2="96" stroke="#e0ddd6" stroke-width="0.5" stroke-dasharray="2 5"/>
+      <line x1="40" y1="258" x2="820" y2="258" stroke="#e0ddd6" stroke-width="0.5" stroke-dasharray="2 5"/>
+      <line x1="40" y1="438" x2="820" y2="438" stroke="#e0ddd6" stroke-width="0.5" stroke-dasharray="2 5"/>
+      <line x1="40" y1="578" x2="820" y2="578" stroke="#e0ddd6" stroke-width="0.5" stroke-dasharray="2 5"/>
+      <line x1="40" y1="702" x2="820" y2="702" stroke="#e0ddd6" stroke-width="0.5" stroke-dasharray="2 5"/>
+      <line x1="40" y1="812" x2="820" y2="812" stroke="#e0ddd6" stroke-width="0.5" stroke-dasharray="2 5"/>
+      <!-- phase 1 -->
+      <rect x="50" y="104" width="180" height="50" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="140" y="124" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#3C3489">Shoot all day</text>
+      <text x="140" y="142" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">stills · live photos · locked</text>
+      <rect x="50" y="164" width="180" height="80" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="140" y="186" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#3C3489">Vault (locked)</text>
+      <text x="140" y="204" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">assets hidden, encrypted</text>
+      <text x="140" y="222" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">no preview possible</text>
+      <line x1="140" y1="154" x2="140" y2="162" stroke="#534AB7" stroke-width="1.2" marker-end="url(#a2)"/>
+      <rect x="290" y="114" width="280" height="50" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="430" y="134" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#444441">rollCircle locked at first capture</text>
+      <text x="430" y="152" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">immutable for this Roll</text>
+      <line x1="232" y1="130" x2="288" y2="130" stroke="#534AB7" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#a2)"/>
+      <!-- phase 2 -->
+      <rect x="50" y="264" width="180" height="50" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="140" y="284" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#3C3489">Unlock trigger</text>
+      <text x="140" y="302" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">9PM or 24h ceiling</text>
+      <line x1="140" y1="244" x2="140" y2="262" stroke="#534AB7" stroke-width="1.2" marker-end="url(#a2)"/>
+      <rect x="50" y="324" width="180" height="100" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="140" y="346" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#3C3489">StoryEngine assembly</text>
+      <text x="140" y="364" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">film sim baked in</text>
+      <text x="140" y="382" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">hero asset selected</text>
+      <text x="140" y="400" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">Moment labeled</text>
+      <line x1="140" y1="314" x2="140" y2="322" stroke="#534AB7" stroke-width="1.2" marker-end="url(#a2)"/>
+      <!-- phase 3 -->
+      <rect x="50" y="444" width="180" height="50" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="140" y="464" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#3C3489">Encrypt per-recipient</text>
+      <text x="140" y="482" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">Curve25519 public key</text>
+      <line x1="140" y1="424" x2="140" y2="442" stroke="#534AB7" stroke-width="1.2" marker-end="url(#a2)"/>
+      <line x1="232" y1="468" x2="288" y2="468" stroke="#534AB7" stroke-width="1.2" marker-end="url(#a2)"/>
+      <rect x="290" y="444" width="280" height="80" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="430" y="468" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#444441">iCloud private container</text>
+      <text x="430" y="486" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">one .rollpkg per recipient</text>
+      <text x="430" y="504" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">opaque — Apple sees nothing</text>
+      <rect x="290" y="534" width="280" height="44" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="430" y="550" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#444441">APNs group ping</text>
+      <text x="430" y="568" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">Your Piqd is ready — no content</text>
+      <line x1="430" y1="524" x2="430" y2="532" stroke="#5F5E5A" stroke-width="1.2" marker-end="url(#a2)"/>
+      <line x1="572" y1="554" x2="618" y2="554" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#a2)"/>
+      <!-- phase 4 -->
+      <rect x="620" y="584" width="200" height="50" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="720" y="604" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">Open notification</text>
+      <text x="720" y="622" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">fetch .rollpkg from iCloud</text>
+      <line x1="720" y1="570" x2="720" y2="582" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#a2)"/>
+      <line x1="618" y1="608" x2="572" y2="608" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#a2)"/>
+      <rect x="620" y="644" width="200" height="50" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="720" y="664" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">Decrypt + reveal</text>
+      <text x="720" y="682" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">film-advance, one by one</text>
+      <line x1="720" y1="634" x2="720" y2="642" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#a2)"/>
+      <line x1="618" y1="668" x2="572" y2="668" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#a2)"/>
+      <rect x="290" y="644" width="280" height="50" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="430" y="660" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#444441">Opened status APNs</text>
+      <text x="430" y="678" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">avatar indicator to sender</text>
+      <line x1="288" y1="668" x2="232" y2="668" stroke="#534AB7" stroke-width="1.2" marker-end="url(#a2)"/>
+      <rect x="50" y="644" width="180" height="50" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="140" y="660" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#3C3489">Friends opened</text>
+      <text x="140" y="678" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">avatar glow on Roll</text>
+      <!-- phase 5 -->
+      <rect x="620" y="708" width="200" height="56" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="720" y="728" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">React to assets</text>
+      <text x="720" y="746" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">chip or short reply</text>
+      <line x1="720" y1="694" x2="720" y2="706" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#a2)"/>
+      <line x1="618" y1="734" x2="572" y2="734" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#a2)"/>
+      <rect x="290" y="708" width="280" height="56" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="430" y="728" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#444441">Reaction APNs</text>
+      <text x="430" y="746" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">text metadata only</text>
+      <line x1="288" y1="734" x2="232" y2="734" stroke="#534AB7" stroke-width="1.2" marker-end="url(#a2)"/>
+      <rect x="50" y="708" width="180" height="56" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="140" y="728" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#3C3489">Sender notified</text>
+      <text x="140" y="746" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">name reacted to photo</text>
+      <!-- phase 6 -->
+      <rect x="50" y="818" width="180" height="56" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="140" y="838" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#3C3489">Sender Film Archive</text>
+      <text x="140" y="856" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">permanent local storage</text>
+      <line x1="140" y1="764" x2="140" y2="816" stroke="#534AB7" stroke-width="1.2" marker-end="url(#a2)"/>
+      <rect x="290" y="818" width="280" height="56" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="430" y="838" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#444441">.rollpkg deleted from iCloud</text>
+      <text x="430" y="856" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">after receiver acknowledges</text>
+      <line x1="430" y1="764" x2="430" y2="816" stroke="#5F5E5A" stroke-width="0.5" stroke-dasharray="3 3" marker-end="url(#a2)"/>
+      <rect x="620" y="818" width="200" height="56" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="720" y="838" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">Receiver Film Archive</text>
+      <text x="720" y="856" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">permanent, no expiry</text>
+      <line x1="720" y1="764" x2="720" y2="816" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#a2)"/>
+    </svg>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#7F77DD;"></div>Sender flow</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1D9E75;"></div>Receiver flow</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#888780;border:1px dashed #9a9890;"></div>Infrastructure cleanup</div>
+  </div>
+  <table class="phase-table" style="margin-top:24px;">
+    <thead><tr><th>Phase</th><th>Action</th><th>Data in transit</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>1 · Capture</td><td>All-day capture into locked vault. rollCircle set at first capture — immutable.</td><td>None — local only</td><td>All day</td></tr>
+      <tr><td>2 · Unlock</td><td>StoryEngine assembles Roll: film sim baked, hero selected, Moment labeled.</td><td>None — local processing</td><td>9PM or 24h</td></tr>
+      <tr><td>3 · Delivery</td><td>RollPackage encrypted per-recipient, uploaded to iCloud. APNs ping after upload confirms.</td><td>E2EE .rollpkg · APNs metadata</td><td>&lt;30s upload</td></tr>
+      <tr><td>4 · Reveal</td><td>Receiver fetches .rollpkg from iCloud, decrypts, film-advance reveal. Opened status returned.</td><td>.rollpkg download · opened APNs</td><td>On app open</td></tr>
+      <tr><td>5 · Response</td><td>Reactions and short replies sent to sender via APNs.</td><td>Reaction text — no asset re-transmitted</td><td>On tap</td></tr>
+      <tr><td>6 · Archive</td><td>Assets move to Film Archive on both devices permanently. .rollpkg deleted from iCloud.</td><td>None</td><td>Post-reveal</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="diagram-section">
+  <h2>3. Data objects and purge conditions</h2>
+  <p class="diagram-desc">What data exists at each stage, where it lives, and when it is destroyed. The bottom section defines what never touches a Piqd server — a technical guarantee enforced by architecture.</p>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 860 680" xmlns="http://www.w3.org/2000/svg">
+      <rect x="40" y="20" width="780" height="32" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+      <text x="430" y="36" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#712B13">Snap Mode — data objects</text>
+      <rect x="40" y="62" width="240" height="110" rx="6" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+      <text x="160" y="84" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#712B13">Sender vault</text>
+      <text x="160" y="104" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">AES-256-GCM encrypted</text>
+      <text x="160" y="122" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">raw HEIF frames + MP4</text>
+      <text x="160" y="140" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">purge: 5min after viewed</text>
+      <text x="160" y="158" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#993C1D">hard ceiling: 24h</text>
+      <rect x="310" y="62" width="240" height="110" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="430" y="84" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#444441">Transport payload</text>
+      <text x="430" y="104" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">E2EE asset bytes</text>
+      <text x="430" y="122" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">sender ID · message ID</text>
+      <text x="430" y="140" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">EphemeralPolicy</text>
+      <text x="430" y="158" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">transient — never stored</text>
+      <rect x="580" y="62" width="240" height="110" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="700" y="84" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">Receiver inbox</text>
+      <text x="700" y="104" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">decrypted asset</text>
+      <text x="700" y="122" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">viewed: false initially</text>
+      <text x="700" y="140" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">purge: on view close</text>
+      <text x="700" y="158" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">hard ceiling: 24h from send</text>
+      <rect x="40" y="184" width="780" height="36" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="430" y="202" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#444441">24h hard ceiling — both copies purged if asset is never viewed · Response thread cleared with sender purge</text>
+
+      <rect x="40" y="238" width="780" height="32" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="430" y="254" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#3C3489">Roll Mode — data objects</text>
+      <rect x="40" y="280" width="240" height="110" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="160" y="302" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#3C3489">Sender vault → Archive</text>
+      <text x="160" y="322" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">locked vault all day</text>
+      <text x="160" y="340" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">moves to Film Archive</text>
+      <text x="160" y="358" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">permanent — no expiry</text>
+      <text x="160" y="376" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#534AB7">user deletes manually</text>
+      <rect x="310" y="280" width="240" height="110" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="430" y="302" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#444441">iCloud container</text>
+      <text x="430" y="322" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">one .rollpkg per friend</text>
+      <text x="430" y="340" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">E2EE — opaque to Apple</text>
+      <text x="430" y="358" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">temporary delivery only</text>
+      <text x="430" y="376" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5F5E5A">deleted on receiver ack</text>
+      <rect x="580" y="280" width="240" height="110" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+      <text x="700" y="302" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#085041">Receiver Film Archive</text>
+      <text x="700" y="322" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">decrypted RollPackage</text>
+      <text x="700" y="340" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">Film Archive permanent</text>
+      <text x="700" y="358" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">no expiry</text>
+      <text x="700" y="376" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#0F6E56">user deletes manually</text>
+
+      <rect x="40" y="408" width="780" height="32" rx="6" fill="#2C2C2A" stroke="#444441" stroke-width="0.5"/>
+      <text x="430" y="424" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#D3D1C7">What never touches a Piqd server — architectural guarantee</text>
+      <rect x="40" y="450" width="780" height="210" rx="6" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+      <text x="430" y="476" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#444441">Photo and video content — never stored on Piqd servers, ever, under any conditions</text>
+      <text x="430" y="502" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#444441">Encryption keys — private keys generated on-device, stored in Keychain only, never transmitted</text>
+      <text x="430" y="528" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#444441">APNs payloads — sender name + message ID + reason string only, no content or thumbnails</text>
+      <text x="430" y="554" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#444441">TURN relay (WebRTC fallback) — relays encrypted bytes only, no key access, no storage</text>
+      <text x="430" y="580" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#444441">iCloud container — sender's own private container, E2EE, Piqd has no server-side key access</text>
+      <text x="430" y="612" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#888780">This is a technical constraint enforced by architecture — not a policy promise in a terms of service</text>
+      <text x="430" y="634" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#888780">SRS reference: piqd_SRS_v1.0.md §6 · PRD reference: piqd_PRD_v1.0.md §8 (Product Principle P5)</text>
+    </svg>
+  </div>
+</div>
+
+<h2>4. Snap Mode — Viewfinder State Machine</h2>
+<p class="diagram-desc">All states the Snap Mode viewfinder can be in, every trigger that causes a transition, and the resulting state. Engineers implement this as a state enum — one source of truth for which chrome is visible and which gestures are active. Mode switch states (11–12) are shared with Roll Mode.</p>
+<div class="diagram-wrap">
+<svg viewBox="0 0 960 1200" xmlns="http://www.w3.org/2000/svg" style="font-family:-apple-system,sans-serif">
+  <defs>
+    <marker id="sm-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="sm-arrow-y" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="sm-arrow-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#E24B4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="sm-arrow-g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#1D9E75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- S0: REST -->
+  <rect x="360" y="40" width="240" height="64" rx="10" fill="#F5C420" stroke="#BA7517" stroke-width="1.5"/>
+  <text x="480" y="65" text-anchor="middle" font-size="13" font-weight="600" fill="#1A1208">S0 · REST (Layer 0)</text>
+  <text x="480" y="82" text-anchor="middle" font-size="10" fill="#633806">Shutter + mode pill only</text>
+
+  <!-- S1: LAYER 1 -->
+  <rect x="360" y="180" width="240" height="64" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/>
+  <text x="480" y="205" text-anchor="middle" font-size="13" font-weight="600" fill="#042C53">S1 · LAYER 1</text>
+  <text x="480" y="222" text-anchor="middle" font-size="10" fill="#185FA5">Zoom · ratio · flip · badge visible</text>
+
+  <!-- S2: LAYER 2 -->
+  <rect x="360" y="320" width="240" height="64" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/>
+  <text x="480" y="345" text-anchor="middle" font-size="13" font-weight="600" fill="#042C53">S2 · LAYER 2</text>
+  <text x="480" y="362" text-anchor="middle" font-size="10" fill="#185FA5">Format selector open</text>
+
+  <!-- S3: SEQUENCE FIRING -->
+  <rect x="80" y="460" width="220" height="72" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+  <text x="190" y="483" text-anchor="middle" font-size="13" font-weight="600" fill="#26215C">S3 · SEQUENCE FIRING</text>
+  <text x="190" y="500" text-anchor="middle" font-size="10" fill="#534AB7">6 frames × 333ms · DI State 1</text>
+  <text x="190" y="516" text-anchor="middle" font-size="10" fill="#534AB7">Layer 1 hidden · gestures locked</text>
+
+  <!-- S4: ASSEMBLING -->
+  <rect x="80" y="600" width="220" height="64" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+  <text x="190" y="623" text-anchor="middle" font-size="13" font-weight="600" fill="#26215C">S4 · ASSEMBLING</text>
+  <text x="190" y="640" text-anchor="middle" font-size="10" fill="#534AB7">StoryEngine MP4 · shareReady=false</text>
+
+  <!-- S5: STRIP PREVIEW -->
+  <rect x="80" y="736" width="220" height="64" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+  <text x="190" y="759" text-anchor="middle" font-size="13" font-weight="600" fill="#26215C">S5 · STRIP PREVIEW</text>
+  <text x="190" y="776" text-anchor="middle" font-size="10" fill="#534AB7">28% overlay · loops silently · 8s</text>
+
+  <!-- S6: CLIP RECORDING -->
+  <rect x="660" y="460" width="220" height="72" rx="10" fill="#FCEBEB" stroke="#A32D2D" stroke-width="1.5"/>
+  <text x="770" y="483" text-anchor="middle" font-size="13" font-weight="600" fill="#501313">S6 · CLIP RECORDING</text>
+  <text x="770" y="500" text-anchor="middle" font-size="10" fill="#A32D2D">Red arc fills · timer counts up</text>
+  <text x="770" y="516" text-anchor="middle" font-size="10" fill="#A32D2D">Layer 1 hidden · mode sw. disabled</text>
+
+  <!-- S7: CLIP READY -->
+  <rect x="660" y="600" width="220" height="64" rx="10" fill="#FCEBEB" stroke="#A32D2D" stroke-width="1.5"/>
+  <text x="770" y="623" text-anchor="middle" font-size="13" font-weight="600" fill="#501313">S7 · CLIP READY</text>
+  <text x="770" y="640" text-anchor="middle" font-size="10" fill="#A32D2D">Asset available · swipe-up → circle</text>
+
+  <!-- S8: POST-CAPTURE -->
+  <rect x="360" y="460" width="240" height="64" rx="10" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1.5"/>
+  <text x="480" y="483" text-anchor="middle" font-size="13" font-weight="600" fill="#173404">S8 · POST-CAPTURE</text>
+  <text x="480" y="500" text-anchor="middle" font-size="10" fill="#3B6D11">Checkmark/arrow pulse 150ms</text>
+
+  <!-- S9: CIRCLE SELECTOR -->
+  <rect x="360" y="600" width="240" height="64" rx="10" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1.5"/>
+  <text x="480" y="623" text-anchor="middle" font-size="13" font-weight="600" fill="#173404">S9 · CIRCLE SELECTOR</text>
+  <text x="480" y="640" text-anchor="middle" font-size="10" fill="#3B6D11">.medium sheet · send to friends</text>
+
+  <!-- S10: DRAFTS TRAY -->
+  <rect x="360" y="736" width="240" height="64" rx="10" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1.5"/>
+  <text x="480" y="759" text-anchor="middle" font-size="13" font-weight="600" fill="#173404">S10 · DRAFTS TRAY</text>
+  <text x="480" y="776" text-anchor="middle" font-size="10" fill="#3B6D11">.medium sheet · 24h items</text>
+
+  <!-- S11: HOLD ARC -->
+  <rect x="360" y="880" width="240" height="64" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.5"/>
+  <text x="480" y="903" text-anchor="middle" font-size="13" font-weight="600" fill="#412402">S11 · HOLD ARC</text>
+  <text x="480" y="920" text-anchor="middle" font-size="10" fill="#854F0B">Arc fills 1.5s · all inputs locked</text>
+
+  <!-- S12: CONFIRM SHEET -->
+  <rect x="360" y="1016" width="240" height="64" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.5"/>
+  <text x="480" y="1039" text-anchor="middle" font-size="13" font-weight="600" fill="#412402">S12 · CONFIRM SHEET</text>
+  <text x="480" y="1056" text-anchor="middle" font-size="10" fill="#854F0B">Switch to Roll? · amber CTA</text>
+
+  <!-- S13: ROLL MODE exit -->
+  <rect x="360" y="1140" width="240" height="44" rx="10" fill="#1C1408" stroke="#C97B2A" stroke-width="1.5"/>
+  <text x="480" y="1167" text-anchor="middle" font-size="13" font-weight="600" fill="#C97B2A">→ ROLL MODE</text>
+
+  <!-- TRANSITIONS -->
+  <line x1="480" y1="104" x2="480" y2="178" stroke="#888780" stroke-width="1.5" marker-end="url(#sm-arrow)"/>
+  <rect x="492" y="130" width="110" height="18" rx="4" fill="white"/>
+  <text x="547" y="143" text-anchor="middle" font-size="10" fill="#5F5E5A">tap viewfinder</text>
+  <line x1="452" y1="180" x2="452" y2="106" stroke="#888780" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#sm-arrow)"/>
+  <rect x="340" y="130" width="90" height="18" rx="4" fill="white"/>
+  <text x="385" y="143" text-anchor="middle" font-size="10" fill="#9A9890">3s idle</text>
+  <line x1="480" y1="244" x2="480" y2="318" stroke="#888780" stroke-width="1.5" marker-end="url(#sm-arrow)"/>
+  <rect x="492" y="272" width="130" height="18" rx="4" fill="white"/>
+  <text x="557" y="285" text-anchor="middle" font-size="10" fill="#5F5E5A">swipe-up / long-press shutter</text>
+  <line x1="452" y1="320" x2="452" y2="246" stroke="#888780" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#sm-arrow)"/>
+  <rect x="340" y="272" width="100" height="18" rx="4" fill="white"/>
+  <text x="390" y="285" text-anchor="middle" font-size="10" fill="#9A9890">select / 3s idle</text>
+  <line x1="390" y1="384" x2="260" y2="458" stroke="#534AB7" stroke-width="1.5" marker-end="url(#sm-arrow)"/>
+  <text x="295" y="420" text-anchor="middle" font-size="10" fill="#534AB7">tap (Seq)</text>
+  <line x1="190" y1="532" x2="190" y2="598" stroke="#534AB7" stroke-width="1.5" marker-end="url(#sm-arrow)"/>
+  <text x="218" y="570" font-size="10" fill="#534AB7">frame 6</text>
+  <line x1="190" y1="664" x2="190" y2="734" stroke="#534AB7" stroke-width="1.5" marker-end="url(#sm-arrow)"/>
+  <text x="218" y="704" font-size="10" fill="#534AB7">shareReady</text>
+  <line x1="300" y1="768" x2="360" y2="636" stroke="#1D9E75" stroke-width="1.5" marker-end="url(#sm-arrow-g)"/>
+  <text x="310" y="710" text-anchor="middle" font-size="10" fill="#1D9E75">swipe-up</text>
+  <line x1="190" y1="800" x2="360" y2="768" stroke="#888780" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#sm-arrow)"/>
+  <text x="240" y="800" text-anchor="middle" font-size="10" fill="#9A9890">8s / dismiss</text>
+  <line x1="80" y1="490" x2="390" y2="90" stroke="#E24B4A" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#sm-arrow-r)"/>
+  <text x="160" y="340" text-anchor="middle" font-size="10" fill="#E24B4A">interrupted</text>
+  <line x1="570" y1="384" x2="710" y2="458" stroke="#E24B4A" stroke-width="1.5" marker-end="url(#sm-arrow-r)"/>
+  <text x="670" y="420" text-anchor="middle" font-size="10" fill="#E24B4A">hold (Clip/Dual)</text>
+  <line x1="770" y1="532" x2="770" y2="598" stroke="#E24B4A" stroke-width="1.5" marker-end="url(#sm-arrow-r)"/>
+  <text x="800" y="570" font-size="10" fill="#E24B4A">release/ceiling</text>
+  <line x1="700" y1="632" x2="602" y2="632" stroke="#1D9E75" stroke-width="1.5" marker-end="url(#sm-arrow-g)"/>
+  <text x="650" y="620" text-anchor="middle" font-size="10" fill="#1D9E75">swipe-up</text>
+  <line x1="770" y1="600" x2="610" y2="104" stroke="#888780" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#sm-arrow)"/>
+  <text x="740" y="350" text-anchor="middle" font-size="10" fill="#9A9890">dismiss</text>
+  <line x1="480" y1="104" x2="480" y2="458" stroke="#1D9E75" stroke-width="1.5" marker-end="url(#sm-arrow-g)"/>
+  <text x="508" y="280" font-size="10" fill="#1D9E75">tap (Still)</text>
+  <line x1="440" y1="460" x2="440" y2="106" stroke="#1D9E75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#sm-arrow-g)"/>
+  <text x="408" y="280" text-anchor="end" font-size="10" fill="#1D9E75">150ms → S0</text>
+  <line x1="420" y1="600" x2="420" y2="106" stroke="#888780" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#sm-arrow)"/>
+  <text x="388" y="420" text-anchor="end" font-size="10" fill="#9A9890">send/dismiss</text>
+  <line x1="390" y1="72" x2="200" y2="736" stroke="#888780" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#sm-arrow)"/>
+  <text x="240" y="400" text-anchor="end" font-size="10" fill="#9A9890">tap badge</text>
+  <line x1="370" y1="768" x2="370" y2="106" stroke="#888780" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#sm-arrow)"/>
+  <line x1="480" y1="104" x2="480" y2="878" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#sm-arrow-y)"/>
+  <text x="535" y="490" font-size="10" fill="#C97B2A">long-hold pill</text>
+  <line x1="602" y1="912" x2="602" y2="106" stroke="#C97B2A" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#sm-arrow-y)"/>
+  <text x="620" y="490" font-size="10" fill="#C97B2A">release &lt;1.5s</text>
+  <line x1="480" y1="944" x2="480" y2="1014" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#sm-arrow-y)"/>
+  <text x="508" y="984" font-size="10" fill="#C97B2A">arc complete</text>
+  <line x1="480" y1="1080" x2="480" y2="1138" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#sm-arrow-y)"/>
+  <text x="508" y="1112" font-size="10" fill="#C97B2A">confirm</text>
+  <line x1="358" y1="1048" x2="358" y2="106" stroke="#C97B2A" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#sm-arrow-y)"/>
+  <text x="340" y="920" text-anchor="end" font-size="10" fill="#C97B2A">dismiss</text>
+</svg>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#F5C420"></div>Start / rest state</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#B5D4F4"></div>Layer chrome states</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#AFA9EC"></div>Sequence states</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#F09595"></div>Clip / recording states</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#97C459"></div>Send / share states</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#FAC775"></div>Mode switch states</div>
+  <div class="legend-item"><div class="legend-dot" style="background:transparent;border:1px solid #888;border-radius:2px"></div>── User-triggered transition</div>
+  <div class="legend-item"><div class="legend-dot" style="background:transparent;border:1px solid #888;border-radius:2px"></div>─ ─ Auto / timeout transition</div>
+</div>
+
+<table class="phase-table" style="margin-top:24px">
+  <tr><th>State</th><th>Chrome active</th><th>Gestures accepted</th><th>Auto-exit</th></tr>
+  <tr><td>S0 · Rest</td><td>Shutter + mode pill</td><td>Tap viewfinder → S1 · Tap shutter (Still) → S8 · Tap shutter (Seq) → S3 · Hold shutter (Clip/Dual) → S6 · Long-hold pill → S11</td><td>—</td></tr>
+  <tr><td>S1 · Layer 1</td><td>S0 + zoom · ratio · flip · badge</td><td>Swipe-up shutter → S2 · Tap badge → S10 · All S0 gestures</td><td>3s idle → S0</td></tr>
+  <tr><td>S2 · Layer 2</td><td>S1 + format selector</td><td>Tap segment (format change) → S1 · All S0 gestures</td><td>3s idle → S1</td></tr>
+  <tr><td>S3 · Seq firing</td><td>Yellow shutter ring · frame counter · Safe Render zone · DI State 1</td><td>None — all locked</td><td>Frame 6 → S4 · Interrupted → S0</td></tr>
+  <tr><td>S4 · Assembling</td><td>Assembling arc on send button</td><td>None</td><td>shareReady=true → S5 · &lt;2s</td></tr>
+  <tr><td>S5 · Strip preview</td><td>28% bottom overlay · looping MP4</td><td>Swipe-up → S9 · Swipe-down → S0</td><td>8s → S10 (enters drafts)</td></tr>
+  <tr><td>S6 · Clip recording</td><td>Red arc · timer · locked chrome</td><td>Release → S7</td><td>Duration ceiling → S7</td></tr>
+  <tr><td>S7 · Clip ready</td><td>Asset ready indicator</td><td>Swipe-up → S9 · Dismiss → S0</td><td>—</td></tr>
+  <tr><td>S8 · Post-capture</td><td>Checkmark (delivered) or arrow (queued) on shutter</td><td>—</td><td>150ms → S0</td></tr>
+  <tr><td>S9 · Circle selector</td><td>.medium sheet over viewfinder</td><td>Send → S8+S0 · Dismiss → S0</td><td>—</td></tr>
+  <tr><td>S10 · Drafts tray</td><td>.medium sheet over viewfinder</td><td>Send row → S9 · Dismiss → S0</td><td>—</td></tr>
+  <tr><td>S11 · Hold arc</td><td>Amber arc around pill · all locked</td><td>Release early → S0 (abort)</td><td>1.5s → S12</td></tr>
+  <tr><td>S12 · Confirm sheet</td><td>Modal sheet · “Switch to Roll?”</td><td>Confirm → Roll S0 · Dismiss/tap outside → S0</td><td>—</td></tr>
+</table>
+
+<div class="diagram-section" style="margin-top:40px">
+  <h2>5. Roll Mode — Viewfinder State Machine</h2>
+  <p class="diagram-desc">All states the Roll Mode viewfinder can be in, every trigger, and resulting transitions. The grain overlay and film simulation are always active — they are not states, they are the permanent Roll identity. Mode switch states S11–S12 are shared with Snap Mode (see above).</p>
+  <div class="diagram-wrap">
+  <svg viewBox="0 0 960 960" xmlns="http://www.w3.org/2000/svg" style="font-family:-apple-system,sans-serif">
+    <defs>
+      <marker id="rm-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+      <marker id="rm-arrow-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M2 1L8 5L2 9" fill="none" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+      <marker id="rm-arrow-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M2 1L8 5L2 9" fill="none" stroke="#E24B4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+      <marker id="rm-arrow-g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M2 1L8 5L2 9" fill="none" stroke="#1D9E75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+    </defs>
+
+    <!-- R0: REST -->
+    <rect x="360" y="40" width="240" height="72" rx="10" fill="#C97B2A" stroke="#854F0B" stroke-width="1.5"/>
+    <text x="480" y="68" text-anchor="middle" font-size="13" font-weight="600" fill="#1A1208">R0 · REST (Layer 0)</text>
+    <text x="480" y="84" text-anchor="middle" font-size="10" fill="#412402">Grain + film sim · shutter · pill · counter</text>
+    <text x="480" y="100" text-anchor="middle" font-size="9" fill="#633806">Counter: white &gt;5 · amber ≤ 5</text>
+
+    <!-- R1: LAYER 1 -->
+    <rect x="360" y="186" width="240" height="64" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.5"/>
+    <text x="480" y="211" text-anchor="middle" font-size="13" font-weight="600" fill="#412402">R1 · LAYER 1</text>
+    <text x="480" y="228" text-anchor="middle" font-size="10" fill="#854F0B">Zoom · flip · film sim dots visible</text>
+
+    <!-- R2: FILM SIM CHANGE -->
+    <rect x="80" y="186" width="220" height="64" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.5"/>
+    <text x="190" y="211" text-anchor="middle" font-size="13" font-weight="600" fill="#412402">R2 · FILM SIM CHANGE</text>
+    <text x="190" y="228" text-anchor="middle" font-size="10" fill="#854F0B">Preset name label 1.5s · fades</text>
+
+    <!-- R3: FORMAT CHANGE -->
+    <rect x="660" y="186" width="220" height="64" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.5"/>
+    <text x="770" y="211" text-anchor="middle" font-size="13" font-weight="600" fill="#412402">R3 · FORMAT CHANGE</text>
+    <text x="770" y="228" text-anchor="middle" font-size="10" fill="#854F0B">Shutter morphs · “Still”/“Live” label</text>
+
+    <!-- R4: STILL CAPTURED -->
+    <rect x="360" y="330" width="240" height="64" rx="10" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1.5"/>
+    <text x="480" y="355" text-anchor="middle" font-size="13" font-weight="600" fill="#173404">R4 · STILL CAPTURED</text>
+    <text x="480" y="372" text-anchor="middle" font-size="10" fill="#3B6D11">Counter decrements · no preview</text>
+
+    <!-- R5: ROLL FULL -->
+    <rect x="80" y="330" width="220" height="72" rx="10" fill="#FCEBEB" stroke="#A32D2D" stroke-width="1.5"/>
+    <text x="190" y="355" text-anchor="middle" font-size="13" font-weight="600" fill="#501313">R5 · ROLL FULL</text>
+    <text x="190" y="372" text-anchor="middle" font-size="10" fill="#A32D2D">“Roll’s full. See you at 9.”</text>
+    <text x="190" y="388" text-anchor="middle" font-size="10" fill="#A32D2D">Shutter disabled · pill active</text>
+
+    <!-- R6: UNLOCK IMMINENT -->
+    <rect x="660" y="330" width="220" height="72" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.5"/>
+    <text x="770" y="355" text-anchor="middle" font-size="13" font-weight="600" fill="#412402">R6 · UNLOCK IMMINENT</text>
+    <text x="770" y="372" text-anchor="middle" font-size="10" fill="#854F0B">DI State 2 · counter amber pulse</text>
+    <text x="770" y="388" text-anchor="middle" font-size="10" fill="#854F0B">Within 30min of 9PM</text>
+
+    <!-- R7: DEVELOPING -->
+    <rect x="360" y="480" width="240" height="80" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="2"/>
+    <text x="480" y="508" text-anchor="middle" font-size="13" font-weight="600" fill="#412402">R7 · DEVELOPING</text>
+    <text x="480" y="525" text-anchor="middle" font-size="10" fill="#854F0B">DI State 3 · “Developing your Roll…”</text>
+    <text x="480" y="541" text-anchor="middle" font-size="10" fill="#854F0B">Grain doubles · StoryEngine + iCloud</text>
+    <text x="480" y="557" text-anchor="middle" font-size="10" fill="#854F0B">Counter still usable if &gt;0</text>
+
+    <!-- R8: DELIVERING -->
+    <rect x="360" y="636" width="240" height="64" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.5"/>
+    <text x="480" y="661" text-anchor="middle" font-size="13" font-weight="600" fill="#412402">R8 · DELIVERING</text>
+    <text x="480" y="678" text-anchor="middle" font-size="10" fill="#854F0B">DI State 3 “Delivering…” · APNs pending</text>
+
+    <!-- R9: QUEUED -->
+    <rect x="660" y="636" width="220" height="64" rx="10" fill="#FCEBEB" stroke="#A32D2D" stroke-width="1.5"/>
+    <text x="770" y="661" text-anchor="middle" font-size="13" font-weight="600" fill="#501313">R9 · QUEUED</text>
+    <text x="770" y="678" text-anchor="middle" font-size="10" fill="#A32D2D">DI “Queued” · retries every 5min</text>
+
+    <!-- R10: MODE SWITCH shared -->
+    <rect x="360" y="776" width="240" height="64" rx="10" fill="#1C1C1E" stroke="#C97B2A" stroke-width="1.5"/>
+    <text x="480" y="801" text-anchor="middle" font-size="13" font-weight="600" fill="#C97B2A">S11–S12 · MODE SWITCH</text>
+    <text x="480" y="818" text-anchor="middle" font-size="10" fill="#888780">Shared with Snap · see diagram 4</text>
+
+    <!-- R11: SNAP exit -->
+    <rect x="360" y="900" width="240" height="44" rx="10" fill="#F5C420" stroke="#BA7517" stroke-width="1.5"/>
+    <text x="480" y="927" text-anchor="middle" font-size="13" font-weight="600" fill="#1A1208">→ SNAP MODE</text>
+
+    <!-- TRANSITIONS -->
+    <line x1="480" y1="112" x2="480" y2="184" stroke="#888780" stroke-width="1.5" marker-end="url(#rm-arrow)"/>
+    <text x="508" y="153" font-size="10" fill="#5F5E5A">tap viewfinder</text>
+    <line x1="452" y1="186" x2="452" y2="114" stroke="#888780" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#rm-arrow)"/>
+    <text x="420" y="153" text-anchor="end" font-size="10" fill="#9A9890">3s idle</text>
+    <line x1="360" y1="218" x2="302" y2="218" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#rm-arrow-a)"/>
+    <text x="328" y="210" text-anchor="middle" font-size="10" fill="#C97B2A">edge swipe &lt;80pt</text>
+    <line x1="190" y1="250" x2="190" y2="320" stroke="#888780" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#rm-arrow)"/>
+    <line x1="190" y1="320" x2="360" y2="80" stroke="#888780" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#rm-arrow)"/>
+    <text x="140" y="300" text-anchor="end" font-size="10" fill="#9A9890">1.5s → R0</text>
+    <line x1="600" y1="218" x2="658" y2="218" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#rm-arrow-a)"/>
+    <text x="626" y="210" text-anchor="middle" font-size="10" fill="#C97B2A">edge swipe &gt;80pt</text>
+    <line x1="770" y1="250" x2="770" y2="310" stroke="#888780" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#rm-arrow)"/>
+    <line x1="770" y1="310" x2="602" y2="80" stroke="#888780" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#rm-arrow)"/>
+    <text x="820" y="290" font-size="10" fill="#9A9890">1.5s → R0</text>
+    <line x1="480" y1="112" x2="480" y2="328" stroke="#1D9E75" stroke-width="1.5" marker-end="url(#rm-arrow-g)"/>
+    <text x="508" y="230" font-size="10" fill="#1D9E75">tap (counter &gt;0)</text>
+    <line x1="440" y1="330" x2="440" y2="114" stroke="#1D9E75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#rm-arrow-g)"/>
+    <text x="408" y="240" text-anchor="end" font-size="10" fill="#1D9E75">150ms → R0</text>
+    <line x1="360" y1="362" x2="302" y2="370" stroke="#E24B4A" stroke-width="1.5" marker-end="url(#rm-arrow-r)"/>
+    <text x="310" y="355" text-anchor="end" font-size="10" fill="#E24B4A">counter=0</text>
+    <line x1="190" y1="402" x2="190" y2="760" stroke="#C97B2A" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#rm-arrow-a)"/>
+    <line x1="190" y1="760" x2="358" y2="808" stroke="#C97B2A" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#rm-arrow-a)"/>
+    <text x="160" y="600" text-anchor="end" font-size="10" fill="#C97B2A">long-hold pill</text>
+    <line x1="600" y1="80" x2="770" y2="328" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#rm-arrow-a)"/>
+    <text x="720" y="210" text-anchor="middle" font-size="10" fill="#C97B2A">30min to 9PM</text>
+    <line x1="770" y1="402" x2="620" y2="480" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#rm-arrow-a)"/>
+    <text x="720" y="448" text-anchor="middle" font-size="10" fill="#C97B2A">9PM fires</text>
+    <line x1="390" y1="112" x2="390" y2="478" stroke="#C97B2A" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#rm-arrow-a)"/>
+    <text x="368" y="296" text-anchor="end" font-size="10" fill="#C97B2A">9PM (direct)</text>
+    <line x1="480" y1="560" x2="480" y2="634" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#rm-arrow-a)"/>
+    <text x="508" y="600" font-size="10" fill="#C97B2A">upload done</text>
+    <line x1="600" y1="520" x2="660" y2="636" stroke="#E24B4A" stroke-width="1.5" marker-end="url(#rm-arrow-r)"/>
+    <text x="660" y="575" text-anchor="middle" font-size="10" fill="#E24B4A">no connection</text>
+    <line x1="770" y1="636" x2="602" y2="668" stroke="#1D9E75" stroke-width="1.5" marker-end="url(#rm-arrow-g)"/>
+    <text x="700" y="648" text-anchor="middle" font-size="10" fill="#1D9E75">reconnects</text>
+    <line x1="358" y1="668" x2="358" y2="114" stroke="#888780" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#rm-arrow)"/>
+    <text x="336" y="420" text-anchor="end" font-size="10" fill="#9A9890">APNs sent → R0</text>
+    <line x1="480" y1="112" x2="480" y2="774" stroke="#C97B2A" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#rm-arrow-a)"/>
+    <text x="538" y="448" font-size="10" fill="#C97B2A">long-hold pill</text>
+    <line x1="480" y1="840" x2="480" y2="898" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#rm-arrow-a)"/>
+    <text x="508" y="873" font-size="10" fill="#C97B2A">confirm</text>
+    <line x1="602" y1="808" x2="602" y2="114" stroke="#C97B2A" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#rm-arrow-a)"/>
+    <text x="622" y="448" font-size="10" fill="#C97B2A">dismiss</text>
+  </svg>
+  </div>
+
+  <table class="phase-table" style="margin-top:24px">
+    <tr><th>State</th><th>Chrome active</th><th>Gestures accepted</th><th>Auto-exit</th></tr>
+    <tr><td>R0 · Rest</td><td>Grain + film sim + shutter + pill + counter</td><td>Tap viewfinder → R1 · Tap shutter (counter&gt;0) → R4 · Long-hold pill → S11</td><td>9PM → R7 · 30min before → R6</td></tr>
+    <tr><td>R0 · First-time note</td><td colspan="3" style="color:#C97B2A;font-style:italic">On first-ever Roll shutter tap: storage warning modal (Screen 16) blocks capture. User must dismiss “Got it” before R4 fires. One-time only (FR-STORAGE-08). Social share (iOS share sheet) is NOT available from R0–R9 viewfinder states — only from Film Archive post-unlock (FR-SHARE-SOCIAL-05).</td></tr>
+    <tr><td>R1 · Layer 1</td><td>R0 + zoom · flip · film sim dots</td><td>Short edge swipe → R2 · Long edge swipe → R3 · All R0 gestures</td><td>3s idle → R0</td></tr>
+    <tr><td>R2 · Film sim change</td><td>Preset name label</td><td>—</td><td>1.5s → R0</td></tr>
+    <tr><td>R3 · Format change</td><td>Format label “Still”/“Live” · shutter morphs</td><td>—</td><td>1.5s → R0</td></tr>
+    <tr><td>R4 · Still captured</td><td>Counter decrements · no thumbnail</td><td>—</td><td>150ms → R0 (or R5 if counter=0)</td></tr>
+    <tr><td>R4 · Note</td><td colspan="3" style="color:#C97B2A;font-style:italic">rollCircle locks at first capture of the day (FR-CIRCLE-08). Adding a friend after R4 fires does not add them to the current Roll — only future Rolls.</td></tr>
+    <tr><td>R5 · Roll full</td><td>“Roll’s full. See you at 9.” overlay · shutter dim</td><td>Long-hold pill → S11 (switch to Snap)</td><td>9PM → R7</td></tr>
+    <tr><td>R6 · Unlock imminent</td><td>DI State 2 · counter amber pulse · 30min countdown</td><td>All R0/R1 gestures · can still shoot if counter&gt;0</td><td>9PM → R7</td></tr>
+    <tr><td>R7 · Developing</td><td>DI State 3 “Developing…” · grain doubles · copy overlay</td><td>Shoot still if counter&gt;0</td><td>Upload complete → R8 · No connection → R9</td></tr>
+    <tr><td>R8 · Delivering</td><td>DI State 3 “Delivering…”</td><td>—</td><td>APNs sent → R0 · DI dismisses</td></tr>
+    <tr><td>R9 · Queued</td><td>DI “Queued” · retries every 5min</td><td>—</td><td>Reconnect → R8</td></tr>
+    <tr><td>S11–S12 · Mode switch</td><td>See Snap diagram · shared states</td><td>Confirm → Snap R0 · Dismiss → R0</td><td>—</td></tr>
+  </table>
+</div>
+
+<div class="diagram-section" style="margin-top:48px">
+  <h2>6. Screen Navigation Flow</h2>
+  <p class="diagram-desc">Every screen in the reference UI, the gesture or event that navigates to it, and how the user returns. Grouped by surface. Solid arrows = user gesture. Dashed arrows = system/auto event. Bold double border = entry point. This is the UINavigationController / sheet presentation map for Sprint 1 engineers.</p>
+  <div class="diagram-wrap" style="overflow-x:auto">
+  <svg viewBox="0 0 1080 1380" xmlns="http://www.w3.org/2000/svg" style="font-family:-apple-system,sans-serif;min-width:960px">
+    <defs>
+      <marker id="nf-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+      <marker id="nf-arrow-b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#185FA5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+      <marker id="nf-arrow-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+      <marker id="nf-arrow-g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#1D9E75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+      <marker id="nf-arrow-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#E24B4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+    </defs>
+
+    <!-- SECTION LABELS -->
+    <text x="20" y="28" font-size="11" font-weight="600" letter-spacing="0.08em" fill="#9A9890">SNAP MODE VIEWFINDER</text>
+    <text x="20" y="428" font-size="11" font-weight="600" letter-spacing="0.08em" fill="#9A9890">SNAP SEND / RECEIVE</text>
+    <text x="20" y="728" font-size="11" font-weight="600" letter-spacing="0.08em" fill="#9A9890">ROLL MODE VIEWFINDER</text>
+    <text x="20" y="1028" font-size="11" font-weight="600" letter-spacing="0.08em" fill="#9A9890">FILM ARCHIVE</text>
+    <text x="20" y="1208" font-size="11" font-weight="600" letter-spacing="0.08em" fill="#9A9890">GLOBAL / SETTINGS</text>
+
+    <!-- SNAP VIEWFINDER -->
+    <!-- S01 Rest (entry) -->
+    <rect x="20" y="44" width="180" height="52" rx="8" fill="#FFF9E6" stroke="#F5C420" stroke-width="2.5"/>
+    <rect x="23" y="47" width="174" height="46" rx="6" fill="none" stroke="#F5C420" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>
+    <text x="110" y="68" text-anchor="middle" font-size="12" font-weight="600" fill="#1A1208">S01 · Snap Rest</text>
+    <text x="110" y="84" text-anchor="middle" font-size="10" fill="#856A00">Layer 0 · entry point</text>
+    <!-- S02 Layer 1 -->
+    <rect x="240" y="44" width="180" height="52" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/>
+    <text x="330" y="68" text-anchor="middle" font-size="12" font-weight="600" fill="#042C53">S02 · Layer 1</text>
+    <text x="330" y="84" text-anchor="middle" font-size="10" fill="#185FA5">zoom · flip · gear ⚙ · badge</text>
+    <!-- S01→S02 -->
+    <line x1="200" y1="66" x2="238" y2="66" stroke="#185FA5" stroke-width="1.5" marker-end="url(#nf-arrow-b)"/>
+    <text x="219" y="61" text-anchor="middle" font-size="9" fill="#185FA5">tap vf</text>
+    <!-- S02→S01 idle -->
+    <line x1="240" y1="78" x2="202" y2="78" stroke="#888780" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#nf-arrow)"/>
+    <text x="221" y="91" text-anchor="middle" font-size="9" fill="#9A9890">3s idle</text>
+    <!-- S19 Format Selector -->
+    <rect x="460" y="44" width="180" height="52" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/>
+    <text x="550" y="68" text-anchor="middle" font-size="12" font-weight="600" fill="#042C53">S19 · Format Selector</text>
+    <text x="550" y="84" text-anchor="middle" font-size="10" fill="#185FA5">Layer 2 · Still/Seq/Clip/Dual</text>
+    <!-- S02→S19 -->
+    <line x1="420" y1="63" x2="458" y2="63" stroke="#185FA5" stroke-width="1.5" marker-end="url(#nf-arrow-b)"/>
+    <text x="439" y="58" text-anchor="middle" font-size="9" fill="#185FA5">swipe-up ↑</text>
+    <!-- S19→S02 -->
+    <line x1="460" y1="77" x2="422" y2="77" stroke="#888780" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#nf-arrow)"/>
+    <text x="441" y="90" text-anchor="middle" font-size="9" fill="#9A9890">select/3s</text>
+    <!-- S21 Post-capture -->
+    <rect x="240" y="136" width="180" height="52" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1.5"/>
+    <text x="330" y="160" text-anchor="middle" font-size="12" font-weight="600" fill="#173404">S21 · Checkmark</text>
+    <text x="330" y="176" text-anchor="middle" font-size="10" fill="#3B6D11">150ms → S01 auto</text>
+    <!-- S01→S21 -->
+    <line x1="150" y1="96" x2="290" y2="134" stroke="#1D9E75" stroke-width="1.5" marker-end="url(#nf-arrow-g)"/>
+    <text x="200" y="120" font-size="9" fill="#1D9E75">tap shutter (Still)</text>
+    <!-- S21→S01 auto -->
+    <line x1="240" y1="170" x2="110" y2="170" stroke="#888780" stroke-width="1" stroke-dasharray="3,2"/>
+    <line x1="110" y1="170" x2="110" y2="98" stroke="#888780" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#nf-arrow)"/>
+    <!-- S03 Sequence Firing -->
+    <rect x="20" y="228" width="180" height="52" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+    <text x="110" y="252" text-anchor="middle" font-size="12" font-weight="600" fill="#26215C">S03 · Seq Firing</text>
+    <text x="110" y="268" text-anchor="middle" font-size="10" fill="#534AB7">6 frames · locked</text>
+    <!-- S01→S03 -->
+    <line x1="80" y1="96" x2="80" y2="226" stroke="#534AB7" stroke-width="1.5" marker-end="url(#nf-arrow)"/>
+    <text x="58" y="164" font-size="9" fill="#534AB7">tap (Seq)</text>
+    <!-- S06 Strip Preview -->
+    <rect x="240" y="228" width="180" height="52" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+    <text x="330" y="252" text-anchor="middle" font-size="12" font-weight="600" fill="#26215C">S06 · Strip Preview</text>
+    <text x="330" y="268" text-anchor="middle" font-size="10" fill="#534AB7">28% overlay · 8s → S10</text>
+    <!-- S03→S06 -->
+    <line x1="200" y1="254" x2="238" y2="254" stroke="#534AB7" stroke-width="1.5" marker-end="url(#nf-arrow)"/>
+    <text x="219" y="249" text-anchor="middle" font-size="9" fill="#534AB7">assembled</text>
+    <!-- S20 Clip Recording -->
+    <rect x="460" y="136" width="180" height="52" rx="8" fill="#FCEBEB" stroke="#A32D2D" stroke-width="1.5"/>
+    <text x="550" y="160" text-anchor="middle" font-size="12" font-weight="600" fill="#501313">S20 · Clip Recording</text>
+    <text x="550" y="176" text-anchor="middle" font-size="10" fill="#A32D2D">red arc · timer · locked</text>
+    <!-- S19→S20 -->
+    <line x1="550" y1="96" x2="550" y2="134" stroke="#E24B4A" stroke-width="1.5" marker-end="url(#nf-arrow-r)"/>
+    <text x="570" y="118" font-size="9" fill="#E24B4A">hold (Clip)</text>
+    <!-- S07 Drafts Tray -->
+    <rect x="460" y="228" width="180" height="52" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1.5"/>
+    <text x="550" y="252" text-anchor="middle" font-size="12" font-weight="600" fill="#173404">S07 · Drafts Tray</text>
+    <text x="550" y="268" text-anchor="middle" font-size="10" fill="#3B6D11">.medium sheet</text>
+    <!-- S02→S07 tap badge -->
+    <line x1="390" y1="78" x2="550" y2="226" stroke="#888780" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#nf-arrow)"/>
+    <text x="500" y="160" font-size="9" fill="#9A9890">tap badge</text>
+    <!-- S13 Circle Selector -->
+    <rect x="240" y="320" width="180" height="52" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1.5"/>
+    <text x="330" y="344" text-anchor="middle" font-size="12" font-weight="600" fill="#173404">S13 · Circle Selector</text>
+    <text x="330" y="360" text-anchor="middle" font-size="10" fill="#3B6D11">.medium sheet · send friends</text>
+    <!-- S06→S13 -->
+    <line x1="330" y1="280" x2="330" y2="318" stroke="#1D9E75" stroke-width="1.5" marker-end="url(#nf-arrow-g)"/>
+    <text x="350" y="302" font-size="9" fill="#1D9E75">swipe-up ↑</text>
+    <!-- S07→S13 -->
+    <line x1="460" y1="262" x2="422" y2="340" stroke="#1D9E75" stroke-width="1.5" marker-end="url(#nf-arrow-g)"/>
+    <text x="456" y="308" font-size="9" fill="#1D9E75">send row</text>
+    <!-- Mode Switch S11 -->
+    <rect x="700" y="44" width="200" height="52" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.5"/>
+    <text x="800" y="68" text-anchor="middle" font-size="12" font-weight="600" fill="#412402">S11 · Hold Arc</text>
+    <text x="800" y="84" text-anchor="middle" font-size="10" fill="#854F0B">1.5s pill · all locked</text>
+    <!-- S12 Confirm Sheet -->
+    <rect x="700" y="136" width="200" height="52" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.5"/>
+    <text x="800" y="160" text-anchor="middle" font-size="12" font-weight="600" fill="#412402">S12 · Confirm Sheet</text>
+    <text x="800" y="176" text-anchor="middle" font-size="10" fill="#854F0B">“Switch to Roll?”</text>
+    <!-- S01→S11 -->
+    <line x1="200" y1="58" x2="698" y2="58" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#nf-arrow-a)"/>
+    <text x="450" y="53" text-anchor="middle" font-size="9" fill="#C97B2A">long-hold pill 1.5s</text>
+    <!-- S11→S12 -->
+    <line x1="800" y1="96" x2="800" y2="134" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#nf-arrow-a)"/>
+    <text x="820" y="118" font-size="9" fill="#C97B2A">arc done</text>
+    <!-- S12→Roll -->
+    <line x1="800" y1="188" x2="800" y2="218" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#nf-arrow-a)"/>
+    <rect x="712" y="220" width="176" height="28" rx="6" fill="#1C1408" stroke="#C97B2A" stroke-width="1.5"/>
+    <text x="800" y="238" text-anchor="middle" font-size="11" font-weight="600" fill="#C97B2A">→ Roll R04</text>
+
+    <!-- SEPARATOR -->
+    <line x1="0" y1="412" x2="1080" y2="412" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
+
+    <!-- SNAP SEND / RECEIVE -->
+    <!-- S08 Inbox -->
+    <rect x="20" y="444" width="180" height="52" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/>
+    <text x="110" y="468" text-anchor="middle" font-size="12" font-weight="600" fill="#042C53">S08 · Inbox</text>
+    <text x="110" y="484" text-anchor="middle" font-size="10" fill="#185FA5">received Snaps list</text>
+    <text x="110" y="440" text-anchor="middle" font-size="9" fill="#185FA5">⚙ gear → Inbox · or APNs tap</text>
+    <!-- S14 Asset View -->
+    <rect x="240" y="444" width="180" height="52" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/>
+    <text x="330" y="468" text-anchor="middle" font-size="12" font-weight="600" fill="#042C53">S14 · Asset View</text>
+    <text x="330" y="484" text-anchor="middle" font-size="10" fill="#185FA5">full screen · viewed trigger</text>
+    <!-- S08→S14 -->
+    <line x1="200" y1="468" x2="238" y2="468" stroke="#185FA5" stroke-width="1.5" marker-end="url(#nf-arrow-b)"/>
+    <text x="219" y="463" text-anchor="middle" font-size="9" fill="#185FA5">tap row</text>
+    <!-- S14→S08 back -->
+    <line x1="240" y1="480" x2="202" y2="480" stroke="#888780" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#nf-arrow)"/>
+    <text x="221" y="493" text-anchor="middle" font-size="9" fill="#9A9890">← inbox</text>
+    <!-- S17 Response Thread -->
+    <rect x="460" y="444" width="180" height="52" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1.5"/>
+    <text x="550" y="468" text-anchor="middle" font-size="12" font-weight="600" fill="#173404">S17 · Response Thread</text>
+    <text x="550" y="484" text-anchor="middle" font-size="10" fill="#3B6D11">sender side · reaction/reply</text>
+    <text x="550" y="440" text-anchor="middle" font-size="9" fill="#1D9E75">APNs: reaction received → sender</text>
+    <!-- S18 Purged -->
+    <rect x="240" y="556" width="180" height="52" rx="8" fill="#FCEBEB" stroke="#A32D2D" stroke-width="1.5"/>
+    <text x="330" y="580" text-anchor="middle" font-size="12" font-weight="600" fill="#501313">S18 · Purged State</text>
+    <text x="330" y="596" text-anchor="middle" font-size="10" fill="#A32D2D">“Piqd has left the chat.”</text>
+    <!-- S14→S18 re-open purged -->
+    <line x1="330" y1="496" x2="330" y2="554" stroke="#E24B4A" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#nf-arrow-r)"/>
+    <text x="352" y="528" font-size="9" fill="#E24B4A">re-open (purged)</text>
+
+    <!-- SEPARATOR -->
+    <line x1="0" y1="712" x2="1080" y2="712" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
+
+    <!-- ROLL VIEWFINDER -->
+    <!-- R04 Rest (entry) -->
+    <rect x="20" y="744" width="180" height="60" rx="8" fill="#1C1408" stroke="#C97B2A" stroke-width="2.5"/>
+    <rect x="23" y="747" width="174" height="54" rx="6" fill="none" stroke="#C97B2A" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>
+    <text x="110" y="769" text-anchor="middle" font-size="12" font-weight="600" fill="#C97B2A">R04 · Roll Rest</text>
+    <text x="110" y="785" text-anchor="middle" font-size="10" fill="rgba(201,123,42,0.7)">Layer 0 · grain + counter</text>
+    <text x="110" y="799" text-anchor="middle" font-size="9" fill="rgba(201,123,42,0.5)">← confirm from S12</text>
+    <!-- R24 Layer 1 -->
+    <rect x="240" y="744" width="180" height="60" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.5"/>
+    <text x="330" y="768" text-anchor="middle" font-size="12" font-weight="600" fill="#412402">R24 · Layer 1</text>
+    <text x="330" y="784" text-anchor="middle" font-size="10" fill="#854F0B">zoom · flip · gear ⚙ · film sim dots</text>
+    <text x="330" y="798" text-anchor="middle" font-size="9" fill="#854F0B">3s idle → R04</text>
+    <!-- R04→R24 -->
+    <line x1="200" y1="766" x2="238" y2="766" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#nf-arrow-a)"/>
+    <text x="219" y="761" text-anchor="middle" font-size="9" fill="#C97B2A">tap vf</text>
+    <!-- R27 Film Sim Change -->
+    <rect x="460" y="744" width="180" height="60" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.5"/>
+    <text x="550" y="768" text-anchor="middle" font-size="12" font-weight="600" fill="#412402">R27 · Film Sim Change</text>
+    <text x="550" y="784" text-anchor="middle" font-size="10" fill="#854F0B">label 1.5s → R04</text>
+    <text x="550" y="798" text-anchor="middle" font-size="9" fill="#854F0B">edge swipe &lt;80pt</text>
+    <!-- R24→R27 -->
+    <line x1="420" y1="760" x2="458" y2="760" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#nf-arrow-a)"/>
+    <text x="439" y="755" text-anchor="middle" font-size="9" fill="#C97B2A">&lt;80pt</text>
+    <!-- R28 Live Format -->
+    <rect x="460" y="836" width="180" height="52" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.5"/>
+    <text x="550" y="860" text-anchor="middle" font-size="12" font-weight="600" fill="#412402">R28 · Live Format</text>
+    <text x="550" y="876" text-anchor="middle" font-size="10" fill="#854F0B">shutter morphs · 1.5s → R04</text>
+    <!-- R24→R28 -->
+    <line x1="550" y1="804" x2="550" y2="834" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#nf-arrow-a)"/>
+    <text x="570" y="822" font-size="9" fill="#C97B2A">&gt;80pt</text>
+    <!-- R05 Roll Full -->
+    <rect x="20" y="836" width="180" height="52" rx="8" fill="#FCEBEB" stroke="#A32D2D" stroke-width="1.5"/>
+    <text x="110" y="860" text-anchor="middle" font-size="12" font-weight="600" fill="#501313">R05 · Roll Full</text>
+    <text x="110" y="876" text-anchor="middle" font-size="10" fill="#A32D2D">shutter dim · counter=0</text>
+    <!-- R04→R05 -->
+    <line x1="110" y1="804" x2="110" y2="834" stroke="#E24B4A" stroke-width="1.5" marker-end="url(#nf-arrow-r)"/>
+    <text x="130" y="822" font-size="9" fill="#E24B4A">counter=0</text>
+    <!-- R22 Unlock Imminent -->
+    <rect x="240" y="836" width="180" height="52" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.5"/>
+    <text x="330" y="860" text-anchor="middle" font-size="12" font-weight="600" fill="#412402">R22 · Unlock Imminent</text>
+    <text x="330" y="876" text-anchor="middle" font-size="10" fill="#854F0B">DI State 2 · amber pulse</text>
+    <!-- R04→R22 system -->
+    <line x1="200" y1="790" x2="238" y2="848" stroke="#C97B2A" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#nf-arrow-a)"/>
+    <text x="226" y="824" text-anchor="end" font-size="9" fill="#C97B2A">30min → 9PM</text>
+    <!-- R23 Developing -->
+    <rect x="240" y="928" width="180" height="52" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="2"/>
+    <text x="330" y="952" text-anchor="middle" font-size="12" font-weight="600" fill="#412402">R23 · Developing</text>
+    <text x="330" y="968" text-anchor="middle" font-size="10" fill="#854F0B">DI State 3 · grain doubles</text>
+    <!-- R22→R23 -->
+    <line x1="330" y1="888" x2="330" y2="926" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#nf-arrow-a)"/>
+    <text x="350" y="910" font-size="9" fill="#C97B2A">9PM fires</text>
+    <!-- R05→R23 -->
+    <line x1="110" y1="888" x2="240" y2="940" stroke="#C97B2A" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#nf-arrow-a)"/>
+    <text x="150" y="920" font-size="9" fill="#C97B2A">9PM (full)</text>
+    <!-- R10 Unlock Reveal receiver -->
+    <rect x="460" y="928" width="180" height="52" rx="8" fill="#1C1408" stroke="#C97B2A" stroke-width="1.5"/>
+    <text x="550" y="952" text-anchor="middle" font-size="12" font-weight="600" fill="#C97B2A">R10 · Unlock Reveal</text>
+    <text x="550" y="968" text-anchor="middle" font-size="10" fill="rgba(201,123,42,0.7)">receiver · APNs tap</text>
+    <!-- R23→R10 APNs -->
+    <line x1="420" y1="952" x2="458" y2="952" stroke="#C97B2A" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#nf-arrow-a)"/>
+    <text x="439" y="947" text-anchor="middle" font-size="9" fill="#C97B2A">APNs</text>
+    <!-- R23→R04 after delivery -->
+    <line x1="240" y1="964" x2="110" y2="964" stroke="#888780" stroke-width="1" stroke-dasharray="3,2"/>
+    <line x1="110" y1="964" x2="110" y2="806" stroke="#888780" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#nf-arrow)"/>
+    <text x="174" y="978" text-anchor="middle" font-size="9" fill="#9A9890">→ R04 after APNs sent</text>
+
+    <!-- SEPARATOR -->
+    <line x1="0" y1="1012" x2="1080" y2="1012" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
+
+    <!-- FILM ARCHIVE -->
+    <!-- S09 Archive List -->
+    <rect x="20" y="1044" width="180" height="52" rx="8" fill="#111008" stroke="#C97B2A" stroke-width="1.5"/>
+    <text x="110" y="1068" text-anchor="middle" font-size="12" font-weight="600" fill="rgba(255,255,255,0.88)">S09 · Archive List</text>
+    <text x="110" y="1084" text-anchor="middle" font-size="10" fill="rgba(201,123,42,0.7)">swipe-up from viewfinder</text>
+    <!-- S15 Moment View sender -->
+    <rect x="240" y="1044" width="180" height="52" rx="8" fill="#111008" stroke="#C97B2A" stroke-width="1.5"/>
+    <text x="330" y="1068" text-anchor="middle" font-size="12" font-weight="600" fill="rgba(255,255,255,0.88)">S15 · Moment View</text>
+    <text x="330" y="1084" text-anchor="middle" font-size="10" fill="rgba(201,123,42,0.7)">sender · push</text>
+    <!-- S09→S15 -->
+    <line x1="200" y1="1068" x2="238" y2="1068" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#nf-arrow-a)"/>
+    <text x="219" y="1063" text-anchor="middle" font-size="9" fill="#C97B2A">tap card</text>
+    <!-- S15→S09 -->
+    <line x1="240" y1="1080" x2="202" y2="1080" stroke="#888780" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#nf-arrow)"/>
+    <text x="221" y="1093" text-anchor="middle" font-size="9" fill="#9A9890">← archive</text>
+    <!-- S25 Received Roll -->
+    <rect x="460" y="1044" width="180" height="52" rx="8" fill="#111008" stroke="#C97B2A" stroke-width="1.5"/>
+    <text x="550" y="1068" text-anchor="middle" font-size="12" font-weight="600" fill="rgba(255,255,255,0.88)">S25 · Received Roll</text>
+    <text x="550" y="1084" text-anchor="middle" font-size="10" fill="rgba(201,123,42,0.7)">receiver · “from Jiyeon”</text>
+    <!-- S09→S25 -->
+    <line x1="420" y1="1068" x2="458" y2="1068" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#nf-arrow-a)"/>
+    <text x="439" y="1063" text-anchor="middle" font-size="9" fill="#C97B2A">tap received</text>
+    <!-- R10→S09 reveal ends -->
+    <line x1="540" y1="982" x2="110" y2="1042" stroke="#888780" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#nf-arrow)"/>
+    <text x="340" y="1018" text-anchor="middle" font-size="9" fill="#9A9890">reveal ends → archive</text>
+
+    <!-- SEPARATOR -->
+    <line x1="0" y1="1192" x2="1080" y2="1192" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
+
+    <!-- GLOBAL / SETTINGS -->
+    <!-- S16 Storage Warning -->
+    <rect x="20" y="1224" width="180" height="52" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.5"/>
+    <text x="110" y="1248" text-anchor="middle" font-size="12" font-weight="600" fill="#412402">S16 · Storage Warning</text>
+    <text x="110" y="1264" text-anchor="middle" font-size="10" fill="#854F0B">first Roll capture only · auto</text>
+    <text x="110" y="1290" text-anchor="middle" font-size="10" fill="#854F0B">dismiss → R4 proceeds</text>
+    <!-- S29 QR Invite -->
+    <rect x="240" y="1224" width="180" height="52" rx="8" fill="#FFF9E6" stroke="#F5C420" stroke-width="1.5"/>
+    <text x="330" y="1248" text-anchor="middle" font-size="12" font-weight="600" fill="#1A1208">S29 · QR Invite</text>
+    <text x="330" y="1264" text-anchor="middle" font-size="10" fill="#856A00">Settings → Circle → My QR</text>
+    <!-- S30 Settings -->
+    <rect x="460" y="1224" width="180" height="52" rx="8" fill="#F2F2F7" stroke="#888780" stroke-width="1.5"/>
+    <text x="550" y="1248" text-anchor="middle" font-size="12" font-weight="600" fill="#1a1a18">S30 · Settings</text>
+    <text x="550" y="1264" text-anchor="middle" font-size="10" fill="#5F5E5A">gear ⚙ (Layer 1) or ⋯ (all screens)</text>
+    <!-- S30→S29 -->
+    <line x1="460" y1="1248" x2="422" y2="1248" stroke="#888780" stroke-width="1.5" marker-end="url(#nf-arrow)"/>
+    <text x="441" y="1243" text-anchor="middle" font-size="9" fill="#9A9890">Circle → My QR</text>
+    <text x="550" y="1290" text-anchor="middle" font-size="10" fill="#5F5E5A">dismiss → back to calling screen</text>
+    <!-- Onboarding -->
+    <rect x="700" y="1224" width="200" height="52" rx="8" fill="#F7F5F0" stroke="rgba(0,0,0,0.15)" stroke-width="1.5"/>
+    <text x="800" y="1248" text-anchor="middle" font-size="12" font-weight="600" fill="rgba(0,0,0,0.7)">Onboarding</text>
+    <text x="800" y="1264" text-anchor="middle" font-size="10" fill="rgba(0,0,0,0.4)">first launch only → S01 / R04</text>
+
+    <!-- LEGEND -->
+    <g transform="translate(700, 280)">
+      <text x="0" y="0" font-size="11" font-weight="600" fill="#9A9890">LEGEND</text>
+      <line x1="0" y1="16" x2="32" y2="16" stroke="#185FA5" stroke-width="1.5" marker-end="url(#nf-arrow-b)"/>
+      <text x="38" y="20" font-size="10" fill="#5F5E5A">User gesture → navigates to</text>
+      <line x1="0" y1="36" x2="32" y2="36" stroke="#888780" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#nf-arrow)"/>
+      <text x="38" y="40" font-size="10" fill="#5F5E5A">System / auto event</text>
+      <line x1="0" y1="56" x2="32" y2="56" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#nf-arrow-a)"/>
+      <text x="38" y="60" font-size="10" fill="#5F5E5A">Roll Mode transition</text>
+      <line x1="0" y1="76" x2="32" y2="76" stroke="#1D9E75" stroke-width="1.5" marker-end="url(#nf-arrow-g)"/>
+      <text x="38" y="80" font-size="10" fill="#5F5E5A">Send / share flow</text>
+      <line x1="0" y1="96" x2="32" y2="96" stroke="#E24B4A" stroke-width="1.5" marker-end="url(#nf-arrow-r)"/>
+      <text x="38" y="100" font-size="10" fill="#5F5E5A">Error / blocked state</text>
+      <rect x="0" y="114" width="32" height="18" rx="4" fill="#FFF9E6" stroke="#F5C420" stroke-width="2.5"/>
+      <rect x="2" y="116" width="28" height="14" rx="3" fill="none" stroke="#F5C420" stroke-width="1" stroke-dasharray="2,1" opacity="0.5"/>
+      <text x="38" y="127" font-size="10" fill="#5F5E5A">Entry point (app launch / APNs)</text>
+    </g>
+  </svg>
+  </div>
+</div>
+
+<div class="diagram-section" style="margin-top:48px">
+  <h2>7. State → Screen Cross-Reference</h2>
+  <p class="diagram-desc">Maps every state machine state to its reference screen number and presentation style. Blank screen = state is invisible — chrome changes on the existing viewfinder with no new view controller. Engineers use this as the authoritative lookup when implementing each state.</p>
+
+  <p style="font-size:13px;font-weight:600;color:var(--text);margin:20px 0 8px">Snap Mode</p>
+  <table class="phase-table">
+    <tr><th>State</th><th>Reference Screen</th><th>Presentation</th><th>Key visual change from previous state</th></tr>
+    <tr><td>S0 · Rest</td><td>Screen 01</td><td>Full screen viewfinder</td><td>Shutter + mode pill only. Entry state on launch.</td></tr>
+    <tr><td>S1 · Layer 1</td><td>Screen 02</td><td>Overlay on viewfinder (no push)</td><td>Zoom pill + flip + gear ⚙ + badge fade in (150ms)</td></tr>
+    <tr><td>S2 · Layer 2</td><td>Screen 19</td><td>Overlay on viewfinder (no push)</td><td>Format selector pill slides up (220ms) from shutter position</td></tr>
+    <tr><td>S3 · Seq firing</td><td>Screen 03</td><td>Overlay on viewfinder</td><td>Shutter fills yellow · frame counter · Safe Render zone · DI State 1</td></tr>
+    <tr><td>S4 · Assembling</td><td>— (no new screen)</td><td>Viewfinder unchanged</td><td>Brief “Assembling…” label if &gt;1.5s · DI State 1 continues</td></tr>
+    <tr><td>S5 · Strip preview</td><td>Screen 06</td><td>28% bottom overlay (non-interactive bg)</td><td>Looping MP4 strip appears (220ms slide up)</td></tr>
+    <tr><td>S6 · Clip recording</td><td>Screen 20</td><td>Overlay on viewfinder</td><td>Red arc fills clockwise · timer above shutter · Layer 1 hides</td></tr>
+    <tr><td>S7 · Clip ready</td><td>— (no new screen)</td><td>Viewfinder returns to S0 look</td><td>Shutter returns to idle · swipe-up cue</td></tr>
+    <tr><td>S8 · Post-capture</td><td>Screen 21</td><td>Overlay on viewfinder · 150ms transient</td><td>Checkmark (✓ delivered) or arrow (→ queued) on shutter ring</td></tr>
+    <tr><td>S9 · Circle selector</td><td>Screen 13</td><td>UISheetPresentationController .medium</td><td>Sheet slides up (220ms) · viewfinder stays live</td></tr>
+    <tr><td>S10 · Drafts tray</td><td>Screen 07</td><td>UISheetPresentationController .medium</td><td>Sheet slides up · viewfinder stays live</td></tr>
+    <tr><td>S11 · Hold arc</td><td>Screen 11</td><td>Overlay on viewfinder</td><td>Amber arc animates CW around pill · all other interaction locked</td></tr>
+    <tr><td>S12 · Confirm sheet</td><td>Screen 12</td><td>UISheetPresentationController + 50% scrim</td><td>“Switch to Roll?” sheet · amber CTA · viewfinder ghosted</td></tr>
+  </table>
+
+  <p style="font-size:13px;font-weight:600;color:var(--text);margin:24px 0 8px">Roll Mode</p>
+  <table class="phase-table">
+    <tr><th>State</th><th>Reference Screen</th><th>Presentation</th><th>Key visual change from previous state</th></tr>
+    <tr><td>R0 · Rest</td><td>Screen 04</td><td>Full screen viewfinder</td><td>Grain + film sim + canister shutter + OCR-A counter. Entry state.</td></tr>
+    <tr><td>R1 · Layer 1</td><td>Screen 24</td><td>Overlay on viewfinder</td><td>Zoom pill (amber) + flip + gear ⚙ + film sim dots fade in (150ms)</td></tr>
+    <tr><td>R2 · Film sim change</td><td>Screen 27</td><td>Overlay on viewfinder · 1.5s auto-dismiss</td><td>Preset label bottom-left · dots update · viewfinder tint shifts</td></tr>
+    <tr><td>R3 · Format change</td><td>Screen 28</td><td>Overlay on viewfinder · 1.5s auto-dismiss</td><td>“Live” label · shutter morphs (pulse ring added) · amber dot</td></tr>
+    <tr><td>R4 · Still captured</td><td>— (no new screen)</td><td>Viewfinder unchanged · 150ms</td><td>Counter decrements only. No thumbnail. No preview. Ever.</td></tr>
+    <tr><td>R5 · Roll full</td><td>Screen 05</td><td>Overlay on viewfinder</td><td>“Roll’s full. See you at 9.” centered text · shutter dims to 40%</td></tr>
+    <tr><td>R6 · Unlock imminent</td><td>Screen 22</td><td>Overlay on viewfinder</td><td>Counter turns amber + breathes 4s loop · DI State 2 activates</td></tr>
+    <tr><td>R7 · Developing</td><td>Screen 23</td><td>Overlay on viewfinder</td><td>Grain doubles · “Developing your Roll…” · DI State 3</td></tr>
+    <tr><td>R8 · Delivering</td><td>— (no new screen)</td><td>DI State 3 “Delivering…” only</td><td>DI updates text · viewfinder returns to R0 on APNs confirmed</td></tr>
+    <tr><td>R9 · Queued</td><td>— (no new screen)</td><td>DI “Queued” indicator only</td><td>DI state only · retries every 5 min automatically</td></tr>
+    <tr><td>S11–S12 shared</td><td>Screens 11–12</td><td>Same as Snap Mode S11–S12</td><td>Arc → confirm sheet → Snap S0</td></tr>
+  </table>
+
+  <p style="font-size:13px;font-weight:600;color:var(--text);margin:24px 0 8px">Navigation screens (pushed / presented from any state)</p>
+  <table class="phase-table">
+    <tr><th>Screen</th><th>Accessed from</th><th>Presentation style</th><th>Dismiss / back path</th></tr>
+    <tr><td>S08 · Inbox</td><td>Gear ⚙ → Inbox (Layer 1) · APNs notification tap</td><td>UISheetPresentationController .large</td><td>Swipe down · ← back</td></tr>
+    <tr><td>S09 · Film Archive list</td><td>Swipe-up from viewfinder bottom (both modes)</td><td>UISheetPresentationController .large</td><td>Swipe down</td></tr>
+    <tr><td>S10 · Unlock Reveal</td><td>APNs tap (9PM notification) — replaces viewfinder</td><td>Full screen modal · not a sheet</td><td>Ends naturally → S09 Archive</td></tr>
+    <tr><td>S13 · Circle Selector</td><td>Swipe-up from S06 strip preview · send row in S07</td><td>UISheetPresentationController .medium</td><td>Send → S21 → S0 · dismiss → S0</td></tr>
+    <tr><td>S14 · Asset View</td><td>Tap row in S08 Inbox</td><td>Full screen push (no nav bar, no tab bar)</td><td>← inbox · close = viewed trigger + purge schedule</td></tr>
+    <tr><td>S15 · Moment View (sender)</td><td>Tap card in S09 Archive list</td><td>UINavigationController push</td><td>← archive</td></tr>
+    <tr><td>S16 · Storage Warning</td><td>Auto-fires on first ever Roll shutter tap</td><td>UIAlertController-style modal (blocking)</td><td>“Got it” → R4 capture proceeds · one-time only</td></tr>
+    <tr><td>S17 · Response Thread</td><td>APNs tap: reaction/reply received (on sender’s device)</td><td>UISheetPresentationController .medium over viewfinder</td><td>Swipe down → viewfinder</td></tr>
+    <tr><td>S18 · Purged State</td><td>Tap already-purged item in S08 Inbox</td><td>Full screen (same frame as S14)</td><td>← inbox</td></tr>
+    <tr><td>S25 · Received Roll</td><td>Tap received Roll card in S09 Archive</td><td>UINavigationController push</td><td>← archive</td></tr>
+    <tr><td>S29 · QR Invite</td><td>S30 Settings → Circle → My invite QR</td><td>UINavigationController push</td><td>← settings</td></tr>
+    <tr><td>S30 · Settings</td><td>Gear ⚙ (Layer 1 viewfinder) · ⋯ (all non-viewfinder screens)</td><td>UINavigationController push</td><td>← done → back to calling screen</td></tr>
+  </table>
+</div>
+
+<div class="diagram-section" style="margin-top:48px">
+  <h2>8. Onboarding Flow &amp; App Launch Logic</h2>
+  <p class="diagram-desc">First launch after installation runs the onboarding flow (O0–O4). Every subsequent launch skips onboarding and opens in the last-used mode (FR-MODE-08). Permissions fire contextually — never pre-requested. This section documents the first-launch path and the returning-user launch decision tree.</p>
+  <div class="diagram-wrap" style="overflow-x:auto">
+  <svg viewBox="0 0 960 860" xmlns="http://www.w3.org/2000/svg" style="font-family:-apple-system,sans-serif;min-width:860px">
+    <defs>
+      <marker id="ob-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+      <marker id="ob-arrow-y" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#F5C420" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+      <marker id="ob-arrow-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+      <marker id="ob-arrow-b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#185FA5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+      <marker id="ob-arrow-g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#1D9E75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+    </defs>
+
+    <!-- APP LAUNCH DECISION -->
+    <text x="20" y="28" font-size="11" font-weight="600" letter-spacing="0.08em" fill="#9A9890">APP LAUNCH DECISION</text>
+    <rect x="360" y="44" width="200" height="52" rx="8" fill="#1a1a18" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+    <text x="460" y="68" text-anchor="middle" font-size="13" font-weight="600" fill="rgba(255,255,255,0.88)">App Launch</text>
+    <text x="460" y="84" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.45)">cold launch or foreground restore</text>
+    <polygon points="460,116 524,152 460,188 396,152" fill="#F7F5F0" stroke="rgba(0,0,0,0.2)" stroke-width="1.5"/>
+    <text x="460" y="147" text-anchor="middle" font-size="11" font-weight="600" fill="rgba(0,0,0,0.75)">First</text>
+    <text x="460" y="162" text-anchor="middle" font-size="11" font-weight="600" fill="rgba(0,0,0,0.75)">launch?</text>
+    <line x1="460" y1="96" x2="460" y2="114" stroke="#888780" stroke-width="1.5" marker-end="url(#ob-arrow)"/>
+    <!-- YES → onboarding -->
+    <line x1="396" y1="152" x2="210" y2="152" stroke="#1D9E75" stroke-width="1.5" marker-end="url(#ob-arrow-g)"/>
+    <text x="301" y="147" text-anchor="middle" font-size="10" fill="#1D9E75">YES</text>
+    <rect x="20" y="124" width="190" height="56" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1.5"/>
+    <text x="115" y="149" text-anchor="middle" font-size="12" font-weight="600" fill="#173404">Onboarding</text>
+    <text x="115" y="165" text-anchor="middle" font-size="10" fill="#3B6D11">hasCompletedOnboarding = false</text>
+    <text x="115" y="177" text-anchor="middle" font-size="9" fill="#3B6D11">O0 Brand Entry → flow</text>
+    <!-- NO → last-used mode -->
+    <line x1="524" y1="152" x2="680" y2="152" stroke="#185FA5" stroke-width="1.5" marker-end="url(#ob-arrow-b)"/>
+    <text x="600" y="147" text-anchor="middle" font-size="10" fill="#185FA5">NO — returning user</text>
+    <rect x="680" y="124" width="230" height="56" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/>
+    <text x="795" y="149" text-anchor="middle" font-size="12" font-weight="600" fill="#042C53">Read AppConfig.lastMode</text>
+    <text x="795" y="165" text-anchor="middle" font-size="10" fill="#185FA5">FR-MODE-08: open in last-used mode</text>
+    <text x="795" y="177" text-anchor="middle" font-size="9" fill="#185FA5">No onboarding · no delay</text>
+    <!-- lastMode = Snap -->
+    <line x1="760" y1="180" x2="730" y2="220" stroke="#F5C420" stroke-width="1.5" marker-end="url(#ob-arrow-y)"/>
+    <rect x="630" y="222" width="175" height="44" rx="8" fill="#FFF9E6" stroke="#F5C420" stroke-width="2"/>
+    <text x="717" y="247" text-anchor="middle" font-size="12" font-weight="600" fill="#1A1208">S01 Snap Rest</text>
+    <text x="717" y="260" text-anchor="middle" font-size="9" fill="#856A00">if lastMode = Snap</text>
+    <!-- lastMode = Roll -->
+    <line x1="840" y1="180" x2="865" y2="220" stroke="#C97B2A" stroke-width="1.5" marker-end="url(#ob-arrow-a)"/>
+    <rect x="820" y="222" width="120" height="44" rx="8" fill="#1C1408" stroke="#C97B2A" stroke-width="2"/>
+    <text x="880" y="247" text-anchor="middle" font-size="12" font-weight="600" fill="#C97B2A">R04 Roll Rest</text>
+    <text x="880" y="260" text-anchor="middle" font-size="9" fill="rgba(201,123,42,0.7)">if lastMode = Roll</text>
+    <text x="755" y="282" text-anchor="middle" font-size="9" fill="#9A9890">Camera permission on first vf open</text>
+    <text x="880" y="282" text-anchor="middle" font-size="9" fill="#9A9890">Camera permission on first vf open</text>
+
+    <!-- Separator -->
+    <line x1="0" y1="310" x2="960" y2="310" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
+
+    <!-- ONBOARDING FLOW -->
+    <text x="20" y="338" font-size="11" font-weight="600" letter-spacing="0.08em" fill="#9A9890">ONBOARDING FLOW — FIRST LAUNCH ONLY (hasCompletedOnboarding = false)</text>
+
+    <!-- O0 -->
+    <rect x="20" y="352" width="150" height="72" rx="8" fill="#1a1a18" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+    <rect x="23" y="355" width="144" height="66" rx="6" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="3,2"/>
+    <text x="95" y="376" text-anchor="middle" font-size="11" font-weight="600" fill="rgba(255,255,255,0.88)">O0 · Brand Entry</text>
+    <text x="95" y="392" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.45)">Camera hero · splash</text>
+    <text x="95" y="407" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)">no permissions</text>
+    <text x="95" y="419" text-anchor="middle" font-size="9" fill="#F5C420">tap anywhere →</text>
+    <!-- O1 -->
+    <rect x="200" y="352" width="150" height="72" rx="8" fill="#1a1a18" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+    <text x="275" y="376" text-anchor="middle" font-size="11" font-weight="600" fill="rgba(255,255,255,0.88)">O1 · Mode Choice</text>
+    <text x="275" y="392" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.45)">Split vf · Snap vs Roll</text>
+    <text x="275" y="407" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)">educational only</text>
+    <text x="275" y="419" text-anchor="middle" font-size="9" fill="#F5C420">CONTINUE / Skip</text>
+    <line x1="170" y1="388" x2="198" y2="388" stroke="#888780" stroke-width="1.5" marker-end="url(#ob-arrow)"/>
+    <!-- O2 -->
+    <rect x="380" y="352" width="150" height="72" rx="8" fill="#1C1C1E" stroke="#F5C420" stroke-width="1.5"/>
+    <text x="455" y="376" text-anchor="middle" font-size="11" font-weight="600" fill="rgba(255,255,255,0.88)">O2 · Snap Intro</text>
+    <text x="455" y="392" text-anchor="middle" font-size="10" fill="rgba(245,196,32,0.7)">Live vf · tap to capture</text>
+    <text x="455" y="407" text-anchor="middle" font-size="9" fill="#F5C420">Camera permission fires</text>
+    <text x="455" y="419" text-anchor="middle" font-size="9" fill="#F5C420">Next → yellow</text>
+    <line x1="350" y1="385" x2="378" y2="385" stroke="#1D9E75" stroke-width="1.5" marker-end="url(#ob-arrow-g)"/>
+    <text x="364" y="380" text-anchor="middle" font-size="9" fill="#1D9E75">CONTINUE</text>
+    <!-- O3 -->
+    <rect x="560" y="352" width="150" height="72" rx="8" fill="#1C1408" stroke="#C97B2A" stroke-width="1.5"/>
+    <text x="635" y="376" text-anchor="middle" font-size="11" font-weight="600" fill="#C97B2A">O3 · Roll Intro</text>
+    <text x="635" y="392" text-anchor="middle" font-size="10" fill="rgba(201,123,42,0.7)">Live Roll vf · 9PM ritual</text>
+    <text x="635" y="407" text-anchor="middle" font-size="9" fill="rgba(201,123,42,0.55)">no capture · teach only</text>
+    <text x="635" y="419" text-anchor="middle" font-size="9" fill="#C97B2A">Next → amber</text>
+    <line x1="530" y1="388" x2="558" y2="388" stroke="#888780" stroke-width="1.5" marker-end="url(#ob-arrow)"/>
+    <text x="544" y="383" text-anchor="middle" font-size="9" fill="#9A9890">Next</text>
+    <!-- O4 -->
+    <rect x="740" y="352" width="150" height="72" rx="8" fill="#F7F5F0" stroke="rgba(0,0,0,0.2)" stroke-width="1.5"/>
+    <text x="815" y="376" text-anchor="middle" font-size="11" font-weight="600" fill="rgba(0,0,0,0.85)">O4 · Invite / QR</text>
+    <text x="815" y="392" text-anchor="middle" font-size="10" fill="rgba(0,0,0,0.45)">200pt QR · circle</text>
+    <text x="815" y="407" text-anchor="middle" font-size="9" fill="rgba(0,0,0,0.35)">skip destination</text>
+    <text x="815" y="419" text-anchor="middle" font-size="9" fill="#856A00">START SHOOTING →</text>
+    <line x1="710" y1="388" x2="738" y2="388" stroke="#888780" stroke-width="1.5" marker-end="url(#ob-arrow)"/>
+    <text x="724" y="383" text-anchor="middle" font-size="9" fill="#9A9890">Next</text>
+
+    <!-- Skip O1 → O4 -->
+    <line x1="275" y1="424" x2="275" y2="468" stroke="#888780" stroke-width="1" stroke-dasharray="3,2"/>
+    <line x1="275" y1="468" x2="815" y2="468" stroke="#888780" stroke-width="1" stroke-dasharray="3,2"/>
+    <line x1="815" y1="468" x2="815" y2="426" stroke="#888780" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#ob-arrow)"/>
+    <text x="545" y="483" text-anchor="middle" font-size="9" fill="#9A9890">Skip (O1) → jumps to O4 directly, bypasses O2 and O3</text>
+
+    <!-- O4 → completion -->
+    <line x1="815" y1="424" x2="815" y2="520" stroke="#1D9E75" stroke-width="2" marker-end="url(#ob-arrow-g)"/>
+    <rect x="630" y="522" width="370" height="44" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1.5"/>
+    <text x="815" y="545" text-anchor="middle" font-size="11" font-weight="600" fill="#173404">hasCompletedOnboarding = true · lastMode = Snap</text>
+    <text x="815" y="559" text-anchor="middle" font-size="9" fill="#3B6D11">Written to UserDefaults · never shown again · FR-SNAP-STILL-06</text>
+    <!-- → S01 -->
+    <line x1="815" y1="566" x2="815" y2="604" stroke="#F5C420" stroke-width="2" marker-end="url(#ob-arrow-y)"/>
+    <rect x="680" y="606" width="270" height="52" rx="8" fill="#FFF9E6" stroke="#F5C420" stroke-width="2.5"/>
+    <rect x="683" y="609" width="264" height="46" rx="6" fill="none" stroke="#F5C420" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>
+    <text x="815" y="632" text-anchor="middle" font-size="13" font-weight="600" fill="#1A1208">S01 · Snap Rest</text>
+    <text x="815" y="648" text-anchor="middle" font-size="10" fill="#856A00">App entry · onboarding complete</text>
+    <text x="815" y="658" text-anchor="middle" font-size="9" fill="#856A00">First launch always enters Snap</text>
+
+    <!-- Contextual permissions note -->
+    <rect x="20" y="522" width="580" height="76" rx="8" fill="rgba(0,0,0,0.03)" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
+    <text x="310" y="544" text-anchor="middle" font-size="11" font-weight="600" fill="#5F5E5A">Contextual permissions — never pre-requested during onboarding</text>
+    <text x="30" y="562" font-size="10" fill="#888780">📷 Camera: fires when viewfinder first opens (O2 or S01/R04 on subsequent launch)</text>
+    <text x="30" y="578" font-size="10" fill="#888780">🔔 Notifications (APNs): fires on first Roll photo capture · post-onboarding · in the viewfinder</text>
+    <text x="30" y="594" font-size="10" fill="#888780">📁 Photos library: fires on first “Save to Photos” tap · post-onboarding · anywhere in-app</text>
+  </svg>
+  </div>
+
+  <table class="phase-table" style="margin-top:24px">
+    <tr><th>Launch condition</th><th>UserDefaults check</th><th>Result</th><th>Requirement</th></tr>
+    <tr><td>First install · never launched</td><td>hasCompletedOnboarding = false</td><td>O0 → onboarding → S01 Snap Rest</td><td>FR-SNAP-STILL-06 · Snap is default first mode</td></tr>
+    <tr><td>Returning user · used Snap last</td><td>hasCompletedOnboarding = true · lastMode = Snap</td><td>→ S01 Snap Rest directly · no delay</td><td>FR-MODE-08</td></tr>
+    <tr><td>Returning user · used Roll last</td><td>hasCompletedOnboarding = true · lastMode = Roll</td><td>→ R04 Roll Rest directly · no delay</td><td>FR-MODE-08</td></tr>
+    <tr><td>Reinstall (UserDefaults cleared)</td><td>hasCompletedOnboarding = false (reset on reinstall)</td><td>O0 → full onboarding again · Film Archive not recoverable</td><td>FR-STORAGE-05 communicated in O0–O4</td></tr>
+  </table>
+
+  <table class="phase-table" style="margin-top:20px">
+    <tr><th>Screen</th><th>Trigger to advance</th><th>Skip path</th><th>Side effects</th></tr>
+    <tr><td>O0 · Brand Entry</td><td>Tap anywhere on screen</td><td>— no skip</td><td>None · no permissions requested</td></tr>
+    <tr><td>O1 · Mode Choice</td><td>“CONTINUE →” button (full width, snapYellow)</td><td>“Skip” text-link → jumps to O4, bypassing O2 and O3</td><td>None · mode selection here is educational only, not persisted</td></tr>
+    <tr><td>O2 · Snap Intro</td><td>“Next →” text button (snapYellow, right-aligned)</td><td>No explicit skip</td><td>Camera permission fires when viewfinder opens. User may tap shutter to capture a real still during onboarding.</td></tr>
+    <tr><td>O3 · Roll Intro</td><td>“Next →” text button (rollAmber, right-aligned)</td><td>No explicit skip</td><td>None · Roll viewfinder shown with grain but no capture during onboarding</td></tr>
+    <tr><td>O4 · Invite / QR</td><td>“START SHOOTING →” CTA (full width, snapYellow)</td><td>— terminal screen, no skip</td><td>hasCompletedOnboarding = true written. lastMode = Snap written. App enters S01.</td></tr>
+  </table>
+
+  <table class="phase-table" style="margin-top:20px">
+    <tr><th>Permission</th><th>When requested</th><th>If denied</th><th>Ref</th></tr>
+    <tr><td>Camera (AVCaptureDevice)</td><td>When viewfinder first opens — O2 during onboarding, or S01/R04 on subsequent launch</td><td>“Camera unavailable. Check permissions in Settings.” error on viewfinder</td><td>UIUX Spec §7.4</td></tr>
+    <tr><td>Notifications (APNs)</td><td>First Roll photo capture · post-onboarding · in the viewfinder</td><td>Roll captures work but APNs events are silent. Inbox accessible only via manual open.</td><td>UIUX Spec §7.4 · FR-SHARE-RECV-01</td></tr>
+    <tr><td>Photos library (PHPhotoLibrary)</td><td>First “Save to Photos” tap anywhere in-app</td><td>“Couldn’t save to Photos. Check permissions in Settings.”</td><td>UIUX Spec §9 copy reference</td></tr>
+  </table>
+</div>
+  <span>PRD: piqd_PRD_v1.1.md · SRS: piqd_SRS_v1.0.md · UIUX Spec: piqd_UIUX_Spec_v1.0.md</span>
+</footer>
+
+</body>
+</html>

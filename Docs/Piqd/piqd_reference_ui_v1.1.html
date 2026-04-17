@@ -1,0 +1,1982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Piqd — Reference UI v1.1 · iPhone 15 Pro · 393×852pt</title>
+<style>
+  :root {
+    --snap-yellow: #F5C420;
+    --roll-amber: #C97B2A;
+    --record-red: #E5372A;
+    --bg: #0E0E0E;
+    --surface: #1A1A1A;
+    --label: #E8E6DF;
+    --label-2: #9A9890;
+    --label-3: #5F5E5A;
+    --border: rgba(255,255,255,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, sans-serif; color: var(--label); padding: 40px; }
+  header { margin-bottom: 40px; padding-bottom: 20px; border-bottom: 0.5px solid var(--border); }
+  .doc-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--label-3); margin-bottom: 8px; }
+  h1 { font-size: 24px; font-weight: 500; letter-spacing: -0.3px; margin-bottom: 6px; }
+  .meta { font-size: 13px; color: var(--label-2); display: flex; gap: 20px; flex-wrap: wrap; }
+  .figma-note { background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; padding: 14px 18px; font-size: 12px; color: var(--label-2); line-height: 1.7; margin-bottom: 48px; max-width: 720px; }
+  .figma-note b { color: var(--label); font-weight: 500; }
+  .screens-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 48px; }
+  .screen-block { display: flex; flex-direction: column; gap: 12px; }
+  .screen-label { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--label-3); }
+  .screen-title { font-size: 15px; font-weight: 500; color: var(--label); }
+  .screen-desc { font-size: 12px; color: var(--label-2); line-height: 1.6; }
+  svg.phone { filter: drop-shadow(0 20px 40px rgba(0,0,0,0.7)); }
+  footer { margin-top: 80px; padding-top: 24px; border-top: 0.5px solid var(--border); font-size: 12px; color: var(--label-3); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="doc-label">Piqd · Reference UI Design · v1.1</div>
+  <h1>Screen Reference — iPhone 15 Pro</h1>
+  <div class="meta">
+    <span>393 × 852pt · safe area top 59pt · safe area bottom 34pt</span>
+    <span>Shutter center Y=750 · Zoom pill Y=673 · Mode pill Y=814</span>
+    <span>April 2026 · Confidential</span>
+  </div>
+</header>
+
+<div class="figma-note">
+  <b>v1.1 fixes:</b> Corrected shutter / zoom pill / mode pill vertical spacing — all three elements now have clear separation with no overlap.
+  Shutter center: 750pt · Zoom pill top: 673pt (16pt gap to shutter) · Mode pill top: 814pt (35pt gap from shutter bottom).
+  <br><br>
+  <b>Figma import:</b> Right-click any screen → Save image as SVG → drag into Figma. Named <code>&lt;g id="..."&gt;</code> groups become Figma layers following <b>Screen / Component / State</b> naming.
+</div>
+
+<div class="screens-grid">
+
+<!-- ─────────────────────────────────────────────
+     LAYOUT CONSTANTS (iPhone 15 Pro 393×852pt)
+     safeTop=59  safeBot=34  safeH=759
+     Shutter cx=196.5  cy=750  r=29
+     Shutter top=721   bottom=779
+     ZoomPill  y=673  h=32  bottom=705  (gap to shutter top: 16pt)
+     ModePill  y=814  h=28             (gap from shutter bottom: 35pt)
+     FilmCounter text-y ≈ 102  (safeTop+30+13)
+     DI rect x=136 y=12 w=121 h=34 rx=17
+───────────────────────────────────────────── -->
+
+<!-- ═══════════ SCREEN 01: SNAP REST ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 01</div>
+  <div class="screen-title">Snap Viewfinder — Rest (Layer 0)</div>
+  <div class="screen-desc">Maximum simplicity. Shutter (clean ring) and mode pill only. Full-screen camera behind Dynamic Island.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c1"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a2030"/><stop offset="100%" stop-color="#090d14"/></linearGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c1)">
+    <!-- Viewfinder -->
+    <g id="S01/Viewfinder"><rect width="393" height="852" fill="url(#g1)"/><rect x="70" y="210" width="260" height="170" rx="4" fill="rgba(255,255,255,0.02)"/><rect x="110" y="270" width="110" height="75" rx="3" fill="rgba(255,255,255,0.025)"/></g>
+    <!-- Dynamic Island -->
+    <g id="S01/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/><circle cx="225" cy="29" r="3" fill="#090d14"/></g>
+    <!-- Shutter — Snap Still (clean ring) cy=750 -->
+    <g id="S01/Shutter-Snap-Still">
+      <circle cx="196.5" cy="750" r="29" fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="3"/>
+      <circle cx="196.5" cy="750" r="24" fill="rgba(255,255,255,0.07)"/>
+    </g>
+    <!-- Mode Pill — Snap (open aperture) y=814 -->
+    <g id="S01/ModePill-Snap">
+      <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+      <!-- Open aperture icon: circle + 6 radiating lines -->
+      <circle cx="196.5" cy="828" r="6" fill="none" stroke="#F5C420" stroke-width="1.2"/>
+      <circle cx="196.5" cy="828" r="2.8" fill="none" stroke="#F5C420" stroke-width="0.7"/>
+      <line x1="196.5" y1="822.5" x2="196.5" y2="820.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="201.7" y1="824.2" x2="203.4" y2="822.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="201.7" y1="831.8" x2="203.4" y2="833.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="196.5" y1="833.5" x2="196.5" y2="835.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="191.3" y1="831.8" x2="189.6" y2="833.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="191.3" y1="824.2" x2="189.6" y2="822.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    </g>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 02: SNAP LAYER 1 ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 02</div>
+  <div class="screen-title">Snap Viewfinder — Layer 1 (Single Tap)</div>
+  <div class="screen-desc">Zoom pill (673pt), aspect ratio pill, flip button, gear ⚙ top-left (→ Inbox / Settings), unsent badge, invisible level line. All elements clear of shutter.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c2"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a2030"/><stop offset="100%" stop-color="#090d14"/></linearGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c2)">
+    <g id="S02/Viewfinder"><rect width="393" height="852" fill="url(#g2)"/><rect x="70" y="210" width="260" height="170" rx="4" fill="rgba(255,255,255,0.02)"/></g>
+    <g id="S02/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/><circle cx="225" cy="29" r="3" fill="#090d14"/></g>
+
+    <!-- Flip Button — top right safe area -->
+    <g id="S02/Layer1/FlipButton">
+      <circle cx="349" cy="87" r="16" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+      <path d="M342 83 Q349 78 356 83" fill="none" stroke="rgba(255,255,255,0.88)" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M342 91 Q349 96 356 91" fill="none" stroke="rgba(255,255,255,0.88)" stroke-width="1.5" stroke-linecap="round"/>
+      <polyline points="342,83 342,87" stroke="rgba(255,255,255,0.88)" stroke-width="1.5" stroke-linecap="round"/>
+      <polyline points="356,87 356,91" stroke="rgba(255,255,255,0.88)" stroke-width="1.5" stroke-linecap="round"/>
+    </g>
+
+    <!-- Invisible Level line — centered vertically in safe area -->
+    <g id="S02/Layer1/LevelLine">
+      <line x1="118" y1="430" x2="275" y2="430" stroke="rgba(255,255,255,0.65)" stroke-width="1" stroke-linecap="round"/>
+    </g>
+
+    <!-- Zoom Pill — y=673, clearly above shutter (top=721) -->
+    <g id="S02/Layer1/ZoomPill">
+      <rect x="110" y="673" width="116" height="32" rx="16" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+      <!-- 0.5× inactive -->
+      <text x="135" y="694" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" fill="rgba(255,255,255,0.5)">0.5×</text>
+      <!-- 1× active pill -->
+      <rect x="149" y="676" width="34" height="26" rx="13" fill="#F5C420"/>
+      <text x="166" y="694" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#1A1208">1×</text>
+      <!-- 2× inactive -->
+      <text x="200" y="694" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" fill="rgba(255,255,255,0.5)">2×</text>
+    </g>
+
+    <!-- Aspect Ratio Pill — right of zoom pill, same Y -->
+    <g id="S02/Layer1/AspectRatioPill">
+      <rect x="241" y="673" width="52" height="32" rx="16" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+      <text x="267" y="694" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" fill="rgba(255,255,255,0.85)">9:16</text>
+    </g>
+
+    <!-- Shutter cy=750 — clear gap of 16pt from zoom pill bottom (705) to shutter top (721) -->
+    <g id="S02/Shutter-Snap-Still">
+      <circle cx="196.5" cy="750" r="29" fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="3"/>
+      <circle cx="196.5" cy="750" r="24" fill="rgba(255,255,255,0.07)"/>
+    </g>
+
+    <!-- Unsent Badge — left of mode pill, same Y=814 -->
+    <g id="S02/Layer1/UnsentBadge">
+      <rect x="107" y="814" width="60" height="28" rx="14" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+      <text x="137" y="832" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.82)">2 unsent</text>
+    </g>
+
+
+    <!-- Gear icon — top-left Layer 1, → Inbox / Settings menu -->
+    <g id="S02/Layer1/GearIcon">
+      <circle cx="44" cy="87" r="16" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+      <circle cx="44" cy="87" r="6" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="1.5"/>
+      <circle cx="44" cy="87" r="2.5" fill="rgba(255,255,255,0.82)"/>
+      <rect x="42.2" y="79" width="3.6" height="3" rx="1" fill="rgba(255,255,255,0.82)"/>
+      <rect x="42.2" y="93" width="3.6" height="3" rx="1" fill="rgba(255,255,255,0.82)"/>
+      <rect x="36" y="85.2" width="3" height="3.6" rx="1" fill="rgba(255,255,255,0.82)"/>
+      <rect x="49" y="85.2" width="3" height="3.6" rx="1" fill="rgba(255,255,255,0.82)"/>
+    </g>
+    <!-- Mode Pill — y=814, bottom=842, clear of shutter bottom (779) by 35pt -->
+    <g id="S02/ModePill-Snap">
+      <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+      <circle cx="196.5" cy="828" r="6" fill="none" stroke="#F5C420" stroke-width="1.2"/>
+      <circle cx="196.5" cy="828" r="2.8" fill="none" stroke="#F5C420" stroke-width="0.7"/>
+      <line x1="196.5" y1="822.5" x2="196.5" y2="820.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="201.7" y1="824.2" x2="203.4" y2="822.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="201.7" y1="831.8" x2="203.4" y2="833.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="196.5" y1="833.5" x2="196.5" y2="835.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="191.3" y1="831.8" x2="189.6" y2="833.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="191.3" y1="824.2" x2="189.6" y2="822.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    </g>
+
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 03: SNAP SEQUENCE FIRING ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 03</div>
+  <div class="screen-title">Snap — Sequence Capture (4 of 6 frames)</div>
+  <div class="screen-desc">Yellow shutter ring, Dynamic Island State 1 (4 dots filled), Safe Render crop guide. Layer 1 chrome hidden.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c3"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a2030"/><stop offset="100%" stop-color="#090d14"/></linearGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c3)">
+    <g id="S03/Viewfinder"><rect width="393" height="852" fill="url(#g3)"/><rect x="70" y="210" width="260" height="170" rx="4" fill="rgba(255,255,255,0.02)"/></g>
+    <!-- Frame flash subtle -->
+    <g id="S03/FrameFlash"><rect width="393" height="852" fill="rgba(255,255,255,0.03)"/></g>
+
+    <!-- Dynamic Island — State 1 expanded with 4 dots filled -->
+    <g id="S03/DI-State1-Sequence">
+      <rect x="98" y="12" width="197" height="34" rx="17" fill="#000"/>
+      <!-- 4 filled dots -->
+      <circle cx="124" cy="29" r="4" fill="#F5C420"/>
+      <circle cx="138" cy="29" r="4" fill="#F5C420"/>
+      <circle cx="152" cy="29" r="4" fill="#F5C420"/>
+      <circle cx="166" cy="29" r="4" fill="#F5C420"/>
+      <!-- 2 empty dots -->
+      <circle cx="180" cy="29" r="4" fill="rgba(255,255,255,0.2)"/>
+      <circle cx="194" cy="29" r="4" fill="rgba(255,255,255,0.2)"/>
+      <!-- Elapsed time -->
+      <text x="238" y="33" font-family="'Courier New',monospace" font-size="11" fill="rgba(255,255,255,0.65)">1.3s</text>
+    </g>
+
+    <!-- Safe Render Zone — 9:16 crop indicator -->
+    <g id="S03/SafeRenderZone">
+      <rect x="28" y="59" width="337" height="599" rx="8" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="5 4"/>
+    </g>
+
+    <!-- Frame counter label -->
+    <g id="S03/FrameCounter">
+      <text x="196.5" y="700" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.75)">4 / 6</text>
+    </g>
+
+    <!-- Shutter — Sequence firing (yellow) cy=750 -->
+    <g id="S03/Shutter-Sequence-Firing">
+      <circle cx="196.5" cy="750" r="29" fill="rgba(245,196,32,0.18)" stroke="#F5C420" stroke-width="3"/>
+      <circle cx="196.5" cy="750" r="24" fill="rgba(245,196,32,0.12)"/>
+    </g>
+
+    <!-- Mode pill -->
+    <g id="S03/ModePill-Snap">
+      <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+      <circle cx="196.5" cy="828" r="6" fill="none" stroke="#F5C420" stroke-width="1.2"/>
+      <circle cx="196.5" cy="828" r="2.8" fill="none" stroke="#F5C420" stroke-width="0.7"/>
+      <line x1="196.5" y1="822.5" x2="196.5" y2="820.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="201.7" y1="824.2" x2="203.4" y2="822.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="201.7" y1="831.8" x2="203.4" y2="833.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="196.5" y1="833.5" x2="196.5" y2="835.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="191.3" y1="831.8" x2="189.6" y2="833.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="191.3" y1="824.2" x2="189.6" y2="822.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    </g>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 04: ROLL VIEWFINDER REST ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 04</div>
+  <div class="screen-title">Roll Viewfinder — Rest (Layer 0)</div>
+  <div class="screen-desc">Grain overlay, warm grade, light leak (top-right), film canister shutter, OCR-A counter, stopped-down aperture.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c4"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g4" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0%" stop-color="#1C1408"/><stop offset="100%" stop-color="#0E0A04"/></linearGradient>
+    <radialGradient id="ll4" cx="100%" cy="0%" r="55%">
+      <stop offset="0%" stop-color="#C97B2A" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#C97B2A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c4)">
+    <!-- Viewfinder — warm Roll palette -->
+    <g id="S04/Viewfinder-Roll">
+      <rect width="393" height="852" fill="url(#g4)"/>
+      <rect width="393" height="852" fill="rgba(201,123,42,0.04)"/>
+      <rect x="80" y="190" width="240" height="155" rx="4" fill="rgba(201,123,42,0.04)"/>
+    </g>
+    <!-- Light leak — top right corner -->
+    <g id="S04/LightLeak"><rect width="393" height="852" fill="url(#ll4)"/></g>
+    <!-- Grain (approximated with noise pattern) -->
+    <g id="S04/GrainOverlay" opacity="0.07">
+      <rect width="393" height="852" fill="white"/>
+    </g>
+
+    <g id="S04/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/></g>
+
+    <!-- Film Counter — OCR-A style, top right, y≈102 -->
+    <g id="S04/FilmCounter-14">
+      <text x="365" y="97" text-anchor="end" font-family="'Courier New','Courier',monospace" font-size="16" letter-spacing="1" fill="rgba(255,255,255,0.9)">14</text>
+      <text x="365" y="112" text-anchor="end" font-family="'Courier New','Courier',monospace" font-size="11" letter-spacing="1" fill="rgba(255,255,255,0.48)">left</text>
+    </g>
+
+    <!-- Shutter — Roll film canister end cap, cy=750 -->
+    <g id="S04/Shutter-Roll-Still">
+      <circle cx="196.5" cy="750" r="29" fill="none" stroke="rgba(255,255,255,0.86)" stroke-width="2.5"/>
+      <circle cx="196.5" cy="750" r="21.5" fill="none" stroke="rgba(255,255,255,0.44)" stroke-width="1"/>
+      <circle cx="196.5" cy="750" r="2" fill="rgba(255,255,255,0.86)"/>
+    </g>
+
+    <!-- Mode Pill — Roll stopped-down aperture, y=814 -->
+    <g id="S04/ModePill-Roll">
+      <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.09)" stroke="rgba(255,255,255,0.11)" stroke-width="0.5"/>
+      <!-- Stopped-down: small opening circle -->
+      <circle cx="196.5" cy="828" r="6" fill="none" stroke="#C97B2A" stroke-width="1.2"/>
+      <circle cx="196.5" cy="828" r="1.5" fill="none" stroke="#C97B2A" stroke-width="0.8"/>
+      <!-- Short blade lines -->
+      <line x1="196.5" y1="823" x2="196.5" y2="821.5" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="200.6" y1="824.5" x2="201.7" y2="823.1" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="200.6" y1="831.5" x2="201.7" y2="832.9" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="196.5" y1="833" x2="196.5" y2="834.5" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="192.4" y1="831.5" x2="191.3" y2="832.9" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="192.4" y1="824.5" x2="191.3" y2="823.1" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round"/>
+    </g>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.11)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 05: ROLL FULL ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 05</div>
+  <div class="screen-title">Roll Viewfinder — Roll Full (0 shots remaining)</div>
+  <div class="screen-desc">Shutter at 40% opacity (non-responsive). "Roll's full. See you at 9." overlaid on live viewfinder. Mode pill still active.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c5"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g5" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0%" stop-color="#1C1408"/><stop offset="100%" stop-color="#0E0A04"/></linearGradient>
+    <radialGradient id="ll5" cx="100%" cy="0%" r="55%"><stop offset="0%" stop-color="#C97B2A" stop-opacity="0.12"/><stop offset="100%" stop-color="#C97B2A" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c5)">
+    <g id="S05/Viewfinder-Roll"><rect width="393" height="852" fill="url(#g5)"/><rect width="393" height="852" fill="url(#ll5)"/><rect width="393" height="852" fill="rgba(201,123,42,0.04)"/></g>
+    <g id="S05/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/></g>
+
+    <!-- Film Counter — "Roll full" state in amber -->
+    <g id="S05/FilmCounter-Zero">
+      <text x="365" y="97" text-anchor="end" font-family="'Courier New',monospace" font-size="13" letter-spacing="1" fill="rgba(201,123,42,0.48)">Roll</text>
+      <text x="365" y="112" text-anchor="end" font-family="'Courier New',monospace" font-size="11" letter-spacing="1" fill="rgba(201,123,42,0.48)">full</text>
+    </g>
+
+    <!-- Roll full message — centered in safe area -->
+    <g id="S05/RollFullMessage">
+      <text x="196.5" y="408" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="22" font-weight="500" fill="rgba(255,255,255,0.9)">Roll's full.</text>
+      <text x="196.5" y="440" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="22" font-weight="500" fill="#C97B2A">See you at 9.</text>
+    </g>
+
+    <!-- Shutter — disabled 40% opacity, cy=750 -->
+    <g id="S05/Shutter-Disabled" opacity="0.4">
+      <circle cx="196.5" cy="750" r="29" fill="none" stroke="rgba(255,255,255,0.86)" stroke-width="2.5"/>
+      <circle cx="196.5" cy="750" r="21.5" fill="none" stroke="rgba(255,255,255,0.44)" stroke-width="1"/>
+      <circle cx="196.5" cy="750" r="2" fill="rgba(255,255,255,0.86)"/>
+    </g>
+
+    <!-- Mode Pill — still fully active -->
+    <g id="S05/ModePill-Roll">
+      <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.09)" stroke="rgba(255,255,255,0.11)" stroke-width="0.5"/>
+      <circle cx="196.5" cy="828" r="6" fill="none" stroke="#C97B2A" stroke-width="1.2"/>
+      <circle cx="196.5" cy="828" r="1.5" fill="none" stroke="#C97B2A" stroke-width="0.8"/>
+      <line x1="196.5" y1="823" x2="196.5" y2="821.5" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="200.6" y1="824.5" x2="201.7" y2="823.1" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="200.6" y1="831.5" x2="201.7" y2="832.9" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="196.5" y1="833" x2="196.5" y2="834.5" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="192.4" y1="831.5" x2="191.3" y2="832.9" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="192.4" y1="824.5" x2="191.3" y2="823.1" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round"/>
+    </g>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.11)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 06: SEQUENCE STRIP PREVIEW ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 06</div>
+  <div class="screen-title">Snap — Sequence Strip Preview</div>
+  <div class="screen-desc">Floating 28% overlay (safeH×0.28≈213pt) at bottom. 6-frame contact sheet auto-loops. Text-link send/save. Swipe up → circle selector.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c6"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g6" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a2030"/><stop offset="100%" stop-color="#090d14"/></linearGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c6)">
+    <g id="S06/Viewfinder"><rect width="393" height="852" fill="url(#g6)"/><rect x="70" y="170" width="260" height="190" rx="4" fill="rgba(255,255,255,0.02)"/></g>
+    <g id="S06/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/></g>
+
+    <!-- Shutter behind strip (dimmed) -->
+    <g id="S06/Shutter-Behind" opacity="0.25">
+      <circle cx="196.5" cy="580" r="29" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="3"/>
+    </g>
+
+    <!-- Strip Overlay — height = 213pt (safeH×0.28), anchored above safeBot -->
+    <!-- Top of strip: 852 - 34(safeBot) - 213 = 605pt -->
+    <g id="S06/StripOverlay">
+      <!-- Background panel -->
+      <rect x="0" y="613" width="393" height="205" rx="20" fill="rgba(20,14,6,0.9)"/>
+      <!-- Handle bar -->
+      <rect x="183" y="621" width="27" height="3" rx="1.5" fill="rgba(255,255,255,0.25)"/>
+
+      <!-- 6 frame thumbnails — frame width≈(393-32-40)/6≈53.5pt, gap 8pt, left inset 16pt -->
+      <g id="S06/FrameThumbnails">
+        <rect x="16"  y="636" width="52" height="124" rx="6" fill="#1a2535" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+        <rect x="76"  y="636" width="52" height="124" rx="6" fill="#182030" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+        <rect x="136" y="636" width="52" height="124" rx="6" fill="#1c2238" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+        <rect x="196" y="636" width="52" height="124" rx="6" fill="#1a2030" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+        <rect x="256" y="636" width="52" height="124" rx="6" fill="#1e2535" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+        <rect x="316" y="636" width="61" height="124" rx="6" fill="#182030" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+      </g>
+
+      <!-- Asset type label -->
+      <text x="16" y="776" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.35)">Sequence · 3 sec</text>
+
+      <!-- Actions — text links: save left, send → right -->
+      <text x="16"  y="800" font-family="-apple-system,sans-serif" font-size="14" fill="rgba(255,255,255,0.45)">save</text>
+      <text x="377" y="800" text-anchor="end" font-family="-apple-system,sans-serif" font-size="14" font-weight="500" fill="rgba(255,255,255,0.92)">send →</text>
+    </g>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 07: DRAFTS TRAY ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 07</div>
+  <div class="screen-title">Snap — Drafts Tray Sheet</div>
+  <div class="screen-desc">3 items: still (no timer), sequence (no timer), clip (amber pill badge &lt;1h). UNSENT label + large count. CLEAR ALL right. Text-link actions per row.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c7"><rect width="393" height="852" rx="44"/></clipPath>
+    <!-- Dark viewfinder background -->
+    <linearGradient id="g7" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0E0E10"/>
+      <stop offset="100%" stop-color="#090909"/>
+    </linearGradient>
+    <!-- Thumbnail gradients -->
+    <linearGradient id="th1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2a2a2e"/>
+      <stop offset="100%" stop-color="#141416"/>
+    </linearGradient>
+    <linearGradient id="th2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#18202e"/>
+      <stop offset="100%" stop-color="#0e131c"/>
+    </linearGradient>
+    <linearGradient id="th3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a1a1c"/>
+      <stop offset="100%" stop-color="#0c0c0d"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="393" height="852" rx="44" fill="#0E0E10"/>
+  <g clip-path="url(#c7)">
+
+    <!-- Dark camera viewfinder behind sheet -->
+    <g id="S07/ViewfinderBehind">
+      <rect width="393" height="852" fill="url(#g7)"/>
+    </g>
+
+    <!-- Dynamic Island -->
+    <g id="S07/DynamicIsland">
+      <rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/>
+      <circle cx="225" cy="29" r="5" fill="#111"/>
+    </g>
+
+    <!-- ── BOTTOM SHEET ── -->
+    <g id="S07/Sheet">
+      <!-- Sheet surface — starts at y=370, rounded top corners -->
+      <rect x="0" y="370" width="393" height="482" rx="20" fill="#161618"/>
+
+      <!-- Drag pill -->
+      <rect x="183" y="380" width="27" height="4" rx="2" fill="rgba(255,255,255,0.18)"/>
+
+      <!-- UNSENT label -->
+      <text x="20" y="425" font-family="'Courier New',monospace" font-size="11" letter-spacing="2" fill="#C97B2A">UNSENT</text>
+
+      <!-- "3 items" large heading -->
+      <text x="20" y="468" font-family="-apple-system,sans-serif" font-size="24" font-weight="700" letter-spacing="-1" fill="rgba(255,255,255,0.92)">3 items</text>
+
+      <!-- CLEAR ALL right-aligned -->
+      <text x="373" y="468" text-anchor="end" font-family="'Courier New',monospace" font-size="11" letter-spacing="1.5" fill="rgba(255,255,255,0.35)">CLEAR ALL</text>
+
+      <!-- Divider below header -->
+      <line x1="0" y1="488" x2="393" y2="488" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+
+      <!-- ── ROW 1: STILL ── -->
+      <g id="S07/Row-Still">
+        <!-- Thumbnail: abstract angular planes, dark tones -->
+        <rect x="20" y="504" width="86" height="72" rx="6" fill="url(#th1)"/>
+        <!-- Abstract geometry suggestion -->
+        <polygon points="20,504 106,504 106,530 60,576 20,576" fill="#222226" opacity="0.7"/>
+        <polygon points="106,504 106,576 75,576" fill="#2e2e34" opacity="0.5"/>
+        <line x1="20" y1="540" x2="106" y2="510" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+        <line x1="20" y1="555" x2="90" y2="504" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+
+        <!-- Label -->
+        <text x="122" y="524" font-family="'Courier New',monospace" font-size="11" letter-spacing="1.5" fill="rgba(255,255,255,0.55)">STILL</text>
+        <!-- Actions -->
+        <text x="122" y="548" font-family="-apple-system,sans-serif" font-size="14" fill="rgba(255,255,255,0.45)">save</text>
+        <text x="175" y="548" font-family="-apple-system,sans-serif" font-size="14" font-weight="500" fill="rgba(255,255,255,0.88)">send →</text>
+
+        <!-- Row divider -->
+        <line x1="20" y1="590" x2="393" y2="590" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+      </g>
+
+      <!-- ── ROW 2: SEQUENCE ── -->
+      <g id="S07/Row-Sequence">
+        <!-- Thumbnail: 3×2 grid of 6 frames, 86×68px -->
+        <!-- clipPath for rounded corners on the whole thumbnail -->
+        <defs>
+          <clipPath id="seq-thumb-clip"><rect x="20" y="606" width="86" height="68" rx="6"/></clipPath>
+        </defs>
+        <!-- Thumbnail background -->
+        <rect x="20" y="606" width="86" height="68" rx="6" fill="#0d131e"/>
+
+        <!-- 3×2 grid: col width=27, row height=32, gap=1 -->
+        <!-- ROW 1 -->
+        <!-- Cell [0,0] -->
+        <rect x="20" y="606" width="27" height="32" fill="#111825" clip-path="url(#seq-thumb-clip)"/>
+        <rect x="22" y="624" width="4" height="14" fill="rgba(255,255,255,0.07)"/>
+        <rect x="27" y="620" width="3" height="18" fill="rgba(255,255,255,0.07)"/>
+        <rect x="31" y="626" width="4" height="12" fill="rgba(255,255,255,0.05)"/>
+        <rect x="36" y="618" width="3" height="20" fill="rgba(255,255,255,0.06)"/>
+        <!-- Cell [0,1] -->
+        <rect x="48" y="606" width="27" height="32" fill="#0f1a28" clip-path="url(#seq-thumb-clip)"/>
+        <rect x="50" y="622" width="3" height="16" fill="rgba(255,255,255,0.07)"/>
+        <rect x="55" y="618" width="4" height="20" fill="rgba(255,255,255,0.08)"/>
+        <rect x="60" y="624" width="3" height="14" fill="rgba(255,255,255,0.05)"/>
+        <rect x="65" y="620" width="4" height="18" fill="rgba(255,255,255,0.06)"/>
+        <!-- Cell [0,2] -->
+        <rect x="76" y="606" width="30" height="32" fill="#121820" clip-path="url(#seq-thumb-clip)"/>
+        <rect x="78" y="621" width="4" height="17" fill="rgba(255,255,255,0.06)"/>
+        <rect x="84" y="617" width="3" height="21" fill="rgba(255,255,255,0.07)"/>
+        <rect x="89" y="623" width="4" height="15" fill="rgba(255,255,255,0.05)"/>
+        <rect x="94" y="619" width="3" height="19" fill="rgba(255,255,255,0.06)"/>
+
+        <!-- Horizontal gap between rows -->
+        <rect x="20" y="638" width="86" height="1" fill="#161618" clip-path="url(#seq-thumb-clip)"/>
+
+        <!-- ROW 2 -->
+        <!-- Cell [1,0] -->
+        <rect x="20" y="639" width="27" height="35" fill="#0e1620" clip-path="url(#seq-thumb-clip)"/>
+        <rect x="23" y="655" width="5" height="19" fill="rgba(255,255,255,0.06)"/>
+        <rect x="29" y="650" width="3" height="24" fill="rgba(255,255,255,0.07)"/>
+        <rect x="33" y="657" width="4" height="17" fill="rgba(255,255,255,0.05)"/>
+        <rect x="38" y="652" width="3" height="22" fill="rgba(255,255,255,0.06)"/>
+        <!-- Cell [1,1] -->
+        <rect x="48" y="639" width="27" height="35" fill="#101b2a" clip-path="url(#seq-thumb-clip)"/>
+        <rect x="51" y="653" width="4" height="21" fill="rgba(255,255,255,0.07)"/>
+        <rect x="56" y="648" width="3" height="26" fill="rgba(255,255,255,0.08)"/>
+        <rect x="61" y="655" width="4" height="19" fill="rgba(255,255,255,0.05)"/>
+        <rect x="66" y="651" width="3" height="23" fill="rgba(255,255,255,0.06)"/>
+        <!-- Cell [1,2] -->
+        <rect x="76" y="639" width="30" height="35" fill="#0f1622" clip-path="url(#seq-thumb-clip)"/>
+        <rect x="79" y="652" width="4" height="22" fill="rgba(255,255,255,0.06)"/>
+        <rect x="85" y="647" width="3" height="27" fill="rgba(255,255,255,0.07)"/>
+        <rect x="90" y="654" width="4" height="20" fill="rgba(255,255,255,0.05)"/>
+        <rect x="95" y="650" width="3" height="24" fill="rgba(255,255,255,0.06)"/>
+
+        <!-- Vertical gaps between columns -->
+        <rect x="47" y="606" width="1" height="68" fill="#161618" clip-path="url(#seq-thumb-clip)"/>
+        <rect x="75" y="606" width="1" height="68" fill="#161618" clip-path="url(#seq-thumb-clip)"/>
+
+        <!-- Outer border -->
+        <rect x="20" y="606" width="86" height="68" rx="6" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+
+        <!-- Label -->
+        <text x="122" y="624" font-family="'Courier New',monospace" font-size="11" letter-spacing="1.5" fill="rgba(255,255,255,0.55)">SEQUENCE</text>
+        <!-- Actions -->
+        <text x="122" y="648" font-family="-apple-system,sans-serif" font-size="14" fill="rgba(255,255,255,0.45)">save</text>
+        <text x="175" y="648" font-family="-apple-system,sans-serif" font-size="14" font-weight="500" fill="rgba(255,255,255,0.88)">send →</text>
+
+        <!-- Row divider -->
+        <line x1="20" y1="690" x2="393" y2="690" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+      </g>
+
+      <!-- ── ROW 3: CLIP · URGENT ── -->
+      <g id="S07/Row-Clip-Urgent">
+        <!-- Thumbnail: lone figure in fog -->
+        <rect x="20" y="704" width="86" height="72" rx="6" fill="url(#th3)"/>
+        <!-- Fog gradient overlay -->
+        <rect x="20" y="704" width="86" height="72" rx="6" fill="rgba(255,255,255,0.03)"/>
+        <!-- Figure silhouette -->
+        <ellipse cx="63" cy="726" rx="5" ry="6" fill="rgba(255,255,255,0.18)"/>
+        <rect x="60" y="732" width="6" height="14" rx="2" fill="rgba(255,255,255,0.16)"/>
+        <line x1="58" y1="736" x2="52" y2="748" stroke="rgba(255,255,255,0.14)" stroke-width="2" stroke-linecap="round"/>
+        <line x1="66" y1="736" x2="72" y2="748" stroke="rgba(255,255,255,0.14)" stroke-width="2" stroke-linecap="round"/>
+        <!-- Play triangle centered -->
+        <polygon points="55,754 55,770 72,762" fill="rgba(255,255,255,0.45)"/>
+        <!-- Soft vignette on thumbnail -->
+        <rect x="20" y="704" width="86" height="72" rx="6" fill="rgba(0,0,0,0.2)"/>
+
+        <!-- Label row: CLIP · 10S + amber expiry pill -->
+        <text x="122" y="724" font-family="'Courier New',monospace" font-size="11" letter-spacing="1.5" fill="rgba(255,255,255,0.55)">CLIP · 10S</text>
+        <!-- Amber pill badge -->
+        <rect x="211" y="712" width="82" height="17" rx="4" fill="#C97B2A"/>
+        <text x="252" y="724" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" letter-spacing="0.5" fill="#0E0E10">0h 47m left</text>
+
+        <!-- Actions: save plain, send → in amber -->
+        <text x="122" y="748" font-family="-apple-system,sans-serif" font-size="14" fill="rgba(255,255,255,0.45)">save</text>
+        <text x="175" y="748" font-family="-apple-system,sans-serif" font-size="14" font-weight="500" fill="#C97B2A">send →</text>
+      </g>
+
+    </g>
+  </g>
+
+  <!-- Phone chrome -->
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/>
+  <rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/>
+  <rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/>
+  <rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 08: INBOX ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 08</div>
+  <div class="screen-title">Inbox — Received Snaps</div>
+  <div class="screen-desc">No content preview — asset type only. Yellow unread dot (not a count badge). Timer only when &lt;3h remaining.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs><clipPath id="c8"><rect width="393" height="852" rx="44"/></clipPath></defs>
+  <rect width="393" height="852" rx="44" fill="#111"/>
+  <g clip-path="url(#c8)">
+    <g id="S08/Background"><rect width="393" height="852" fill="#111"/></g>
+    <g id="S08/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/></g>
+    <!-- ··· global nav -->
+    <text x="373" y="82" text-anchor="end" font-family="-apple-system,sans-serif" font-size="22" font-weight="500" fill="rgba(255,255,255,0.6)">⋯</text>
+
+    <g id="S08/InboxContent">
+      <!-- Header -->
+      <text x="20" y="106" font-family="-apple-system,sans-serif" font-size="22" font-weight="500" fill="rgba(255,255,255,0.9)">inbox</text>
+      <text x="20" y="126" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.38)">2 waiting</text>
+      <line x1="0" y1="145" x2="393" y2="145" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+
+      <!-- Row 1: Jiyeon — sequence -->
+      <g id="S08/Row-Jiyeon">
+        <circle cx="40" cy="192" r="20" fill="#1a2535"/>
+        <text x="40" y="197" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" font-weight="500" fill="rgba(255,255,255,0.55)">JY</text>
+        <text x="72" y="184" font-family="-apple-system,sans-serif" font-size="15" font-weight="500" fill="rgba(255,255,255,0.9)">Jiyeon</text>
+        <text x="72" y="202" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.38)">sequence · open before it's gone</text>
+        <text x="373" y="184" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.28)">2m ago</text>
+        <circle cx="373" cy="202" r="4" fill="#F5C420"/>
+        <line x1="72" y1="222" x2="393" y2="222" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+      </g>
+
+      <!-- Row 2: Minjun — still (timer shown: 21h — actually > 3h so no timer shown in this spec, showing anyway for illustration) -->
+      <g id="S08/Row-Minjun">
+        <circle cx="40" cy="262" r="20" fill="#1a301a"/>
+        <text x="40" y="267" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" font-weight="500" fill="rgba(255,255,255,0.55)">MK</text>
+        <text x="72" y="254" font-family="-apple-system,sans-serif" font-size="15" font-weight="500" fill="rgba(255,255,255,0.9)">Minjun</text>
+        <text x="72" y="272" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.38)">still</text>
+        <text x="373" y="254" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.28)">1h ago</text>
+        <circle cx="373" cy="272" r="4" fill="#F5C420"/>
+        <line x1="72" y1="292" x2="393" y2="292" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+      </g>
+    </g>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 09: FILM ARCHIVE ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 09</div>
+  <div class="screen-title">Film Archive — Moment List</div>
+  <div class="screen-desc">Narrative cards. Full-width hero image, Moment label, ambient detail, friend avatars. Received Roll shows attribution.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c9"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="hero1" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0%" stop-color="#1C1408"/><stop offset="100%" stop-color="#0E0A04"/></linearGradient>
+    <linearGradient id="hero2" x1="0.2" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0d1520"/><stop offset="100%" stop-color="#090f16"/></linearGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#111008"/>
+  <g clip-path="url(#c9)">
+    <g id="S09/Background"><rect width="393" height="852" fill="#111008"/></g>
+    <g id="S09/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/></g>
+    <!-- ··· global nav -->
+    <text x="373" y="82" text-anchor="end" font-family="-apple-system,sans-serif" font-size="22" font-weight="500" fill="rgba(255,255,255,0.6)">⋯</text>
+
+    <!-- Header -->
+    <g id="S09/Header">
+      <text x="20" y="104" font-family="-apple-system,sans-serif" font-size="22" font-weight="500" fill="rgba(255,255,255,0.9)">archive</text>
+      <circle cx="365" cy="93" r="16" fill="rgba(255,255,255,0.07)"/>
+      <line x1="359" y1="87" x2="371" y2="99" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="371" y1="87" x2="359" y2="99" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-linecap="round"/>
+    </g>
+    <line x1="0" y1="118" x2="393" y2="118" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+
+    <!-- Card 1 — Roll Mode, own Roll -->
+    <g id="S09/Card1-OwnRoll">
+      <rect x="12" y="126" width="369" height="198" rx="12" fill="#1C1A14"/>
+      <!-- Hero image -->
+      <rect x="12" y="126" width="369" height="156" rx="12" fill="url(#hero1)"/>
+      <rect x="12" y="126" width="369" height="156" rx="12" fill="rgba(201,123,42,0.05)"/>
+      <!-- Film sim badge -->
+      <rect x="24" y="138" width="70" height="18" rx="9" fill="rgba(0,0,0,0.55)"/>
+      <text x="59" y="151" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(201,123,42,0.88)">kodakWarm</text>
+      <!-- Metadata -->
+      <text x="24" y="299" font-family="-apple-system,sans-serif" font-size="13" font-weight="500" fill="rgba(255,255,255,0.82)">Rainy Walk · Apr 14 · Shibuya</text>
+      <text x="24" y="315" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.32)">Tuesday · Rainy · 17°C</text>
+      <!-- Friend avatars -->
+      <circle cx="335" cy="302" r="10" fill="#1a2535"/><text x="335" y="306" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="rgba(255,255,255,0.55)">JY</text>
+      <circle cx="350" cy="302" r="10" fill="#1a301a"/><text x="350" y="306" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="rgba(255,255,255,0.55)">MK</text>
+      <circle cx="365" cy="302" r="10" fill="#2a1a20"/><text x="365" y="306" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="rgba(255,255,255,0.55)">SH</text>
+    </g>
+
+    <!-- Card 2 — Received from friend -->
+    <g id="S09/Card2-ReceivedRoll">
+      <rect x="12" y="336" width="369" height="198" rx="12" fill="#141820"/>
+      <rect x="12" y="336" width="369" height="156" rx="12" fill="url(#hero2)"/>
+      <!-- "from Jiyeon" badge -->
+      <rect x="24" y="348" width="72" height="18" rx="9" fill="rgba(0,0,0,0.55)"/>
+      <text x="60" y="361" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(245,196,32,0.78)">from Jiyeon</text>
+      <!-- Metadata -->
+      <text x="24" y="509" font-family="-apple-system,sans-serif" font-size="13" font-weight="500" fill="rgba(255,255,255,0.82)">Concert · Apr 10 · Nakameguro</text>
+      <text x="24" y="525" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.32)">Saturday · Clear · 12°C</text>
+      <text x="373" y="509" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.28)">Apr 10</text>
+    </g>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.11)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 10: UNLOCK REVEAL ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 10</div>
+  <div class="screen-title">Roll Unlock Reveal — 9PM Ritual</div>
+  <div class="screen-desc">Darkroom surface. Current asset (photo 4 of 18). Opened friends (amber border) vs waiting (dim). Reactions + reply. Quiet, not celebratory.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c10"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g10" x1="0" y1="0" x2="0.2" y2="1"><stop offset="0%" stop-color="#1A1208"/><stop offset="100%" stop-color="#0E0904"/></linearGradient>
+    <linearGradient id="assetg" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0%" stop-color="#1C1610"/><stop offset="100%" stop-color="#14100C"/></linearGradient>
+    <radialGradient id="ll10" cx="80%" cy="8%" r="50%"><stop offset="0%" stop-color="#C97B2A" stop-opacity="0.1"/><stop offset="100%" stop-color="#C97B2A" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c10)">
+    <g id="S10/Background"><rect width="393" height="852" fill="url(#g10)"/><rect width="393" height="852" fill="url(#ll10)"/></g>
+    <g id="S10/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/></g>
+    <!-- ··· global nav -->
+    <text x="373" y="82" text-anchor="end" font-family="-apple-system,sans-serif" font-size="22" font-weight="500" fill="rgba(255,255,255,0.6)">⋯</text>
+
+    <!-- Roll info header -->
+    <g id="S10/RollHeader">
+      <text x="196.5" y="99" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.38)">Apr 14 · 9:00 PM</text>
+      <text x="196.5" y="121" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="20" font-weight="500" fill="rgba(255,255,255,0.88)">Han's Roll</text>
+    </g>
+
+    <!-- Current asset card -->
+    <g id="S10/CurrentAsset">
+      <rect x="20" y="142" width="353" height="498" rx="12" fill="url(#assetg)"/>
+      <rect x="20" y="142" width="353" height="498" rx="12" fill="rgba(201,123,42,0.05)"/>
+      <!-- Scene hint -->
+      <rect x="60" y="220" width="270" height="165" rx="5" fill="rgba(255,255,255,0.025)"/>
+      <!-- Film sim watermark -->
+      <text x="36" y="628" font-family="'Courier New',monospace" font-size="10" letter-spacing="0.5" fill="rgba(201,123,42,0.35)">kodakWarm · 4/18</text>
+    </g>
+
+    <!-- Asset counter -->
+    <g id="S10/AssetCounter">
+      <text x="196.5" y="658" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" fill="rgba(255,255,255,0.28)">photo 4 of 18</text>
+    </g>
+
+    <!-- Friends opened status -->
+    <g id="S10/FriendsOpened">
+      <text x="20" y="686" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.28)">opened</text>
+      <!-- JY — opened (amber border) -->
+      <circle cx="24" cy="708" r="13" fill="#1a2535" stroke="#C97B2A" stroke-width="1.5"/>
+      <text x="24" y="712" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(255,255,255,0.65)">JY</text>
+      <!-- MK — opened -->
+      <circle cx="54" cy="708" r="13" fill="#1a301a" stroke="#C97B2A" stroke-width="1.5"/>
+      <text x="54" y="712" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(255,255,255,0.65)">MK</text>
+      <!-- SH — not yet opened (dim border) -->
+      <circle cx="84" cy="708" r="13" fill="#1C1C1E" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+      <text x="84" y="712" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(255,255,255,0.28)">SH</text>
+    </g>
+
+    <!-- Reaction chips -->
+    <g id="S10/ReactionChips">
+      <rect x="192" y="694" width="44" height="28" rx="14" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+      <text x="214" y="712" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" fill="rgba(255,255,255,0.55)">haha</text>
+      <rect x="242" y="694" width="44" height="28" rx="14" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+      <text x="264" y="712" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" fill="rgba(255,255,255,0.55)">love</text>
+      <rect x="292" y="694" width="40" height="28" rx="14" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+      <text x="312" y="712" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" fill="rgba(255,255,255,0.55)">wow</text>
+      <rect x="338" y="694" width="38" height="28" rx="14" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+      <text x="357" y="712" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" fill="rgba(255,255,255,0.55)">fire</text>
+    </g>
+
+    <!-- Reply field -->
+    <g id="S10/ReplyField">
+      <rect x="20" y="732" width="316" height="36" rx="18" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.09)" stroke-width="0.5"/>
+      <text x="40" y="755" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.22)">reply to Han…</text>
+      <circle cx="355" cy="750" r="13" fill="rgba(255,255,255,0.05)"/>
+      <text x="355" y="755" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="14" fill="rgba(255,255,255,0.18)">↑</text>
+    </g>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.11)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 11: MODE SWITCH — HOLD IN PROGRESS ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 11</div>
+  <div class="screen-title">Mode Switch — Long-Hold In Progress (Snap → Roll)</div>
+  <div class="screen-desc">User holding mode pill ~70% through 1.5s arc. Pill border glows amber. Clockwise arc fills around pill. Shutter visible but locked (dimmed). Release before arc completes = abort, no sheet.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c11"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g11" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a2030"/><stop offset="100%" stop-color="#090d14"/></linearGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c11)">
+
+    <!-- Viewfinder — Snap, unchanged -->
+    <g id="S11/Viewfinder">
+      <rect width="393" height="852" fill="url(#g11)"/>
+      <rect x="70" y="210" width="260" height="170" rx="4" fill="rgba(255,255,255,0.02)"/>
+      <rect x="110" y="270" width="110" height="75" rx="3" fill="rgba(255,255,255,0.025)"/>
+    </g>
+
+    <!-- Dynamic Island -->
+    <g id="S11/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/><circle cx="225" cy="29" r="3" fill="#090d14"/></g>
+
+    <!-- Shutter — visible but locked, dimmed -->
+    <g id="S11/Shutter" opacity="0.4">
+      <circle cx="196.5" cy="750" r="29" fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="3"/>
+      <circle cx="196.5" cy="750" r="24" fill="rgba(255,255,255,0.07)"/>
+    </g>
+
+    <!-- Mode Pill — glowing, amber border -->
+    <g id="S11/ModePill-Holding">
+      <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.18)" stroke="#C97B2A" stroke-width="1.5"/>
+      <!-- Open aperture icon (still Snap) -->
+      <circle cx="196.5" cy="828" r="6" fill="none" stroke="#F5C420" stroke-width="1.2"/>
+      <circle cx="196.5" cy="828" r="2.8" fill="none" stroke="#F5C420" stroke-width="0.7"/>
+      <line x1="196.5" y1="822.5" x2="196.5" y2="820.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="201.7" y1="824.2" x2="203.4" y2="822.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="201.7" y1="831.8" x2="203.4" y2="833.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="196.5" y1="833.5" x2="196.5" y2="835.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="191.3" y1="831.8" x2="189.6" y2="833.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+      <line x1="191.3" y1="824.2" x2="189.6" y2="822.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    </g>
+
+    <!-- Progress arc — clockwise, ~70% complete -->
+    <circle cx="196.5" cy="828" r="22" fill="none" stroke="rgba(201,123,42,0.2)" stroke-width="2"/>
+    <path d="M 196.5 806 A 22 22 0 1 1 175.6 834.8" fill="none" stroke="#C97B2A" stroke-width="2.5" stroke-linecap="round"/>
+
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 12: MODE SWITCH — CONFIRMATION SHEET ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 12</div>
+  <div class="screen-title">Mode Switch — Confirmation Sheet (Snap → Roll)</div>
+  <div class="screen-desc">Arc completes → sheet slides up. "Switch to Roll?" heading. Stopped-down aperture symbol in amber. SWITCH CTA (amber fill). "Stay in Snap" text-link. Tap outside = dismiss, no switch.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c12"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g12" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a2030"/><stop offset="100%" stop-color="#090d14"/></linearGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c12)">
+
+    <!-- Viewfinder — Snap, dimmed behind scrim -->
+    <g id="S12/Viewfinder">
+      <rect width="393" height="852" fill="url(#g12)"/>
+      <rect x="70" y="210" width="260" height="170" rx="4" fill="rgba(255,255,255,0.02)"/>
+    </g>
+
+    <!-- Scrim -->
+    <rect width="393" height="852" fill="rgba(0,0,0,0.5)"/>
+
+    <!-- Dynamic Island -->
+    <g id="S12/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/><circle cx="225" cy="29" r="3" fill="#090d14"/></g>
+
+    <!-- Shutter + pill — ghosted behind scrim -->
+    <g opacity="0.15">
+      <circle cx="196.5" cy="750" r="29" fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="3"/>
+      <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+    </g>
+
+    <!-- ── CONFIRMATION SHEET ── -->
+    <g id="S12/ConfirmSheet">
+      <rect x="0" y="548" width="393" height="304" rx="20" fill="#1C1C1E"/>
+      <rect x="0" y="548" width="393" height="304" rx="20" fill="rgba(255,255,255,0.025)"/>
+      <!-- Drag pill -->
+      <rect x="183" y="558" width="27" height="4" rx="2" fill="rgba(255,255,255,0.18)"/>
+      <!-- Heading -->
+      <text x="196.5" y="618" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="20" font-weight="500" fill="rgba(255,255,255,0.92)">Switch to Roll?</text>
+      <!-- Roll aperture symbol — stopped-down, amber -->
+      <circle cx="196.5" cy="662" r="24" fill="none" stroke="#C97B2A" stroke-width="1.5"/>
+      <circle cx="196.5" cy="662" r="16" fill="none" stroke="rgba(201,123,42,0.35)" stroke-width="0.8"/>
+      <circle cx="196.5" cy="662" r="5" fill="#C97B2A"/>
+      <line x1="196.5" y1="638" x2="193" y2="655" stroke="#C97B2A" stroke-width="1" opacity="0.55"/>
+      <line x1="196.5" y1="638" x2="200" y2="655" stroke="#C97B2A" stroke-width="1" opacity="0.55"/>
+      <line x1="172.5" y1="662" x2="189.5" y2="662" stroke="#C97B2A" stroke-width="1" opacity="0.55"/>
+      <line x1="220.5" y1="662" x2="203.5" y2="662" stroke="#C97B2A" stroke-width="1" opacity="0.55"/>
+      <line x1="196.5" y1="686" x2="193" y2="669" stroke="#C97B2A" stroke-width="1" opacity="0.55"/>
+      <line x1="196.5" y1="686" x2="200" y2="669" stroke="#C97B2A" stroke-width="1" opacity="0.55"/>
+      <!-- SWITCH CTA — amber fill -->
+      <rect x="20" y="700" width="353" height="52" rx="8" fill="#C97B2A"/>
+      <text x="196.5" y="731" text-anchor="middle" font-family="'Courier New',monospace" font-size="13" font-weight="700" letter-spacing="3" fill="#1A1208">SWITCH</text>
+      <!-- Stay in Snap -->
+      <text x="196.5" y="778" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="14" fill="rgba(255,255,255,0.35)">Stay in Snap</text>
+      <!-- Tap outside hint -->
+      <text x="196.5" y="832" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.15)">or tap outside to dismiss</text>
+    </g>
+
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 13: CIRCLE SELECTOR ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 13</div>
+  <div class="screen-title">Snap — Circle Selector Sheet</div>
+  <div class="screen-desc">.medium detent sheet over live viewfinder. "Send to" header + asset type subtitle. 5 friends horizontal — 2 selected (yellow border), 1 nearby dot. Yellow SEND → button. Ephemeral policy note below.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c13"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g13" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a2030"/><stop offset="100%" stop-color="#090d14"/></linearGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c13)">
+
+    <!-- Live viewfinder behind sheet -->
+    <g id="S13/Viewfinder">
+      <rect width="393" height="852" fill="url(#g13)"/>
+      <rect x="70" y="160" width="260" height="200" rx="4" fill="rgba(255,255,255,0.02)"/>
+      <rect x="110" y="220" width="120" height="90" rx="3" fill="rgba(255,255,255,0.025)"/>
+    </g>
+
+    <!-- Dynamic Island -->
+    <g id="S13/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/><circle cx="225" cy="29" r="3" fill="#090d14"/></g>
+
+    <!-- Shutter — partially visible above sheet -->
+    <g id="S13/Shutter" opacity="0.35">
+      <circle cx="196.5" cy="750" r="29" fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="3"/>
+    </g>
+
+    <!-- Mode pill — partially visible -->
+    <g id="S13/ModePill" opacity="0.35">
+      <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+    </g>
+
+    <!-- ── CIRCLE SELECTOR SHEET ── -->
+    <!-- .medium detent — approx half screen, y=480 -->
+    <g id="S13/CircleSelectorSheet">
+      <!-- Sheet surface -->
+      <rect x="0" y="480" width="393" height="372" rx="20" fill="#1C1C1E"/>
+      <rect x="0" y="480" width="393" height="372" rx="20" fill="rgba(255,255,255,0.03)"/>
+
+      <!-- Drag pill -->
+      <rect x="183" y="490" width="27" height="4" rx="2" fill="rgba(255,255,255,0.18)"/>
+
+      <!-- Header -->
+      <text x="20" y="528" font-family="-apple-system,sans-serif" font-size="17" font-weight="500" fill="rgba(255,255,255,0.92)">Send to</text>
+      <text x="20" y="548" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.38)">sequence · 3 sec strip</text>
+
+      <!-- Separator -->
+      <line x1="0" y1="562" x2="393" y2="562" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+
+      <!-- Friend avatar row — horizontal, 5 friends -->
+      <!-- JY — selected (yellow border) + nearby dot -->
+      <g id="S13/Friend-JY">
+        <circle cx="52" cy="618" r="22" fill="#1a2535" stroke="#F5C420" stroke-width="2"/>
+        <text x="52" y="623" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" font-weight="500" fill="rgba(255,255,255,0.75)">JY</text>
+        <!-- Nearby dot -->
+        <circle cx="69" cy="600" r="5" fill="#F5C420"/>
+        <text x="52" y="652" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.55)">Jiyeon</text>
+      </g>
+
+      <!-- MK — selected (yellow border) -->
+      <g id="S13/Friend-MK">
+        <circle cx="128" cy="618" r="22" fill="#1a301a" stroke="#F5C420" stroke-width="2"/>
+        <text x="128" y="623" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" font-weight="500" fill="rgba(255,255,255,0.75)">MK</text>
+        <text x="128" y="652" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.55)">Minjun</text>
+      </g>
+
+      <!-- SH — unselected -->
+      <g id="S13/Friend-SH">
+        <circle cx="204" cy="618" r="22" fill="#2a2218" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+        <text x="204" y="623" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" font-weight="500" fill="rgba(255,255,255,0.4)">SH</text>
+        <text x="204" y="652" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.3)">Sehun</text>
+      </g>
+
+      <!-- HW — unselected -->
+      <g id="S13/Friend-HW">
+        <circle cx="280" cy="618" r="22" fill="#1a1a2e" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+        <text x="280" y="623" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" font-weight="500" fill="rgba(255,255,255,0.4)">HW</text>
+        <text x="280" y="652" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.3)">Hyewon</text>
+      </g>
+
+      <!-- YB — unselected -->
+      <g id="S13/Friend-YB">
+        <circle cx="356" cy="618" r="22" fill="#2a1a2a" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+        <text x="356" y="623" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" font-weight="500" fill="rgba(255,255,255,0.4)">YB</text>
+        <text x="356" y="652" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.3)">Yobin</text>
+      </g>
+
+      <!-- Save to Photos toggle -->
+      <g id="S13/SaveToggle">
+        <text x="20" y="686" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.38)">Save to Photos</text>
+        <!-- Toggle off -->
+        <rect x="333" y="674" width="40" height="22" rx="11" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+        <circle cx="344" cy="685" r="9" fill="rgba(255,255,255,0.45)"/>
+      </g>
+
+      <!-- Separator -->
+      <line x1="20" y1="706" x2="373" y2="706" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+
+      <!-- SEND button — yellow, 2 recipients selected -->
+      <rect x="20" y="718" width="353" height="52" rx="8" fill="#F5C420"/>
+      <text x="196.5" y="749" text-anchor="middle" font-family="'Courier New',monospace" font-size="13" font-weight="700" letter-spacing="2" fill="#1A1208">SEND →  2 friends</text>
+
+      <!-- Ephemeral policy note -->
+      <text x="196.5" y="786" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.22)">Disappears after viewed · 24h max</text>
+    </g>
+
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 14: ASSET VIEW — RECEIVED SNAP ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 14</div>
+  <div class="screen-title">Asset View — Received Snap (Still)</div>
+  <div class="screen-desc">Full screen. Minimal header: ← inbox / sender name / "viewing now". Asset fills screen behind header. Reaction chips + reply field above home indicator. Viewed trigger fires on appear.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c14"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g14" x1="0.2" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a2535"/>
+      <stop offset="100%" stop-color="#090d14"/>
+    </linearGradient>
+    <radialGradient id="vg14" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.04)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </radialGradient>
+    <!-- Bottom fade for footer legibility -->
+    <linearGradient id="footer-fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(0,0,0,0)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,0.82)"/>
+    </linearGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#111"/>
+  <g clip-path="url(#c14)">
+
+    <!-- Asset — full screen still photo (Jiyeon's snap) -->
+    <g id="S14/Asset">
+      <rect width="393" height="852" fill="url(#g14)"/>
+      <rect width="393" height="852" fill="url(#vg14)"/>
+      <!-- Scene suggestion: person silhouette / urban -->
+      <rect x="100" y="180" width="190" height="340" rx="6" fill="rgba(255,255,255,0.025)"/>
+      <ellipse cx="196" cy="280" rx="40" ry="50" fill="rgba(255,255,255,0.035)"/>
+      <rect x="140" y="330" width="110" height="190" rx="4" fill="rgba(255,255,255,0.025)"/>
+      <!-- Ambient detail lines -->
+      <line x1="20" y1="500" x2="370" y2="500" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+      <line x1="20" y1="560" x2="280" y2="560" stroke="rgba(255,255,255,0.02)" stroke-width="1"/>
+    </g>
+
+    <!-- Dynamic Island -->
+    <g id="S14/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/></g>
+
+    <!-- ── HEADER — minimal, over asset ── -->
+    <g id="S14/Header">
+      <!-- ← inbox -->
+      <text x="20" y="82" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.38)">← inbox</text>
+      <!-- Sender name center -->
+      <text x="196.5" y="82" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="15" font-weight="500" fill="rgba(255,255,255,0.92)">Jiyeon</text>
+      <!-- viewing now right — ⋯ sits to its left -->
+      <text x="373" y="82" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.25)">viewing now</text>
+      <!-- ⋯ global nav — left of "viewing now" -->
+      <text x="20" y="108" font-family="-apple-system,sans-serif" font-size="12" fill="rgba(255,255,255,0.28)">⋯ settings</text>
+    </g>
+
+    <!-- Bottom gradient for footer legibility -->
+    <rect x="0" y="660" width="393" height="192" fill="url(#footer-fade)"/>
+
+    <!-- ── FOOTER — reaction chips + reply field ── -->
+    <g id="S14/Footer">
+
+      <!-- Reaction chips row -->
+      <g id="S14/ReactionChips">
+        <!-- haha — selected (yellow) -->
+        <rect x="20" y="700" width="70" height="36" rx="18" fill="#F5C420"/>
+        <text x="55" y="723" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="#1A1208">haha</text>
+        <!-- love -->
+        <rect x="98" y="700" width="70" height="36" rx="18" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+        <text x="133" y="723" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.65)">love</text>
+        <!-- wow -->
+        <rect x="176" y="700" width="70" height="36" rx="18" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+        <text x="211" y="723" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.65)">wow</text>
+        <!-- fire -->
+        <rect x="254" y="700" width="70" height="36" rx="18" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+        <text x="289" y="723" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.65)">fire</text>
+      </g>
+
+      <!-- Reply field -->
+      <g id="S14/ReplyField">
+        <rect x="20" y="750" width="316" height="36" rx="18" fill="rgba(0,0,0,0.3)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+        <text x="40" y="773" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.25)">reply to Jiyeon…</text>
+        <!-- Send icon — right side, inactive -->
+        <circle cx="355" cy="768" r="13" fill="rgba(255,255,255,0.06)"/>
+        <text x="355" y="773" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="14" fill="rgba(255,255,255,0.2)">↑</text>
+      </g>
+
+      <!-- Viewed trigger note — ultra dim -->
+      <text x="196.5" y="818" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(255,255,255,0.12)">tap outside to close · disappears on close</text>
+
+    </g>
+
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 15: FILM ARCHIVE — MOMENT VIEW ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 15</div>
+  <div class="screen-title">Film Archive — Moment View</div>
+  <div class="screen-desc">Pushed from list. Header: Moment label + ambient metadata. Friends row (opened/unopened dots). Vertical asset scroll. Per-asset tap → share/save bar (3s fade). “Save all to Photos” batch at bottom. FR-ARCHIVE-10/11/12, FR-SHARE-SOCIAL-03/04.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c15"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g15" x1="0.2" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#111008"/>
+      <stop offset="100%" stop-color="#0A0A08"/>
+    </linearGradient>
+    <linearGradient id="asset15a" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#1C1610"/>
+      <stop offset="100%" stop-color="#14100C"/>
+    </linearGradient>
+    <linearGradient id="asset15b" x1="0.2" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#101820"/>
+      <stop offset="100%" stop-color="#0a1018"/>
+    </linearGradient>
+    <radialGradient id="ll15" cx="90%" cy="5%" r="50%">
+      <stop offset="0%" stop-color="#C97B2A" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#C97B2A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#111008"/>
+  <g clip-path="url(#c15)">
+    <g id="S15/Background">
+      <rect width="393" height="852" fill="url(#g15)"/>
+      <rect width="393" height="852" fill="url(#ll15)"/>
+    </g>
+    <g id="S15/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/></g>
+    <!-- ··· global nav -->
+    <text x="373" y="82" text-anchor="end" font-family="-apple-system,sans-serif" font-size="22" font-weight="500" fill="rgba(255,255,255,0.6)">⋯</text>
+    <!-- ── HEADER ── -->
+    <g id="S15/Header">
+      <text x="20" y="82" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.38)">← archive</text>
+      <text x="373" y="82" text-anchor="end" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.28)">Narrative</text>
+      <text x="20" y="114" font-family="-apple-system,sans-serif" font-size="20" font-weight="500" fill="rgba(255,255,255,0.92)">Rainy Walk · Apr 14 · Shibuya</text>
+      <text x="20" y="134" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.28)">Tuesday · Rainy · 17°C · Cigarettes After Sex</text>
+    </g>
+    <line x1="20" y1="148" x2="373" y2="148" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+    <!-- ── FRIENDS ROW ── -->
+    <g id="S15/FriendsRow">
+      <circle cx="38" cy="172" r="16" fill="#1a2535"/>
+      <text x="38" y="177" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.65)">JY</text>
+      <circle cx="50" cy="158" r="4" fill="#C97B2A"/>
+      <text x="38" y="196" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(255,255,255,0.35)">Jiyeon</text>
+      <circle cx="96" cy="172" r="16" fill="#1a301a"/>
+      <text x="96" y="177" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.65)">MK</text>
+      <circle cx="108" cy="158" r="4" fill="#C97B2A"/>
+      <text x="96" y="196" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(255,255,255,0.35)">Minjun</text>
+      <circle cx="154" cy="172" r="16" fill="#2a2218"/>
+      <text x="154" y="177" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.3)">SH</text>
+      <circle cx="166" cy="158" r="4" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+      <text x="154" y="196" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(255,255,255,0.2)">Sehun</text>
+    </g>
+    <line x1="20" y1="206" x2="373" y2="206" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+    <!-- ── ASSET 1 — tapped, share bar visible ── -->
+    <g id="S15/Asset1">
+      <rect x="0" y="214" width="393" height="270" fill="url(#asset15a)"/>
+      <rect x="0" y="214" width="393" height="270" fill="rgba(201,123,42,0.04)"/>
+      <rect x="60" y="280" width="270" height="140" rx="4" fill="rgba(255,255,255,0.025)"/>
+      <rect x="140" y="300" width="100" height="90" rx="3" fill="rgba(255,255,255,0.03)"/>
+      <text x="20" y="472" font-family="'Courier New',monospace" font-size="10" letter-spacing="0.5" fill="rgba(201,123,42,0.4)">kodakWarm</text>
+      <!-- Per-asset action bar — 3s fade -->
+      <rect x="0" y="476" width="393" height="40" fill="rgba(0,0,0,0.7)"/>
+      <rect x="20" y="484" width="28" height="24" rx="4" fill="rgba(255,255,255,0.1)"/>
+      <text x="34" y="500" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.7)">⇑□</text>
+      <text x="56" y="500" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.55)">Share</text>
+      <line x1="118" y1="484" x2="118" y2="508" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+      <rect x="130" y="484" width="28" height="24" rx="4" fill="rgba(255,255,255,0.1)"/>
+      <text x="144" y="500" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.7)">↓</text>
+      <text x="166" y="500" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.55)">Save to Photos</text>
+      <text x="373" y="500" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(255,255,255,0.18)">fades 3s</text>
+    </g>
+    <!-- ── ASSET 2 — cool tones ── -->
+    <g id="S15/Asset2">
+      <rect x="0" y="524" width="393" height="230" fill="url(#asset15b)"/>
+      <rect x="40" y="560" width="180" height="160" rx="3" fill="rgba(255,255,255,0.02)"/>
+      <rect x="240" y="580" width="130" height="100" rx="3" fill="rgba(255,255,255,0.025)"/>
+      <text x="20" y="742" font-family="'Courier New',monospace" font-size="10" letter-spacing="0.5" fill="rgba(201,123,42,0.4)">kodakWarm</text>
+    </g>
+    <!-- ── BATCH ACTION ── -->
+    <g id="S15/BatchAction">
+      <line x1="20" y1="754" x2="373" y2="754" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+      <text x="196.5" y="784" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.38)">Save all to Photos</text>
+      <text x="196.5" y="804" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.18)">18 photos · exports to iOS Photos library</text>
+    </g>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.11)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 16: STORAGE WARNING MODAL ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 16</div>
+  <div class="screen-title">Storage Warning — First Roll Capture</div>
+  <div class="screen-desc">Contextual modal blocks first Roll Mode shutter tap. “Roll photos live in Piqd only.” Dismissible but not skippable on first Roll. Two actions: “Got it — start shooting” (amber CTA, dismiss + proceed) and “Export to Photos after each unlock” (sets preference). FR-STORAGE-08.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c16"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g16" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#1C1408"/>
+      <stop offset="100%" stop-color="#0E0904"/>
+    </linearGradient>
+    <radialGradient id="ll16" cx="80%" cy="10%" r="55%">
+      <stop offset="0%" stop-color="#C97B2A" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#C97B2A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c16)">
+    <g id="S16/Viewfinder">
+      <rect width="393" height="852" fill="url(#g16)"/>
+      <rect width="393" height="852" fill="url(#ll16)"/>
+      <rect width="393" height="852" fill="rgba(255,200,150,0.02)"/>
+      <rect x="60" y="160" width="270" height="220" rx="3" fill="rgba(255,255,255,0.015)"/>
+    </g>
+    <rect width="393" height="852" fill="rgba(0,0,0,0.6)"/>
+    <g id="S16/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/></g>
+    <!-- Shutter + pill ghosted -->
+    <g opacity="0.12">
+      <circle cx="196.5" cy="750" r="29" fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="2"/>
+      <circle cx="196.5" cy="750" r="14" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+      <circle cx="196.5" cy="750" r="3" fill="rgba(255,255,255,0.7)"/>
+      <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.11)"/>
+    </g>
+    <text x="373" y="107" text-anchor="end" font-family="'Courier New',monospace" font-size="15" fill="rgba(255,255,255,0.1)">24 left</text>
+    <!-- ── MODAL ── -->
+    <g id="S16/Modal">
+      <rect x="24" y="290" width="345" height="280" rx="16" fill="#1C1C1E"/>
+      <rect x="24" y="290" width="345" height="280" rx="16" fill="rgba(255,255,255,0.04)"/>
+      <rect x="24" y="290" width="345" height="280" rx="16" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+      <!-- Icon — film canister / Roll symbol -->
+      <circle cx="196.5" cy="338" r="22" fill="rgba(201,123,42,0.15)" stroke="rgba(201,123,42,0.3)" stroke-width="1"/>
+      <circle cx="196.5" cy="338" r="14" fill="none" stroke="#C97B2A" stroke-width="1.5"/>
+      <circle cx="196.5" cy="338" r="5" fill="#C97B2A"/>
+      <line x1="196.5" y1="316" x2="196.5" y2="322" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="196.5" y1="354" x2="196.5" y2="360" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="174.5" y1="338" x2="180.5" y2="338" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="212.5" y1="338" x2="218.5" y2="338" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round"/>
+      <!-- Heading -->
+      <text x="196.5" y="386" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="17" font-weight="500" fill="rgba(255,255,255,0.92)">Roll photos live in Piqd only</text>
+      <!-- Body -->
+      <text x="196.5" y="412" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.45)">If you reinstall Piqd, your Film Archive</text>
+      <text x="196.5" y="430" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.45)">is gone. Export to Photos to keep them</text>
+      <text x="196.5" y="448" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.45)">forever. You can do this after each unlock.</text>
+      <line x1="44" y1="468" x2="349" y2="468" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+      <!-- Primary CTA -->
+      <rect x="44" y="480" width="301" height="48" rx="8" fill="#C97B2A"/>
+      <text x="196.5" y="509" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" font-weight="700" letter-spacing="1" fill="#1A1208">GOT IT — START SHOOTING</text>
+      <!-- Secondary -->
+      <text x="196.5" y="548" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.38)">Export to Photos after each unlock</text>
+    </g>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.11)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 17: SENDER — RESPONSE THREAD SHEET ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 17</div>
+  <div class="screen-title">Sender — Response Thread Sheet</div>
+  <div class="screen-desc">Sheet over sender’s Snap viewfinder. Triggered by notification tap after receiver reacts or replies. Asset thumbnail + “Jiyeon reacted haha” + text reply. Sender reply field (one level only). Purge note below. FR-SHARE-RECV-18/19, §5.4.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c17"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g17" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a2030"/><stop offset="100%" stop-color="#090d14"/></linearGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c17)">
+    <rect width="393" height="852" fill="url(#g17)"/>
+    <rect x="70" y="160" width="260" height="200" rx="4" fill="rgba(255,255,255,0.02)"/>
+    <g opacity="0.3">
+      <circle cx="196.5" cy="750" r="29" fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="3"/>
+      <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.11)"/>
+    </g>
+    <g id="S17/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/></g>
+    <!-- ── RESPONSE THREAD SHEET ── -->
+    <rect x="0" y="440" width="393" height="412" rx="20" fill="#1C1C1E"/>
+    <rect x="0" y="440" width="393" height="412" rx="20" fill="rgba(255,255,255,0.03)"/>
+    <rect x="183" y="450" width="27" height="4" rx="2" fill="rgba(255,255,255,0.18)"/>
+    <!-- Asset thumbnail -->
+    <rect x="20" y="474" width="80" height="80" rx="8" fill="#1a2535"/>
+    <rect x="32" y="494" width="56" height="40" rx="3" fill="rgba(255,255,255,0.04)"/>
+    <text x="60" y="567" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="rgba(255,255,255,0.3)">still</text>
+    <!-- Reaction info -->
+    <text x="116" y="494" font-family="-apple-system,sans-serif" font-size="15" font-weight="500" fill="rgba(255,255,255,0.92)">Jiyeon reacted</text>
+    <rect x="116" y="502" width="46" height="26" rx="13" fill="#F5C420"/>
+    <text x="139" y="519" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" fill="#1A1208">haha</text>
+    <text x="116" y="542" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.28)">just now</text>
+    <line x1="20" y1="568" x2="373" y2="568" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+    <!-- Text reply -->
+    <text x="20" y="592" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.55)">Jiyeon also wrote:</text>
+    <rect x="20" y="602" width="280" height="36" rx="18" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+    <text x="36" y="624" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.75)">omg this is so good 😭</text>
+    <line x1="20" y1="650" x2="373" y2="650" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+    <!-- Sender reply field -->
+    <rect x="20" y="662" width="316" height="36" rx="18" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+    <text x="40" y="684" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.25)">Reply to Jiyeon…</text>
+    <circle cx="355" cy="680" r="13" fill="rgba(255,255,255,0.05)"/>
+    <text x="355" y="685" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="14" fill="rgba(255,255,255,0.18)">↑</text>
+    <!-- Purge note -->
+    <text x="196.5" y="718" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.18)">Piqd will purge this when Jiyeon closes it.</text>
+    <text x="196.5" y="740" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.14)">swipe down to return to camera</text>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 18: RECIPIENT — PURGED STATE ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 18</div>
+  <div class="screen-title">Recipient — Purged State</div>
+  <div class="screen-desc">Full screen. Shown if recipient navigates back to an already-viewed (purged) asset, or 24h hard-ceiling expiry. Minimal dark, centered copy. No asset, no chrome. “Piqd has left the chat.” FR-SHARE-RECV-17.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs><clipPath id="c18"><rect width="393" height="852" rx="44"/></clipPath></defs>
+  <rect width="393" height="852" rx="44" fill="#111"/>
+  <g clip-path="url(#c18)">
+    <rect width="393" height="852" fill="#111"/>
+    <g id="S18/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/></g>
+    <!-- ··· global nav -->
+    <text x="373" y="82" text-anchor="end" font-family="-apple-system,sans-serif" font-size="22" font-weight="500" fill="rgba(255,255,255,0.6)">⋯</text>
+    <text x="20" y="82" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.25)">← inbox</text>
+    <text x="196.5" y="82" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="15" font-weight="500" fill="rgba(255,255,255,0.45)">Jiyeon</text>
+    <!-- Dissolved icon -->
+    <circle cx="196.5" cy="390" r="32" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
+    <circle cx="196.5" cy="390" r="18" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+    <line x1="178" y1="372" x2="215" y2="408" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="215" y1="372" x2="178" y2="408" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-linecap="round"/>
+    <text x="196.5" y="448" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="17" font-weight="500" fill="rgba(255,255,255,0.35)">Piqd has left the chat.</text>
+    <text x="196.5" y="474" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.2)">This Snap has been deleted.</text>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 19: SNAP — FORMAT SELECTOR (LAYER 2) ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 19</div>
+  <div class="screen-title">Snap — Format Selector Open (Layer 2)</div>
+  <div class="screen-desc">Triggered by swipe-up on shutter or long-press shutter. Format pill: [Still] [Sequence] [Clip active—red] [Dual]. Layer 1 chrome visible behind. Shutter morphed to Clip (red ring + square). Collapses on selection or 3s idle. FR-SNAP-FORMAT-01/02/03/04.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c19"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g19" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a2030"/><stop offset="100%" stop-color="#090d14"/></linearGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c19)">
+    <rect width="393" height="852" fill="url(#g19)"/>
+    <rect x="70" y="160" width="260" height="200" rx="4" fill="rgba(255,255,255,0.02)"/>
+    <g id="S19/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/><circle cx="225" cy="29" r="3" fill="#090d14"/></g>
+    <!-- Layer 1 chrome -->
+    <circle cx="349" cy="87" r="16" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+    <path d="M342 83 Q349 78 356 83" fill="none" stroke="rgba(255,255,255,0.88)" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M342 91 Q349 96 356 91" fill="none" stroke="rgba(255,255,255,0.88)" stroke-width="1.5" stroke-linecap="round"/>
+    <polyline points="342,83 342,87" stroke="rgba(255,255,255,0.88)" stroke-width="1.5" stroke-linecap="round"/>
+    <polyline points="356,87 356,91" stroke="rgba(255,255,255,0.88)" stroke-width="1.5" stroke-linecap="round"/>
+    <rect x="110" y="673" width="116" height="32" rx="16" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+    <text x="135" y="694" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" fill="rgba(255,255,255,0.5)">0.5×</text>
+    <rect x="149" y="676" width="34" height="26" rx="13" fill="#F5C420"/>
+    <text x="166" y="694" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#1A1208">1×</text>
+    <text x="200" y="694" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" fill="rgba(255,255,255,0.5)">2×</text>
+    <rect x="241" y="673" width="52" height="32" rx="16" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+    <text x="267" y="694" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" fill="rgba(255,255,255,0.85)">9:16</text>
+    <!-- Format selector pill -->
+    <rect x="27" y="640" width="339" height="40" rx="20" fill="rgba(30,30,35,0.92)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+    <text x="72" y="665" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.45)">Still</text>
+    <text x="155" y="665" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.45)">Sequence</text>
+    <rect x="215" y="643" width="56" height="34" rx="17" fill="#E24B4A"/>
+    <text x="243" y="665" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" font-weight="600" fill="#fff">Clip</text>
+    <text x="330" y="665" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.45)">Dual</text>
+    <!-- Shutter — Clip format (red ring + square) -->
+    <circle cx="196.5" cy="750" r="29" fill="none" stroke="#E24B4A" stroke-width="3"/>
+    <rect x="183" y="737" width="27" height="27" rx="4" fill="#E24B4A"/>
+    <!-- Mode pill -->
+    <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+    <circle cx="196.5" cy="828" r="6" fill="none" stroke="#F5C420" stroke-width="1.2"/>
+    <circle cx="196.5" cy="828" r="2.8" fill="none" stroke="#F5C420" stroke-width="0.7"/>
+    <line x1="196.5" y1="822.5" x2="196.5" y2="820.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    <line x1="201.7" y1="824.2" x2="203.4" y2="822.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    <line x1="201.7" y1="831.8" x2="203.4" y2="833.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    <line x1="196.5" y1="833.5" x2="196.5" y2="835.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    <line x1="191.3" y1="831.8" x2="189.6" y2="833.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    <line x1="191.3" y1="824.2" x2="189.6" y2="822.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 20: SNAP — CLIP RECORDING ACTIVE ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 20</div>
+  <div class="screen-title">Snap — Clip Recording Active</div>
+  <div class="screen-desc">Hold shutter → recording begins. Red arc fills clockwise (~46% at 7s of 15s). Timer “0:07” above shutter. Inner square shrinks. Layer 1 chrome hidden. Mode pill dimmed (mode switch disabled). Release or ceiling → S7 Clip Ready. FR-SNAP-CLIP-01/02/03/04.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c20"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g20" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a2030"/><stop offset="100%" stop-color="#090d14"/></linearGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c20)">
+    <rect width="393" height="852" fill="url(#g20)"/>
+    <rect x="70" y="160" width="260" height="200" rx="4" fill="rgba(255,255,255,0.02)"/>
+    <g id="S20/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/><circle cx="225" cy="29" r="3" fill="#090d14"/></g>
+    <!-- Timer -->
+    <text x="196.5" y="706" text-anchor="middle" font-family="'Courier New',monospace" font-size="14" fill="rgba(255,255,255,0.82)">0:07</text>
+    <!-- Shutter recording -->
+    <circle cx="196.5" cy="750" r="32" fill="none" stroke="rgba(226,75,74,0.2)" stroke-width="2"/>
+    <circle cx="196.5" cy="750" r="29" fill="none" stroke="#E24B4A" stroke-width="3"/>
+    <!-- Duration arc ~46% (7s/15s) -->
+    <path d="M 196.5 721 A 29 29 0 0 1 203.5 778.1" fill="none" stroke="#E24B4A" stroke-width="3" stroke-linecap="round"/>
+    <!-- Inner square shrunk -->
+    <rect x="188" y="742" width="17" height="17" rx="3" fill="#E24B4A"/>
+    <!-- Mode pill dimmed -->
+    <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+    <circle cx="196.5" cy="828" r="6" fill="none" stroke="rgba(245,196,32,0.35)" stroke-width="1.2"/>
+    <circle cx="196.5" cy="828" r="2.8" fill="none" stroke="rgba(245,196,32,0.35)" stroke-width="0.7"/>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 21: SNAP — STILL POST-CAPTURE CONFIRMATION ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 21</div>
+  <div class="screen-title">Snap — Still Post-Capture Confirmation</div>
+  <div class="screen-desc">150ms transient state after still capture and send. Shutter ring shows checkmark (delivered) or arrow (queued). No thumbnail ever. Camera stays live. Auto-returns to S0 Rest in 150ms. Pending variant shown inset. FR-SNAP-NO-THUMB-02, §3.7.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c21"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g21" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a2030"/><stop offset="100%" stop-color="#090d14"/></linearGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c21)">
+    <rect width="393" height="852" fill="url(#g21)"/>
+    <rect x="70" y="160" width="260" height="200" rx="4" fill="rgba(255,255,255,0.02)"/>
+    <g id="S21/DynamicIsland"><rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/><circle cx="225" cy="29" r="3" fill="#090d14"/></g>
+    <!-- Shutter — checkmark (delivered) -->
+    <circle cx="196.5" cy="750" r="29" fill="rgba(245,196,32,0.12)" stroke="rgba(255,255,255,0.92)" stroke-width="3"/>
+    <polyline points="183,750 193,760 212,738" fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Sent label -->
+    <text x="196.5" y="706" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" fill="rgba(255,255,255,0.38)">sent · 2 friends</text>
+    <!-- Mode pill normal -->
+    <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+    <circle cx="196.5" cy="828" r="6" fill="none" stroke="#F5C420" stroke-width="1.2"/>
+    <circle cx="196.5" cy="828" r="2.8" fill="none" stroke="#F5C420" stroke-width="0.7"/>
+    <line x1="196.5" y1="822.5" x2="196.5" y2="820.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    <line x1="201.7" y1="824.2" x2="203.4" y2="822.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    <line x1="201.7" y1="831.8" x2="203.4" y2="833.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    <line x1="196.5" y1="833.5" x2="196.5" y2="835.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    <line x1="191.3" y1="831.8" x2="189.6" y2="833.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    <line x1="191.3" y1="824.2" x2="189.6" y2="822.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    <!-- Pending variant callout -->
+    <rect x="20" y="780" width="200" height="48" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+    <text x="30" y="800" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(255,255,255,0.35)">Pending variant:</text>
+    <circle cx="60" cy="818" r="12" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+    <text x="60" y="823" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.55)">→</text>
+    <text x="80" y="822" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(255,255,255,0.35)">arrow = queued</text>
+    <text x="373" y="800" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(255,255,255,0.2)">→ S0 in 150ms</text>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 22: ROLL — UNLOCK IMMINENT ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 22</div>
+  <div class="screen-title">Roll — Unlock Imminent (30min to 9PM)</div>
+  <div class="screen-desc">Within 30min of 9PM. Counter shifts amber + breathes (4s pulse). DI State 2: circular fill arc + "9PM" label. Can still shoot if counter &gt;0. §4.4 R6 state.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c22"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g22" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0%" stop-color="#1C1408"/><stop offset="100%" stop-color="#0E0904"/></linearGradient>
+    <radialGradient id="ll22" cx="80%" cy="8%" r="50%"><stop offset="0%" stop-color="#C97B2A" stop-opacity="0.12"/><stop offset="100%" stop-color="#C97B2A" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c22)">
+    <rect width="393" height="852" fill="url(#g22)"/>
+    <rect width="393" height="852" fill="url(#ll22)"/>
+    <rect width="393" height="852" fill="rgba(255,200,150,0.02)"/>
+    <rect x="60" y="160" width="270" height="220" rx="3" fill="rgba(255,255,255,0.015)"/>
+    <!-- DI State 2: circular fill arc + 9PM label -->
+    <rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/>
+    <circle cx="163" cy="29" r="8" fill="none" stroke="rgba(201,123,42,0.2)" stroke-width="1.5"/>
+    <path d="M 163 21 A 8 8 0 1 1 155.4 24.5" fill="none" stroke="#C97B2A" stroke-width="1.5" stroke-linecap="round"/>
+    <text x="214" y="33" font-family="'Courier New',monospace" font-size="11" fill="rgba(255,255,255,0.82)">9PM</text>
+    <!-- Film counter — amber, breathing -->
+    <text x="373" y="107" text-anchor="end" font-family="'Courier New',monospace" font-size="15" fill="#C97B2A">8 left</text>
+    <text x="373" y="123" text-anchor="end" font-family="-apple-system,sans-serif" font-size="9" fill="rgba(201,123,42,0.45)">pulsing 4s loop</text>
+    <!-- Roll shutter -->
+    <circle cx="196.5" cy="750" r="29" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2"/>
+    <circle cx="196.5" cy="750" r="19" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+    <circle cx="196.5" cy="750" r="4" fill="rgba(255,255,255,0.7)"/>
+    <!-- Mode pill — Roll -->
+    <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+    <circle cx="196.5" cy="828" r="6" fill="none" stroke="#C97B2A" stroke-width="1.2"/>
+    <circle cx="196.5" cy="828" r="1.5" fill="#C97B2A"/>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.11)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 23: ROLL — 9PM DEVELOPING OVERLAY ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 23</div>
+  <div class="screen-title">Roll — 9PM Developing Overlay (R7)</div>
+  <div class="screen-desc">9PM fires. Grain doubles. "Developing your Roll…" centered over viewfinder. DI State 3: film-strip bars + "Developing…". No progress bar. StoryEngine + iCloud running in background. §4.6 R7 state.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c23"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g23" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0%" stop-color="#1C1408"/><stop offset="100%" stop-color="#0E0904"/></linearGradient>
+    <radialGradient id="ll23" cx="60%" cy="10%" r="60%"><stop offset="0%" stop-color="#C97B2A" stop-opacity="0.18"/><stop offset="100%" stop-color="#C97B2A" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c23)">
+    <rect width="393" height="852" fill="url(#g23)"/>
+    <rect width="393" height="852" fill="url(#ll23)"/>
+    <rect width="393" height="852" fill="rgba(255,200,150,0.06)"/>
+    <rect x="0" y="0" width="393" height="852" fill="rgba(255,255,255,0.04)"/>
+    <!-- DI State 3: film strip bars + Developing… -->
+    <rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/>
+    <rect x="152" y="22" width="3" height="14" rx="1" fill="rgba(201,123,42,0.8)"/>
+    <rect x="157" y="18" width="3" height="18" rx="1" fill="#C97B2A"/>
+    <rect x="162" y="24" width="3" height="12" rx="1" fill="rgba(201,123,42,0.8)"/>
+    <text x="169" y="33" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.82)">Developing…</text>
+    <!-- Overlay copy -->
+    <text x="196.5" y="416" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="17" font-weight="500" fill="rgba(255,255,255,0.82)">Developing your Roll…</text>
+    <text x="196.5" y="442" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.3)">This takes a moment.</text>
+    <!-- Shutter dimmed -->
+    <g opacity="0.35">
+      <circle cx="196.5" cy="750" r="29" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2"/>
+      <circle cx="196.5" cy="750" r="19" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+      <circle cx="196.5" cy="750" r="4" fill="rgba(255,255,255,0.7)"/>
+    </g>
+    <!-- Mode pill -->
+    <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+    <circle cx="196.5" cy="828" r="6" fill="none" stroke="#C97B2A" stroke-width="1.2"/>
+    <circle cx="196.5" cy="828" r="1.5" fill="#C97B2A"/>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.11)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 24: ROLL — LAYER 1 ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 24</div>
+  <div class="screen-title">Roll Viewfinder — Layer 1 (Single Tap)</div>
+  <div class="screen-desc">Single tap on viewfinder. Zoom pill (amber active) + flip button + gear ⚙ top-left appear. Film sim three-dot indicator bottom-left. Gear → Inbox / Settings menu. Auto-retreats 3s idle. §4.2 R1 state.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c24"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g24" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0%" stop-color="#1C1408"/><stop offset="100%" stop-color="#0E0904"/></linearGradient>
+    <radialGradient id="ll24" cx="80%" cy="5%" r="50%"><stop offset="0%" stop-color="#C97B2A" stop-opacity="0.1"/><stop offset="100%" stop-color="#C97B2A" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c24)">
+    <rect width="393" height="852" fill="url(#g24)"/>
+    <rect width="393" height="852" fill="url(#ll24)"/>
+    <rect width="393" height="852" fill="rgba(255,200,150,0.025)"/>
+    <rect x="60" y="160" width="270" height="220" rx="3" fill="rgba(255,255,255,0.015)"/>
+    <rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/>
+    <!-- Film counter -->
+    <text x="373" y="107" text-anchor="end" font-family="'Courier New',monospace" font-size="15" fill="rgba(255,255,255,0.82)">14 left</text>
+    <!-- Flip button -->
+    <circle cx="349" cy="87" r="16" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+    <path d="M342 83 Q349 78 356 83" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M342 91 Q349 96 356 91" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="1.5" stroke-linecap="round"/>
+    <polyline points="342,83 342,87" stroke="rgba(255,255,255,0.82)" stroke-width="1.5" stroke-linecap="round"/>
+    <polyline points="356,87 356,91" stroke="rgba(255,255,255,0.82)" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Zoom pill — amber active -->
+    <rect x="110" y="673" width="116" height="32" rx="16" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+    <text x="135" y="694" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" fill="rgba(255,255,255,0.4)">0.5×</text>
+    <rect x="149" y="676" width="34" height="26" rx="13" fill="#C97B2A"/>
+    <text x="166" y="694" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#1A1208">1×</text>
+    <text x="200" y="694" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="12" fill="rgba(255,255,255,0.4)">2×</text>
+
+    <!-- Gear icon — top-left Layer 1, → Inbox / Settings menu -->
+    <g id="S24/Layer1/GearIcon">
+      <circle cx="44" cy="87" r="16" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+      <circle cx="44" cy="87" r="6" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+      <circle cx="44" cy="87" r="2.5" fill="rgba(255,255,255,0.75)"/>
+      <rect x="42.2" y="79" width="3.6" height="3" rx="1" fill="rgba(255,255,255,0.75)"/>
+      <rect x="42.2" y="93" width="3.6" height="3" rx="1" fill="rgba(255,255,255,0.75)"/>
+      <rect x="36" y="85.2" width="3" height="3.6" rx="1" fill="rgba(255,255,255,0.75)"/>
+      <rect x="49" y="85.2" width="3" height="3.6" rx="1" fill="rgba(255,255,255,0.75)"/>
+    </g>
+    <!-- Film sim dots + label -->
+    <circle cx="28" cy="690" r="4" fill="#C97B2A"/>
+    <circle cx="42" cy="690" r="3" fill="rgba(255,255,255,0.25)"/>
+    <circle cx="54" cy="690" r="3" fill="rgba(255,255,255,0.25)"/>
+    <text x="20" y="710" font-family="'Courier New',monospace" font-size="9" fill="rgba(201,123,42,0.6)">.kodakWarm</text>
+    <!-- Shutter -->
+    <circle cx="196.5" cy="750" r="29" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2"/>
+    <circle cx="196.5" cy="750" r="19" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+    <circle cx="196.5" cy="750" r="4" fill="rgba(255,255,255,0.7)"/>
+    <!-- Mode pill -->
+    <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+    <circle cx="196.5" cy="828" r="6" fill="none" stroke="#C97B2A" stroke-width="1.2"/>
+    <circle cx="196.5" cy="828" r="1.5" fill="#C97B2A"/>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.11)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 25: FILM ARCHIVE — RECEIVED ROLL (ATTRIBUTION) ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 25</div>
+  <div class="screen-title">Film Archive — Received Roll (Receiver's View)</div>
+  <div class="screen-desc">Receiver's Moment view. "from Jiyeon" attribution in amber below Moment label. Same layout as Screen 15 otherwise. "permanent · no expiry" badge. Friends row shows sender + recipients. FR-ARCHIVE-12 receiver side.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c25"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g25" x1="0.2" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#111008"/><stop offset="100%" stop-color="#0A0A08"/></linearGradient>
+    <linearGradient id="a25" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0%" stop-color="#1C1610"/><stop offset="100%" stop-color="#14100C"/></linearGradient>
+    <radialGradient id="ll25" cx="90%" cy="5%" r="50%"><stop offset="0%" stop-color="#C97B2A" stop-opacity="0.08"/><stop offset="100%" stop-color="#C97B2A" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#111008"/>
+  <g clip-path="url(#c25)">
+    <rect width="393" height="852" fill="url(#g25)"/>
+    <rect width="393" height="852" fill="url(#ll25)"/>
+    <rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/>
+    <!-- Header -->
+    <text x="20" y="82" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.38)">← archive</text>
+    <!-- ··· global nav -->
+    <text x="373" y="82" text-anchor="end" font-family="-apple-system,sans-serif" font-size="22" font-weight="500" fill="rgba(255,255,255,0.6)">⋯</text>
+    <text x="20" y="114" font-family="-apple-system,sans-serif" font-size="20" font-weight="500" fill="rgba(255,255,255,0.92)">Rainy Walk · Apr 14 · Shibuya</text>
+    <text x="20" y="134" font-family="-apple-system,sans-serif" font-size="13" fill="#C97B2A">from Jiyeon</text>
+    <text x="20" y="152" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.28)">Tuesday · Rainy · 17°C</text>
+    <line x1="20" y1="166" x2="373" y2="166" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+    <!-- Friends row -->
+    <circle cx="38" cy="190" r="16" fill="#2a1a2a"/>
+    <text x="38" y="195" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.65)">JY</text>
+    <circle cx="50" cy="176" r="4" fill="#C97B2A"/>
+    <text x="38" y="214" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(255,255,255,0.35)">Jiyeon</text>
+    <circle cx="96" cy="190" r="16" fill="#1a301a"/>
+    <text x="96" y="195" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.65)">MK</text>
+    <circle cx="108" cy="176" r="4" fill="#C97B2A"/>
+    <text x="96" y="214" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(255,255,255,0.35)">Minjun</text>
+    <circle cx="154" cy="190" r="16" fill="#1a2535"/>
+    <text x="154" y="195" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.65)">Me</text>
+    <circle cx="166" cy="176" r="4" fill="#C97B2A"/>
+    <line x1="20" y1="224" x2="373" y2="224" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+    <!-- Asset -->
+    <rect x="0" y="232" width="393" height="300" fill="url(#a25)"/>
+    <rect x="0" y="232" width="393" height="300" fill="rgba(201,123,42,0.04)"/>
+    <rect x="60" y="290" width="270" height="160" rx="4" fill="rgba(255,255,255,0.025)"/>
+    <text x="20" y="520" font-family="'Courier New',monospace" font-size="10" letter-spacing="0.5" fill="rgba(201,123,42,0.4)">kodakWarm · Jiyeon's Roll</text>
+    <!-- Permanent badge -->
+    <rect x="20" y="532" width="128" height="22" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+    <text x="84" y="547" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(255,255,255,0.3)">permanent · no expiry</text>
+    <!-- Save all -->
+    <line x1="20" y1="566" x2="373" y2="566" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+    <text x="196.5" y="596" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(255,255,255,0.38)">Save all to Photos</text>
+    <text x="196.5" y="616" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(255,255,255,0.18)">18 photos from Jiyeon's Roll</text>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.11)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 26: SNAP — DUAL FORMAT IDLE ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 26</div>
+  <div class="screen-title">Snap — Dual Capture Format (Idle)</div>
+  <div class="screen-desc">Dual selected from format selector. Shutter: red ring + split diagonal circle. Front PiP inset top-right. No flip button (both cameras active simultaneously). FR-SNAP-DUAL-01/02/04/07.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c26"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g26" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a2030"/><stop offset="100%" stop-color="#090d14"/></linearGradient>
+    <linearGradient id="front26" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2a1a1a"/><stop offset="100%" stop-color="#1a1010"/></linearGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c26)">
+    <rect width="393" height="852" fill="url(#g26)"/>
+    <rect x="70" y="160" width="260" height="200" rx="4" fill="rgba(255,255,255,0.02)"/>
+    <rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/><circle cx="225" cy="29" r="3" fill="#090d14"/>
+    <!-- Front PiP -->
+    <rect x="270" y="70" width="103" height="140" rx="8" fill="url(#front26)" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+    <ellipse cx="321" cy="118" rx="20" ry="24" fill="rgba(255,255,255,0.04)"/>
+    <rect x="306" y="140" width="30" height="50" rx="4" fill="rgba(255,255,255,0.03)"/>
+    <text x="321" y="202" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="rgba(255,255,255,0.25)">front</text>
+    <text x="270" y="68" font-family="-apple-system,sans-serif" font-size="9" fill="rgba(255,255,255,0.3)">dual</text>
+    <!-- Shutter — Dual (red ring + split diagonal) -->
+    <circle cx="196.5" cy="750" r="29" fill="none" stroke="#E24B4A" stroke-width="3"/>
+    <path d="M 196.5 730 A 20 20 0 0 0 196.5 770 Z" fill="rgba(226,75,74,0.5)"/>
+    <path d="M 196.5 730 A 20 20 0 0 1 196.5 770 Z" fill="rgba(226,75,74,0.25)"/>
+    <line x1="196.5" y1="730" x2="196.5" y2="770" stroke="#E24B4A" stroke-width="1.5"/>
+    <!-- No flip button note -->
+    <text x="196.5" y="790" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9" fill="rgba(255,255,255,0.2)">flip hidden — both cameras active</text>
+    <!-- Mode pill -->
+    <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+    <circle cx="196.5" cy="828" r="6" fill="none" stroke="#F5C420" stroke-width="1.2"/>
+    <circle cx="196.5" cy="828" r="2.8" fill="none" stroke="#F5C420" stroke-width="0.7"/>
+    <line x1="196.5" y1="822.5" x2="196.5" y2="820.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    <line x1="201.7" y1="824.2" x2="203.4" y2="822.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    <line x1="201.7" y1="831.8" x2="203.4" y2="833.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    <line x1="196.5" y1="833.5" x2="196.5" y2="835.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    <line x1="191.3" y1="831.8" x2="189.6" y2="833.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+    <line x1="191.3" y1="824.2" x2="189.6" y2="822.5" stroke="#F5C420" stroke-width="1" stroke-linecap="round"/>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 27: ROLL — FILM SIM CHANGE ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 27</div>
+  <div class="screen-title">Roll — Film Sim Change (R2 State)</div>
+  <div class="screen-desc">Short edge swipe (&lt;80pt) on left 20% while in Layer 1. Preset label ".fujiCool" appears bottom-left, fades 1.5s. Dots update. Viewfinder shifts to cool blue tint. §4.3 R2 state.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c27"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g27" x1="0" y1="0" x2="0.2" y2="1"><stop offset="0%" stop-color="#101824"/><stop offset="100%" stop-color="#080c14"/></linearGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c27)">
+    <rect width="393" height="852" fill="url(#g27)"/>
+    <rect width="393" height="852" fill="rgba(200,220,255,0.02)"/>
+    <rect x="60" y="160" width="270" height="220" rx="3" fill="rgba(255,255,255,0.02)"/>
+    <rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/>
+    <text x="373" y="107" text-anchor="end" font-family="'Courier New',monospace" font-size="15" fill="rgba(255,255,255,0.82)">14 left</text>
+    <!-- Film sim label appearing -->
+    <text x="20" y="706" font-family="'Courier New',monospace" font-size="13" fill="rgba(255,255,255,0.82)">.fujiCool</text>
+    <text x="20" y="722" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(255,255,255,0.28)">fades 1.5s</text>
+    <!-- Dots — dot 2 active (fujiCool) -->
+    <circle cx="28" cy="738" r="3" fill="rgba(255,255,255,0.25)"/>
+    <circle cx="40" cy="738" r="4" fill="rgba(255,255,255,0.82)"/>
+    <circle cx="52" cy="738" r="3" fill="rgba(255,255,255,0.25)"/>
+    <!-- Swipe arrow -->
+    <line x1="20" y1="758" x2="72" y2="758" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="3,2"/>
+    <polygon points="72,755 79,758 72,761" fill="rgba(255,255,255,0.15)"/>
+    <text x="20" y="774" font-family="-apple-system,sans-serif" font-size="9" fill="rgba(255,255,255,0.2)">edge swipe &lt;80pt</text>
+    <!-- Shutter -->
+    <circle cx="196.5" cy="750" r="29" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2"/>
+    <circle cx="196.5" cy="750" r="19" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+    <circle cx="196.5" cy="750" r="4" fill="rgba(255,255,255,0.7)"/>
+    <!-- Mode pill -->
+    <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+    <circle cx="196.5" cy="828" r="6" fill="none" stroke="#C97B2A" stroke-width="1.2"/>
+    <circle cx="196.5" cy="828" r="1.5" fill="#C97B2A"/>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.11)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 28: ROLL — LIVE PHOTO FORMAT ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 28</div>
+  <div class="screen-title">Roll — Live Photo Format (Shutter Morph)</div>
+  <div class="screen-desc">Long edge swipe (&gt;80pt with upward component) selects Live format. Shutter: film canister base + concentric dashed pulse ring + amber indicator dot. "Live" label appears 1.5s. §4.3 R3 state, FR-ROLL-LIVE-01.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="c28"><rect width="393" height="852" rx="44"/></clipPath>
+    <linearGradient id="g28" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0%" stop-color="#1C1408"/><stop offset="100%" stop-color="#0E0904"/></linearGradient>
+    <radialGradient id="ll28" cx="20%" cy="5%" r="45%"><stop offset="0%" stop-color="#C97B2A" stop-opacity="0.1"/><stop offset="100%" stop-color="#C97B2A" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="393" height="852" rx="44" fill="#1C1C1E"/>
+  <g clip-path="url(#c28)">
+    <rect width="393" height="852" fill="url(#g28)"/>
+    <rect width="393" height="852" fill="url(#ll28)"/>
+    <rect width="393" height="852" fill="rgba(255,200,150,0.02)"/>
+    <rect x="60" y="160" width="270" height="220" rx="3" fill="rgba(255,255,255,0.015)"/>
+    <rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#111"/>
+    <text x="373" y="107" text-anchor="end" font-family="'Courier New',monospace" font-size="15" fill="rgba(255,255,255,0.82)">14 left</text>
+    <!-- Format label -->
+    <text x="20" y="706" font-family="'Courier New',monospace" font-size="13" fill="rgba(255,255,255,0.82)">Live</text>
+    <text x="20" y="722" font-family="-apple-system,sans-serif" font-size="10" fill="rgba(255,255,255,0.28)">fades 1.5s</text>
+    <!-- Film sim dots -->
+    <circle cx="28" cy="738" r="4" fill="#C97B2A"/>
+    <circle cx="40" cy="738" r="3" fill="rgba(255,255,255,0.25)"/>
+    <circle cx="52" cy="738" r="3" fill="rgba(255,255,255,0.25)"/>
+    <!-- Shutter — Live Photo: base + pulse ring -->
+    <circle cx="196.5" cy="750" r="35" fill="none" stroke="rgba(201,123,42,0.25)" stroke-width="1.5" stroke-dasharray="3,2"/>
+    <circle cx="196.5" cy="750" r="29" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2"/>
+    <circle cx="196.5" cy="750" r="19" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+    <circle cx="196.5" cy="750" r="4" fill="rgba(255,255,255,0.7)"/>
+    <circle cx="218" cy="732" r="4" fill="#C97B2A"/>
+    <!-- Mode pill -->
+    <rect x="175" y="814" width="43" height="28" rx="14" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+    <circle cx="196.5" cy="828" r="6" fill="none" stroke="#C97B2A" stroke-width="1.2"/>
+    <circle cx="196.5" cy="828" r="1.5" fill="#C97B2A"/>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(255,255,255,0.11)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 29: TRUSTED CIRCLE — QR INVITE ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 29</div>
+  <div class="screen-title">Trusted Circle — QR Invite Screen</div>
+  <div class="screen-desc">Light background. 200×200pt QR code centered. "Invite your first friend" heading. "Share invite link instead →" in yellow. "START SHOOTING →" CTA. Max 10 friends, QR or link only. §7.4, §9 Trusted Circle.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs><clipPath id="c29"><rect width="393" height="852" rx="44"/></clipPath></defs>
+  <rect width="393" height="852" rx="44" fill="#F7F5F0"/>
+  <g clip-path="url(#c29)">
+    <rect width="393" height="852" fill="#F7F5F0"/>
+    <rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#1a1a1a"/>
+    <text x="20" y="82" font-family="-apple-system,sans-serif" font-size="13" fill="rgba(0,0,0,0.35)">← settings</text>
+    <!-- QR frame -->
+    <rect x="97" y="240" width="200" height="200" rx="12" fill="white" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
+    <!-- Corner anchors -->
+    <rect x="113" y="256" width="40" height="40" rx="4" fill="#111"/>
+    <rect x="120" y="263" width="26" height="26" rx="2" fill="white"/>
+    <rect x="125" y="268" width="16" height="16" rx="1" fill="#111"/>
+    <rect x="241" y="256" width="40" height="40" rx="4" fill="#111"/>
+    <rect x="248" y="263" width="26" height="26" rx="2" fill="white"/>
+    <rect x="253" y="268" width="16" height="16" rx="1" fill="#111"/>
+    <rect x="113" y="384" width="40" height="40" rx="4" fill="#111"/>
+    <rect x="120" y="391" width="26" height="26" rx="2" fill="white"/>
+    <rect x="125" y="396" width="16" height="16" rx="1" fill="#111"/>
+    <!-- QR data cells -->
+    <rect x="165" y="256" width="8" height="8" fill="#111"/><rect x="177" y="256" width="8" height="8" fill="#111"/><rect x="201" y="256" width="8" height="8" fill="#111"/><rect x="221" y="256" width="8" height="8" fill="#111"/>
+    <rect x="165" y="268" width="8" height="8" fill="#111"/><rect x="189" y="268" width="8" height="8" fill="#111"/><rect x="209" y="268" width="8" height="8" fill="#111"/>
+    <rect x="165" y="280" width="8" height="8" fill="#111"/><rect x="177" y="280" width="8" height="8" fill="#111"/><rect x="201" y="280" width="8" height="8" fill="#111"/><rect x="225" y="280" width="8" height="8" fill="#111"/>
+    <rect x="165" y="292" width="8" height="8" fill="#111"/><rect x="189" y="292" width="8" height="8" fill="#111"/><rect x="213" y="292" width="8" height="8" fill="#111"/>
+    <rect x="165" y="304" width="8" height="8" fill="#111"/><rect x="181" y="304" width="8" height="8" fill="#111"/><rect x="197" y="304" width="8" height="8" fill="#111"/><rect x="221" y="304" width="8" height="8" fill="#111"/>
+    <rect x="165" y="316" width="8" height="8" fill="#111"/><rect x="177" y="316" width="8" height="8" fill="#111"/><rect x="193" y="316" width="8" height="8" fill="#111"/><rect x="209" y="316" width="8" height="8" fill="#111"/>
+    <rect x="165" y="328" width="8" height="8" fill="#111"/><rect x="185" y="328" width="8" height="8" fill="#111"/><rect x="205" y="328" width="8" height="8" fill="#111"/><rect x="225" y="328" width="8" height="8" fill="#111"/>
+    <rect x="165" y="340" width="8" height="8" fill="#111"/><rect x="181" y="340" width="8" height="8" fill="#111"/><rect x="201" y="340" width="8" height="8" fill="#111"/><rect x="221" y="340" width="8" height="8" fill="#111"/>
+    <rect x="165" y="352" width="8" height="8" fill="#111"/><rect x="193" y="352" width="8" height="8" fill="#111"/><rect x="213" y="352" width="8" height="8" fill="#111"/>
+    <rect x="165" y="364" width="8" height="8" fill="#111"/><rect x="185" y="364" width="8" height="8" fill="#111"/><rect x="205" y="364" width="8" height="8" fill="#111"/>
+    <rect x="241" y="304" width="8" height="8" fill="#111"/><rect x="257" y="304" width="8" height="8" fill="#111"/>
+    <rect x="241" y="316" width="8" height="8" fill="#111"/><rect x="253" y="316" width="8" height="8" fill="#111"/><rect x="265" y="316" width="8" height="8" fill="#111"/>
+    <rect x="241" y="328" width="8" height="8" fill="#111"/><rect x="261" y="328" width="8" height="8" fill="#111"/>
+    <rect x="241" y="340" width="8" height="8" fill="#111"/><rect x="249" y="340" width="8" height="8" fill="#111"/><rect x="265" y="340" width="8" height="8" fill="#111"/>
+    <rect x="241" y="352" width="8" height="8" fill="#111"/><rect x="257" y="352" width="8" height="8" fill="#111"/>
+    <rect x="113" y="304" width="8" height="8" fill="#111"/><rect x="129" y="304" width="8" height="8" fill="#111"/><rect x="141" y="304" width="8" height="8" fill="#111"/>
+    <rect x="113" y="316" width="8" height="8" fill="#111"/><rect x="125" y="316" width="8" height="8" fill="#111"/>
+    <rect x="113" y="328" width="8" height="8" fill="#111"/><rect x="137" y="328" width="8" height="8" fill="#111"/>
+    <rect x="113" y="340" width="8" height="8" fill="#111"/><rect x="129" y="340" width="8" height="8" fill="#111"/><rect x="141" y="340" width="8" height="8" fill="#111"/>
+    <rect x="113" y="352" width="8" height="8" fill="#111"/><rect x="121" y="352" width="8" height="8" fill="#111"/><rect x="137" y="352" width="8" height="8" fill="#111"/>
+    <!-- Text -->
+    <text x="196.5" y="478" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="20" font-weight="500" fill="rgba(0,0,0,0.9)">Invite your first friend</text>
+    <text x="196.5" y="504" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="15" fill="rgba(0,0,0,0.45)">They scan this to join your circle.</text>
+    <text x="196.5" y="540" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="14" fill="#D4A000">Share invite link instead →</text>
+    <!-- CTA -->
+    <rect x="20" y="780" width="353" height="52" rx="8" fill="#F5C420"/>
+    <text x="196.5" y="811" text-anchor="middle" font-family="'Courier New',monospace" font-size="13" font-weight="700" letter-spacing="2" fill="#1A1208">START SHOOTING →</text>
+    <text x="196.5" y="848" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="rgba(0,0,0,0.25)">max 10 friends · QR or link only</text>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+<!-- ═══════════ SCREEN 30: SETTINGS ═══════════ -->
+<div class="screen-block">
+  <div class="screen-label">Screen 30</div>
+  <div class="screen-title">Settings</div>
+  <div class="screen-desc">iOS UITableViewController. Accessed via long-hold mode pill. Sections: Capture, Roll Mode, Snap Mode, Storage (with archive warning note), Circle, About. §8 Settings spec.</div>
+<svg class="phone" width="393" height="852" viewBox="0 0 393 852" xmlns="http://www.w3.org/2000/svg">
+  <defs><clipPath id="c30"><rect width="393" height="852" rx="44"/></clipPath></defs>
+  <rect width="393" height="852" rx="44" fill="#F2F2F7"/>
+  <g clip-path="url(#c30)">
+    <rect width="393" height="852" fill="#F2F2F7"/>
+    <rect x="136" y="12" width="121" height="34" rx="17" fill="#000"/><circle cx="225" cy="29" r="5" fill="#1a1a1a"/>
+    <text x="20" y="82" font-family="-apple-system,sans-serif" font-size="13" fill="#007AFF">← done</text>
+    <text x="196.5" y="82" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="17" font-weight="600" fill="rgba(0,0,0,0.9)">Settings</text>
+    <!-- CAPTURE -->
+    <text x="20" y="118" font-family="-apple-system,sans-serif" font-size="13" font-weight="500" fill="rgba(0,0,0,0.45)" letter-spacing="0.5">CAPTURE</text>
+    <rect x="0" y="126" width="393" height="44" fill="white"/>
+    <text x="20" y="153" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.9)">Default Snap format</text>
+    <text x="373" y="153" text-anchor="end" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.3)">Still ›</text>
+    <line x1="20" y1="170" x2="393" y2="170" stroke="rgba(0,0,0,0.1)" stroke-width="0.5"/>
+    <rect x="0" y="170" width="393" height="44" fill="white"/>
+    <text x="20" y="197" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.9)">Clip max duration</text>
+    <text x="373" y="197" text-anchor="end" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.3)">10s ›</text>
+    <!-- ROLL MODE -->
+    <text x="20" y="232" font-family="-apple-system,sans-serif" font-size="13" font-weight="500" fill="rgba(0,0,0,0.45)" letter-spacing="0.5">ROLL MODE</text>
+    <rect x="0" y="240" width="393" height="44" fill="white"/>
+    <text x="20" y="267" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.9)">Film simulation</text>
+    <text x="373" y="267" text-anchor="end" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.3)">kodakWarm ›</text>
+    <line x1="20" y1="284" x2="393" y2="284" stroke="rgba(0,0,0,0.1)" stroke-width="0.5"/>
+    <rect x="0" y="284" width="393" height="44" fill="white"/>
+    <text x="20" y="311" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.9)">Unlock time</text>
+    <text x="373" y="311" text-anchor="end" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.3)">9:00 PM</text>
+    <!-- SNAP MODE -->
+    <text x="20" y="346" font-family="-apple-system,sans-serif" font-size="13" font-weight="500" fill="rgba(0,0,0,0.45)" letter-spacing="0.5">SNAP MODE</text>
+    <rect x="0" y="354" width="393" height="44" fill="white"/>
+    <text x="20" y="381" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.9)">Subject guidance</text>
+    <rect x="333" y="364" width="44" height="26" rx="13" fill="#34C759"/>
+    <circle cx="366" cy="377" r="11" fill="white"/>
+    <line x1="20" y1="398" x2="393" y2="398" stroke="rgba(0,0,0,0.1)" stroke-width="0.5"/>
+    <rect x="0" y="398" width="393" height="44" fill="white"/>
+    <text x="20" y="425" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.9)">Vibe hint</text>
+    <rect x="333" y="408" width="44" height="26" rx="13" fill="#34C759"/>
+    <circle cx="366" cy="421" r="11" fill="white"/>
+    <!-- STORAGE -->
+    <text x="20" y="460" font-family="-apple-system,sans-serif" font-size="13" font-weight="500" fill="rgba(0,0,0,0.45)" letter-spacing="0.5">STORAGE</text>
+    <rect x="0" y="468" width="393" height="44" fill="white"/>
+    <text x="20" y="495" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.9)">Vault storage used</text>
+    <text x="373" y="495" text-anchor="end" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.3)">124 MB</text>
+    <line x1="20" y1="512" x2="393" y2="512" stroke="rgba(0,0,0,0.1)" stroke-width="0.5"/>
+    <rect x="0" y="512" width="393" height="44" fill="white"/>
+    <text x="20" y="539" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.9)">Clear unsent drafts</text>
+    <text x="373" y="539" text-anchor="end" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.3)">3 items ›</text>
+    <line x1="20" y1="556" x2="393" y2="556" stroke="rgba(0,0,0,0.1)" stroke-width="0.5"/>
+    <rect x="0" y="556" width="393" height="44" fill="white"/>
+    <text x="20" y="583" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.9)">Export Film Archive</text>
+    <text x="373" y="583" text-anchor="end" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.3)">Save all ›</text>
+    <text x="20" y="612" font-family="-apple-system,sans-serif" font-size="12" fill="rgba(0,0,0,0.35)">Film Archive is local only. Export to Photos to keep your</text>
+    <text x="20" y="628" font-family="-apple-system,sans-serif" font-size="12" fill="rgba(0,0,0,0.35)">Roll photos if you reinstall Piqd. (FR-STORAGE-05)</text>
+    <!-- CIRCLE -->
+    <text x="20" y="660" font-family="-apple-system,sans-serif" font-size="13" font-weight="500" fill="rgba(0,0,0,0.45)" letter-spacing="0.5">CIRCLE</text>
+    <rect x="0" y="668" width="393" height="44" fill="white"/>
+    <text x="20" y="695" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.9)">My friends</text>
+    <text x="373" y="695" text-anchor="end" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.3)">3 ›</text>
+    <line x1="20" y1="712" x2="393" y2="712" stroke="rgba(0,0,0,0.1)" stroke-width="0.5"/>
+    <rect x="0" y="712" width="393" height="44" fill="white"/>
+    <text x="20" y="739" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.9)">My invite QR</text>
+    <text x="373" y="739" text-anchor="end" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.3)">›</text>
+    <!-- ABOUT -->
+    <text x="20" y="774" font-family="-apple-system,sans-serif" font-size="13" font-weight="500" fill="rgba(0,0,0,0.45)" letter-spacing="0.5">ABOUT</text>
+    <rect x="0" y="782" width="393" height="44" fill="white"/>
+    <text x="20" y="809" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.9)">Piqd</text>
+    <text x="373" y="809" text-anchor="end" font-family="-apple-system,sans-serif" font-size="17" fill="rgba(0,0,0,0.3)">1.0.0</text>
+  </g>
+  <rect x="0.5" y="0.5" width="392" height="851" rx="43.5" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
+  <rect x="-2" y="162" width="4" height="30" rx="2" fill="#2C2C2E"/><rect x="-2" y="200" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="-2" y="262" width="4" height="54" rx="2" fill="#2C2C2E"/><rect x="391" y="194" width="4" height="78" rx="2" fill="#2C2C2E"/>
+</svg>
+</div>
+
+</div><!-- end screens-grid -->
+
+<footer>
+  <span>Piqd Reference UI v1.1 · iPhone 15 Pro · 393×852pt</span>
+  <span>Shutter cy=750 · Zoom pill y=673 · Mode pill y=814 · All overlaps resolved</span>
+  <span>April 2026 · Confidential</span>
+</footer>
+</body>
+</html>

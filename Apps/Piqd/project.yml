@@ -1,0 +1,56 @@
+name: Piqd
+options:
+  bundleIdPrefix: com.hwcho99
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    DEVELOPMENT_TEAM: ""
+    IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+packages:
+  NiftyCore:
+    path: ../../NiftyCore
+  NiftyData:
+    path: ../../NiftyData
+targets:
+  Piqd:
+    type: application
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: Piqd
+        excludes:
+          - "Info.plist"
+          - "Piqd.entitlements"
+    dependencies:
+      - package: NiftyCore
+      - package: NiftyData
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hwcho99.piqd
+        INFOPLIST_FILE: Piqd/Info.plist
+        GENERATE_INFOPLIST_FILE: "NO"
+        CODE_SIGN_ENTITLEMENTS: Piqd/Piqd.entitlements
+        TARGETED_DEVICE_FAMILY: "1"
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+        SUPPORTS_MACCATALYST: "NO"
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: "NO"
+        MARKETING_VERSION: "0.1"
+        CURRENT_PROJECT_VERSION: "1"
+  PiqdUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - PiqdUITests
+    dependencies:
+      - target: Piqd
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hwcho99.piqd.uitests
+        TEST_TARGET_NAME: Piqd
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: "YES"
