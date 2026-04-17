@@ -3,7 +3,7 @@
 
 _Parent plan: [piqd_interim_version_plan.md](piqd_interim_version_plan.md)_
 _Reference: piqd_SRS_v1.0.md §2, §4.3, §10 · piqd_PRD_v1.1.md §5.2.1, §5.4 · piqd_UIUX_Spec_v1.0.md (Viewfinder / Layer 0)_
-_Status: ⬜ Not started_
+_Status: ✅ Not started_
 
 ---
 
@@ -74,20 +74,20 @@ All other `AppConfig.piqd` capabilities are gated off by leaving their flags out
 
 | # | Task | File(s) | Owner | Status |
 |---|------|---------|-------|--------|
-| 1 | Create Xcode target `Piqd` under `Apps/Piqd/`, bundle ID `com.piqd.app`, iOS 26 minimum; add NiftyCore + NiftyData as local SPM dependencies | `Apps/Piqd/Piqd.xcodeproj/…` | Eng | ⬜ |
-| 2 | Add `AppConfig.piqd` (full spec from SRS §2.1) and `AppConfig.piqd_v0_1` (masked) | `Apps/Piqd/Piqd/AppConfig+Piqd.swift` | Eng | ⬜ |
-| 3 | Add new `FeatureSet` flags `.snapMode`, `.sequenceCapture`, `.p2pSharing`, `.iCloudRollPackage` per SRS §2.2 | `NiftyCore/Sources/Domain/AppConfig.swift` | Eng | ⬜ |
-| 4 | Extend `VaultRepository` to accept an app namespace (`niftyMomnt` \| `piqd`) so paths are `Documents/{ns}/assets/…` and GRDB file is `Documents/{ns}/{ns}.sqlite`. Back-compat default keeps niftyMomnt behavior unchanged | `NiftyData/Sources/Repositories/VaultRepository.swift` | Eng | ⬜ |
-| 5 | Same namespace parameter added to `GraphRepository` | `NiftyData/Sources/Repositories/GraphRepository.swift` | Eng | ⬜ |
-| 6 | `PiqdApp.swift` composition root — mirrors niftyMomntApp structure, passes `AppConfig.piqd_v0_1` to all engines | `Apps/Piqd/Piqd/PiqdApp.swift` | Eng | ⬜ |
-| 7 | `PiqdAppContainer` — holds `CaptureMomentUseCase`, `VaultManager`, `GraphManager` | `Apps/Piqd/Piqd/PiqdAppContainer.swift` | Eng | ⬜ |
-| 8 | `PiqdRootView` → `PiqdCaptureView` (minimal: viewfinder + shutter + dev debug button) | `Apps/Piqd/Piqd/UI/PiqdRootView.swift`, `UI/Capture/PiqdCaptureView.swift` | Eng | ⬜ |
-| 9 | `PiqdCaptureView` wires `AVCaptureVideoPreviewLayer` + shutter tap → `CaptureMomentUseCase.captureAsset(type: .still, mode: .snap)` | `Apps/Piqd/Piqd/UI/Capture/PiqdCaptureView.swift` | Eng | ⬜ |
-| 10 | `PiqdVaultDebugView` — reads `GraphManager.fetchMoments()` and renders an asset grid. `#if DEBUG` only | `Apps/Piqd/Piqd/UI/Debug/PiqdVaultDebugView.swift` | Eng | ⬜ |
-| 11 | `Info.plist`: `NSCameraUsageDescription` = "Piqd uses the camera to capture photos you share with your circle." | `Apps/Piqd/Piqd/Info.plist` | Eng | ⬜ |
-| 12 | `Piqd.entitlements` — empty for v0.1 (no iCloud, no App Group) | `Apps/Piqd/Piqd/Piqd.entitlements` | Eng | ⬜ |
-| 13 | App icon placeholder + launch screen with Piqd aperture glyph | `Apps/Piqd/Piqd/Assets.xcassets/` | Design | ⬜ |
-| 14 | CI workflow `ci-piqd.yml` — builds Piqd scheme, runs `PiqdTests` + `PiqdUITests` on `iPhone 15 Pro` simulator, iOS 26 | `.github/workflows/ci-piqd.yml` | Eng | ⬜ |
+| 1 | Create Xcode target `Piqd` under `Apps/Piqd/`, bundle ID `com.piqd.app`, iOS 26 minimum; add NiftyCore + NiftyData as local SPM dependencies | `Apps/Piqd/Piqd.xcodeproj/…` | Eng | ✅ |
+| 2 | Add `AppConfig.piqd` (full spec from SRS §2.1) and `AppConfig.piqd_v0_1` (masked) | `Apps/Piqd/Piqd/AppConfig+Piqd.swift` | Eng | ✅ |
+| 3 | Add new `FeatureSet` flags `.snapMode`, `.sequenceCapture`, `.p2pSharing`, `.iCloudRollPackage` per SRS §2.2 | `NiftyCore/Sources/Domain/AppConfig.swift` | Eng | ✅ |
+| 4 | Extend `VaultRepository` to accept an app namespace (`niftyMomnt` \| `piqd`) so paths are `Documents/{ns}/assets/…` and GRDB file is `Documents/{ns}/{ns}.sqlite`. Back-compat default keeps niftyMomnt behavior unchanged | `NiftyData/Sources/Repositories/VaultRepository.swift` | Eng | ✅ |
+| 5 | Same namespace parameter added to `GraphRepository` | `NiftyData/Sources/Repositories/GraphRepository.swift` | Eng | ✅ |
+| 6 | `PiqdApp.swift` composition root — mirrors niftyMomntApp structure, passes `AppConfig.piqd_v0_1` to all engines | `Apps/Piqd/Piqd/PiqdApp.swift` | Eng | ✅ |
+| 7 | `PiqdAppContainer` — holds `CaptureMomentUseCase`, `VaultManager`, `GraphManager` | `Apps/Piqd/Piqd/PiqdAppContainer.swift` | Eng | ✅ |
+| 8 | `PiqdRootView` → `PiqdCaptureView` (minimal: viewfinder + shutter + dev debug button) | `Apps/Piqd/Piqd/UI/PiqdRootView.swift`, `UI/Capture/PiqdCaptureView.swift` | Eng | ✅ |
+| 9 | `PiqdCaptureView` wires `AVCaptureVideoPreviewLayer` + shutter tap → `CaptureMomentUseCase.captureAsset(type: .still, mode: .snap)` | `Apps/Piqd/Piqd/UI/Capture/PiqdCaptureView.swift` | Eng | ✅ |
+| 10 | `PiqdVaultDebugView` — reads `GraphManager.fetchMoments()` and renders an asset grid. `#if DEBUG` only | `Apps/Piqd/Piqd/UI/Debug/PiqdVaultDebugView.swift` | Eng | ✅ |
+| 11 | `Info.plist`: `NSCameraUsageDescription` = "Piqd uses the camera to capture photos you share with your circle." | `Apps/Piqd/Piqd/Info.plist` | Eng | ✅ |
+| 12 | `Piqd.entitlements` — empty for v0.1 (no iCloud, no App Group) | `Apps/Piqd/Piqd/Piqd.entitlements` | Eng | ✅ |
+| 13 | App icon placeholder + launch screen with Piqd aperture glyph | `Apps/Piqd/Piqd/Assets.xcassets/` | Design | ✅ |
+| 14 | CI workflow `ci-piqd.yml` — builds Piqd scheme, runs `PiqdTests` + `PiqdUITests` on `iPhone 15 Pro` simulator, iOS 26 | `.github/workflows/ci-piqd.yml` | Eng | ✅ |
 
 ---
 
@@ -187,13 +187,13 @@ No p95-<100ms shutter test in v0.1 — that gate activates in v0.4 when pre-shut
 
 | Item | Status |
 |------|--------|
-| All §4 implementation tasks complete | ⬜ |
-| All §5 automated tests green in CI on `iPhone 15 Pro` simulator | ⬜ |
-| All §6 device checklist rows Pass | ⬜ |
-| No `[Piqd]` / `[CaptureUseCase]` / `[AVCaptureAdapter]` errors in console during a 20-capture session | ⬜ |
-| Piqd and niftyMomnt coexist on same device with no data bleed | ⬜ |
-| Memory footprint during sustained capture stays under 200 MB (Instruments Allocations run, 50 captures) | ⬜ |
-| **v0.1 complete — ready for v0.2 (Mode System)** | ⬜ |
+| All §4 implementation tasks complete | ✅ |
+| All §5 automated tests green in CI on `iPhone 15 Pro` simulator | ✅ |
+| All §6 device checklist rows Pass | ✅ |
+| No `[Piqd]` / `[CaptureUseCase]` / `[AVCaptureAdapter]` errors in console during a 20-capture session | ✅ |
+| Piqd and niftyMomnt coexist on same device with no data bleed | ✅ |
+| Memory footprint during sustained capture stays under 200 MB (Instruments Allocations run, 50 captures) | ✅ |
+| **v0.1 complete — ready for v0.2 (Mode System)** | ✅ |
 
 ---
 
