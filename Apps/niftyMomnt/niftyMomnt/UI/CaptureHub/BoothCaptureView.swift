@@ -262,7 +262,7 @@ struct BoothCaptureView: View {
         do {
             // Switch to .still to guarantee photo output is active.
             // No-op if already in photo class; ~0.4s if coming from video class.
-            try await container.captureUseCase.switchMode(to: .still, config: container.config)
+            try await container.captureUseCase.reconfigureSession(to: .still, config: container.config)
             print("[BoothCapture] session prep done: \(String(format: "%.3f", CACurrentMediaTime() - t0))s")
         } catch {
             isCapturing = false

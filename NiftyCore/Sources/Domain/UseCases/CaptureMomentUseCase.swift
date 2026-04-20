@@ -63,8 +63,17 @@ public final class CaptureMomentUseCase {
 
     /// Captures a still photo, classifies it, persists to vault + graph, posts notification.
     /// Full v0.2 pipeline: camera → classify + palette + ambient (concurrent) → geocode → vault → graph → notify.
-    /// - Parameter preset: v0.4 — user-selected preset name to persist with the asset.
-    public func captureAsset(preset: String? = nil) async throws -> Asset {
+    /// - Parameters:
+    ///   - preset: v0.4 — user-selected preset name to persist with the asset.
+    ///   - aspectRatio: Piqd v0.2 — center-crop the captured frame before encoding. nil = no crop.
+    ///   - encoder: Piqd v0.2 — re-encode the cropped image (e.g. HEIC). nil = save raw sensor bytes.
+    ///   - locked: Piqd v0.2 — Roll-mode captures route bytes into the locked sub-namespace.
+    public func captureAsset(
+        preset: String? = nil,
+        aspectRatio: AspectRatio? = nil,
+        encoder: ImageEncoder? = nil,
+        locked: Bool = false
+    ) async throws -> Asset {
         log.debug("── captureAsset pipeline start ──")
 
         // 1. Capture from camera → writes JPEG to temp dir, returns Asset with id
@@ -76,8 +85,28 @@ public final class CaptureMomentUseCase {
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("\(asset.id.uuidString).jpg")
         log.debug("[2/8] reading JPEG from temp: \(tempURL.lastPathComponent)")
-        let imageData = try Data(contentsOf: tempURL)
-        log.debug("[2/8] JPEG read OK — \(imageData.count) bytes")
+        let sourceData = try Data(contentsOf: tempURL)
+        log.debug("[2/8] JPEG read OK — \(sourceData.count) bytes")
+
+        // 2b. Piqd v0.2 — optional center-crop + re-encode. Piqd callers pass an `encoder`
+        // (HEIC) plus target `aspectRatio`; the source JPEG is decoded, center-cropped, and
+        // re-encoded. niftyMomnt passes `encoder: nil` → the raw JPEG bytes are saved as-is.
+        let imageData: Data
+        let storageExtension: String?
+        if let enc = encoder {
+            do {
+                imageData = try enc.encode(sourceData: sourceData, crop: aspectRatio, quality: 0.9)
+                storageExtension = enc.fileExtension
+                log.debug("[2b/8] re-encode OK — \(imageData.count)B ext=\(enc.fileExtension) crop=\(aspectRatio?.rawValue ?? "none")")
+            } catch {
+                log.error("[2b/8] encode failed (\(error)) — falling back to raw JPEG")
+                imageData = sourceData
+                storageExtension = nil
+            }
+        } else {
+            imageData = sourceData
+            storageExtension = nil
+        }
 
         // 3. Classify + palette + ambient metadata concurrently (all local/background)
         // Capture stable values before launching concurrent tasks to avoid data-race on `asset`.
@@ -118,9 +147,13 @@ public final class CaptureMomentUseCase {
         }
 
         // 5. Persist to vault
-        log.debug("[5/8] saving to vault…")
-        try await vault.save(asset, data: imageData)
-        log.debug("[5/8] vault JPEG save OK")
+        log.debug("[5/8] saving to vault… locked=\(locked) ext=\(storageExtension ?? "default")")
+        if storageExtension != nil || locked {
+            try await vault.save(asset, data: imageData, fileExtension: storageExtension, locked: locked)
+        } else {
+            try await vault.save(asset, data: imageData)
+        }
+        log.debug("[5/8] vault save OK")
 
         // 5b. For Live assets: also move the companion MOV from temp to vault.
         if asset.type == .live {
@@ -172,16 +205,18 @@ public final class CaptureMomentUseCase {
         return asset
     }
 
-    /// Switches capture mode — reconfigures the session outputs if crossing photo↔video boundary.
-    /// `gestureTime` is `CACurrentMediaTime()` captured at the swipe gesture receipt for end-to-end latency logging.
-    public func switchMode(to mode: CaptureMode, config: AppConfig, gestureTime: Double = 0) async throws {
+    /// Reconfigures the active capture session for a new mode — reshuffles outputs when crossing
+    /// photo↔video boundaries. `gestureTime` is `CACurrentMediaTime()` captured at the gesture
+    /// receipt for end-to-end latency logging. Piqd v0.2 renamed from `switchMode` to capture the
+    /// semantic that mode change is not just a UI toggle — it reconfigures the session.
+    public func reconfigureSession(to mode: CaptureMode, config: AppConfig, gestureTime: Double = 0) async throws {
         let t = CACurrentMediaTime()
         if gestureTime > 0 {
-            log.debug("switchMode → \(mode.rawValue)  [task-start lag: \(String(format: "%.3f", t - gestureTime))s]")
+            log.debug("reconfigureSession → \(mode.rawValue)  [task-start lag: \(String(format: "%.3f", t - gestureTime))s]")
         } else {
-            log.debug("switchMode → \(mode.rawValue)")
+            log.debug("reconfigureSession → \(mode.rawValue)")
         }
-        try await engine.switchMode(to: mode, gestureTime: gestureTime > 0 ? gestureTime : t)
+        try await engine.reconfigureSession(to: mode, gestureTime: gestureTime > 0 ? gestureTime : t)
     }
 
     /// Starts media recording for Clip / Echo / Atmosphere. Call stopVideoRecording() to finalise.

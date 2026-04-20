@@ -30,7 +30,7 @@ Full task and checklist detail for each version lives in its own file — see `p
 | Version | Verification goal | Detail | Status |
 |---------|-------------------|--------|--------|
 | [v0.1](piqd_interim_v0.1_plan.md) | Piqd Xcode target wired to NiftyCore; `AppConfig.piqd` active; Snap Still capture → local encrypted vault → device verification | [v0.1 plan](piqd_interim_v0.1_plan.md) | ⬜ |
-| v0.2 | Mode system: long-hold pill + confirmation sheet → switch <150ms; grain overlay in Roll; mode persists; Roll 24-shot counter; per-mode aspect ratio default | _pending_ | ⬜ |
+| [v0.2](piqd_interim_v0.2_plan.md) | Mode system: long-hold pill + confirmation sheet → switch <150ms; grain overlay in Roll; mode persists; Roll 24-shot counter; per-mode aspect ratio default | [v0.2 plan](piqd_interim_v0.2_plan.md) | ⬜ |
 | v0.3 | Snap format selector (Still→Sequence→Clip→Dual); 6-frame Sequence at 333ms ±20ms; hold-to-Clip; Dual via MultiCamSession; shutter morph | _pending_ | ⬜ |
 | v0.4 | Pre-shutter: zoom pill (0.5/1/2× + pinch), camera flip, invisible level, subject guidance, backlight correction, vibe hint glyph; Layer 0/1 chrome auto-retreat | _pending_ | ⬜ |
 | v0.5 | Drafts tray 24h expiry (amber<1h, red<15min); iOS share sheet hand-off; "save" to Photos; per-mode vault lifecycle | _pending_ | ⬜ |

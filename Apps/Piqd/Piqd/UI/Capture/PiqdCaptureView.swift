@@ -1,10 +1,20 @@
 // Apps/Piqd/Piqd/UI/Capture/PiqdCaptureView.swift
-// v0.1 Snap-Still capture screen. Single responsibility: show preview, shutter button, confirm
-// that a tap persisted an asset. No mode switching, no presets, no grain, no Sound Stamp.
+// Piqd v0.2 capture screen. Adds the mode system (Snap ↔ Roll) on top of v0.1's
+// shutter + flash + camera-denied hint:
+//   • ModePill — long-hold to open the confirmation sheet; 5-tap reveals dev settings.
+//   • ModeSwitchSheet — confirms switch, calls reconfigureSession via the use case.
+//   • Per-mode aspect ratio (Snap 9:16, Roll 4:3) applied as letterbox + post-capture crop.
+//   • GrainOverlayView — drawn over the preview only when in Roll mode.
+//   • FilmCounterView — Roll-only HUD reading from RollCounterRepository.
+//   • RollFullOverlay — locks the shutter when the daily Roll limit is reached.
 
 import AVFoundation
 import NiftyCore
+import NiftyData
 import SwiftUI
+import os
+
+private let modeSwitchLog = Logger(subsystem: "com.hwcho99.niftymomnt", category: "PiqdModeSwitch")
 
 struct PiqdCaptureView: View {
     let container: PiqdAppContainer
@@ -13,12 +23,29 @@ struct PiqdCaptureView: View {
     @State private var flashAssetID: String?
     @State private var errorText: String?
     @State private var cameraAuthorized = true
+    @State private var showModeSheet = false
+    @State private var showDevSettings = false
+    @State private var showRollFull = false
+    @State private var rollUsed: Int = 0
+    @State private var rollLimit: Int = 24
+    /// Set by `switchMode` so the `.task(id: modeStore.mode)` observer can measure the
+    /// total wall-clock from user confirmation through reconfigureSession completion.
+    @State private var modeSwitchStartedAt: CFAbsoluteTime?
+    @State private var modeSwitchTarget: CaptureMode?
+
+    private var modeStore: ModeStore { container.modeStore }
+    private var dev: DevSettingsStore { container.devSettings }
+    private var aspect: AspectRatio { AspectRatio.defaultFor(modeStore.mode) }
 
     var body: some View {
         ZStack {
-            CameraPreviewView(session: container.captureSession)
-                .ignoresSafeArea()
-                .accessibilityIdentifier("piqd.capture")
+            Color.black.ignoresSafeArea()
+
+            previewWithLetterbox
+
+            if !cameraAuthorized {
+                cameraDeniedHint
+            }
 
             if flashAssetID != nil {
                 Rectangle()
@@ -29,22 +56,10 @@ struct PiqdCaptureView: View {
                     .accessibilityIdentifier("piqd.captureIndicator")
             }
 
-            if !cameraAuthorized {
-                VStack(spacing: 12) {
-                    Image(systemName: "camera.fill")
-                        .font(.system(size: 40))
-                        .foregroundStyle(.white)
-                    Text("Camera access needed in Settings")
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
-                }
-                .padding()
-                .accessibilityElement(children: .combine)
-                .accessibilityIdentifier("piqd.cameraDeniedHint")
-            }
-
             VStack {
+                topHUD
+                    .padding(.horizontal, 16)
+                    .padding(.top, 52)
                 Spacer()
                 shutterButton
                     .padding(.bottom, 48)
@@ -61,15 +76,123 @@ struct PiqdCaptureView: View {
                         .padding(.bottom, 140)
                 }
             }
+
+            // UI_TEST_MODE-only hidden trigger: XCUITest's synthetic press(forDuration:)
+            // does not reliably route through SwiftUI gesture recognizers on iOS 26,
+            // so we expose a full-width invisible Button that directly triggers the
+            // long-hold action when tapped by the test runner.
+            if ProcessInfo.processInfo.environment["UI_TEST_MODE"] == "1" {
+                VStack {
+                    Button("longhold") { showModeSheet = true }
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .opacity(0.001)
+                        .accessibilityIdentifier("piqd-mode-pill-longhold-test")
+                    Spacer()
+                }
+                .padding(.top, 140)
+                .allowsHitTesting(true)
+            }
+
+            if showRollFull || (modeStore.mode == .roll && rollLimit > 0 && rollUsed >= rollLimit) {
+                RollFullOverlay(
+                    limit: rollLimit,
+                    onDismiss: { showRollFull = false },
+                    onSwitchToSnap: {
+                        showRollFull = false
+                        Task { await switchMode(to: .snap) }
+                    }
+                )
+            }
         }
         .background(.black)
-        .task {
-            await startPreview()
+        .task { await startPreview() }
+        .task(id: modeStore.mode) {
+            await refreshRollCounter()
+            // Mode change should reflect on session config too.
+            await applyModeToSession(animated: true)
+        }
+        .onChange(of: modeStore.devMenuRequested) { _, newValue in
+            if newValue {
+                showDevSettings = true
+                modeStore.devMenuRequested = false
+            }
+        }
+        .sheet(isPresented: $showModeSheet) {
+            ModeSwitchSheet(
+                current: modeStore.mode,
+                onSelect: { selected in
+                    showModeSheet = false
+                    Task { await switchMode(to: selected) }
+                },
+                onCancel: { showModeSheet = false }
+            )
+        }
+        .sheet(isPresented: $showDevSettings) {
+            PiqdDevSettingsView(store: dev, onClose: { showDevSettings = false })
+        }
+    }
+
+    // MARK: - Subviews
+
+    @ViewBuilder
+    private var previewWithLetterbox: some View {
+        GeometryReader { geo in
+            let cropped = letterboxRect(in: geo.size, ratio: aspect.ratio)
+            ZStack {
+                CameraPreviewView(session: container.captureSession)
+                    .frame(width: cropped.width, height: cropped.height)
+                    .position(x: cropped.midX, y: cropped.midY)
+                    .accessibilityElement()
+                    .accessibilityIdentifier("piqd.capture")
+                    // UI4 polls this value to detect mode-switch completion.
+                    .accessibilityValue(modeStore.mode.rawValue)
+
+                if modeStore.mode == .roll && dev.grainOverlayEnabled {
+                    GrainOverlayView()
+                        .frame(width: cropped.width, height: cropped.height)
+                        .position(x: cropped.midX, y: cropped.midY)
+                }
+            }
+        }
+        .ignoresSafeArea()
+    }
+
+    @ViewBuilder
+    private var cameraDeniedHint: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "camera.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(.white)
+            Text("Camera access needed in Settings")
+                .font(.headline)
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("piqd.cameraDeniedHint")
+    }
+
+    @ViewBuilder
+    private var topHUD: some View {
+        HStack(alignment: .center) {
+            ModePill(
+                mode: modeStore.mode,
+                holdDuration: dev.longHoldDurationSeconds,
+                hapticEnabled: dev.hapticEnabled,
+                onTap: { modeStore.registerPillTap() },
+                onLongHoldTriggered: { showModeSheet = true }
+            )
+            Spacer()
+            if modeStore.mode == .roll {
+                FilmCounterView(used: rollUsed, limit: rollLimit)
+            }
         }
     }
 
     private var shutterButton: some View {
-        Button {
+        let disabled = isCapturing || (modeStore.mode == .roll && rollUsed >= rollLimit)
+        return Button {
             Task { await handleShutter() }
         } label: {
             ZStack {
@@ -77,24 +200,41 @@ struct PiqdCaptureView: View {
                     .stroke(.white, lineWidth: 4)
                     .frame(width: 80, height: 80)
                 Circle()
-                    .fill(.white)
+                    .fill(disabled ? .white.opacity(0.4) : .white)
                     .frame(width: 64, height: 64)
                     .scaleEffect(isCapturing ? 0.85 : 1.0)
             }
         }
-        .disabled(isCapturing)
+        .disabled(disabled)
         .accessibilityIdentifier("piqd.shutter")
     }
 
+    // MARK: - Layout
+
+    /// Inscribed rect for the preview at `ratio` (width/height). Letterboxes top/bottom
+    /// for tall (9:16) and side-bars for wider (4:3) on a 9:16-ish phone canvas.
+    private func letterboxRect(in size: CGSize, ratio: CGFloat) -> CGRect {
+        let canvasRatio = size.width / size.height
+        if ratio >= canvasRatio {
+            // Wider than canvas → constrain by width.
+            let h = size.width / ratio
+            let y = (size.height - h) / 2
+            return CGRect(x: 0, y: y, width: size.width, height: h)
+        } else {
+            // Taller than canvas → constrain by height.
+            let w = size.height * ratio
+            let x = (size.width - w) / 2
+            return CGRect(x: x, y: 0, width: w, height: size.height)
+        }
+    }
+
+    // MARK: - Actions
+
     private func startPreview() async {
-        // UI6: explicit override so XCUITest can assert the denied-state hint without toggling
-        // system privacy settings.
         if ProcessInfo.processInfo.environment["PIQD_FORCE_CAMERA_DENIED"] == "1" {
             cameraAuthorized = false
             return
         }
-        // Check current camera auth so UI6 can surface the denied-state hint without relying on
-        // the AVCaptureSession error path (which would just leave a black preview).
         let status = AVCaptureDevice.authorizationStatus(for: .video)
         if status == .denied || status == .restricted {
             cameraAuthorized = false
@@ -108,24 +248,78 @@ struct PiqdCaptureView: View {
         }
     }
 
+    /// Piqd v0.2 — Snap and Roll both record .still under the hood for v0.2 (no video output
+    /// changes), so the only thing that "changes" is the aspect ratio + UI chrome. We still
+    /// call reconfigureSession for parity with the use case API; it's a no-op when source/dest
+    /// are both photo-class modes.
+    private func applyModeToSession(animated: Bool) async {
+        do {
+            try await container.captureUseCase.reconfigureSession(to: .still, config: container.config)
+        } catch {
+            errorText = "reconfigure failed: \(error.localizedDescription)"
+        }
+        // Close the timing span opened in switchMode. Logged unconditionally so we can
+        // gather a p95 distribution from console logs across runs.
+        if let started = modeSwitchStartedAt, modeSwitchTarget == modeStore.mode {
+            let elapsedMs = (CFAbsoluteTimeGetCurrent() - started) * 1000.0
+            let budgetNote = elapsedMs <= 150 ? "OK" : "OVER"
+            modeSwitchLog.log("mode switch → \(modeStore.mode.rawValue, privacy: .public) took \(elapsedMs, format: .fixed(precision: 1))ms [\(budgetNote, privacy: .public)]")
+            modeSwitchStartedAt = nil
+            modeSwitchTarget = nil
+        }
+    }
+
+    private func switchMode(to newMode: CaptureMode) async {
+        guard newMode != modeStore.mode else { return }
+        modeSwitchStartedAt = CFAbsoluteTimeGetCurrent()
+        modeSwitchTarget = newMode
+        withAnimation(.easeInOut(duration: 0.15)) {
+            modeStore.set(newMode)
+        }
+        await refreshRollCounter()
+    }
+
+    private func refreshRollCounter() async {
+        let count = (try? await container.rollCounter.currentCount()) ?? 0
+        let limit = await container.rollCounter.currentLimit()
+        rollUsed = count
+        rollLimit = limit
+    }
+
     private func handleShutter() async {
         isCapturing = true
         defer { isCapturing = false }
         errorText = nil
 
-        // UI-test short-circuit: simulator has no real camera, so the AVFoundation pipeline
-        // fails silently. Persist a stub asset + moment directly through the Managers so UI2–UI5
-        // can verify flash, debug list, and cross-launch persistence deterministically.
+        // Roll mode — gate on daily limit. UI_TEST_MODE follows the same gate so tests
+        // exercising RollFull overlay see realistic behavior.
+        if modeStore.mode == .roll {
+            do {
+                _ = try await container.rollCounter.increment()
+            } catch RollCounterError.limitReached {
+                showRollFull = true
+                await refreshRollCounter()
+                return
+            } catch {
+                errorText = "counter failed: \(error.localizedDescription)"
+                return
+            }
+            await refreshRollCounter()
+        }
+
         if ProcessInfo.processInfo.environment["UI_TEST_MODE"] == "1" {
-            // Show flash first and leave it up — XCUITest's wait-for-idle can outlast a
-            // brief animated overlay, so the indicator must be sticky for deterministic polling.
             flashAssetID = UUID().uuidString
             await persistTestStub()
             return
         }
 
         do {
-            let asset = try await container.captureUseCase.captureAsset()
+            let asset = try await container.captureUseCase.captureAsset(
+                preset: nil,
+                aspectRatio: aspect,
+                encoder: container.imageEncoder,
+                locked: modeStore.mode == .roll
+            )
             withAnimation(.easeOut(duration: 0.15)) {
                 flashAssetID = asset.id.uuidString
             }
@@ -138,13 +332,14 @@ struct PiqdCaptureView: View {
         }
     }
 
-    /// Writes a 1×1 JPEG + a single-asset Moment so the debug feed reflects UI-test taps.
-    /// Real-device capture runs through CaptureMomentUseCase; this path is only hit when the
-    /// PIQD test harness sets UI_TEST_MODE=1.
     private func persistTestStub() async {
         let asset = Asset(type: .still, capturedAt: Date())
         let data = PiqdCaptureView.onePixelJPEG
-        try? await container.vaultManager.save(asset, data: data)
+        try? await container.vaultManager.save(
+            asset, data: data,
+            fileExtension: "jpg",
+            locked: modeStore.mode == .roll
+        )
         let moment = Moment(
             id: UUID(),
             label: "UI Test",
@@ -160,8 +355,6 @@ struct PiqdCaptureView: View {
         try? await container.graphManager.saveMoment(moment)
     }
 
-    // Minimal valid JPEG (1×1 black pixel) — just enough bytes for VaultRepository.save to
-    // succeed and for the thumbnail path to decode to something.
     private static let onePixelJPEG: Data = Data([
         0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01,
         0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0xFF, 0xDB, 0x00, 0x43,

@@ -1912,7 +1912,7 @@ struct CaptureHubView: View {
                 print("[CaptureHub] cycleMode → photoBooth UI transition lag: \(String(format: "%.3f", lag))s")
             }
         } else {
-            Task { try? await container.captureUseCase.switchMode(to: newMode, config: container.config, gestureTime: gestureTime) }
+            Task { try? await container.captureUseCase.reconfigureSession(to: newMode, config: container.config, gestureTime: gestureTime) }
         }
     }
 
@@ -2246,7 +2246,7 @@ struct CaptureHubView: View {
 
     private func runBoothCaptureSequence() async {
         do {
-            try await container.captureUseCase.switchMode(to: .still, config: container.config)
+            try await container.captureUseCase.reconfigureSession(to: .still, config: container.config)
 
             for slotIndex in 0..<4 {
                 for count in stride(from: 3, through: 1, by: -1) {

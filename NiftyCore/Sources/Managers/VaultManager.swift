@@ -58,6 +58,11 @@ public actor VaultManager {
         try await vault.save(asset, data: data)
     }
 
+    /// Piqd v0.2 — save with explicit container extension + locked Roll routing.
+    public func save(_ asset: Asset, data: Data, fileExtension: String?, locked: Bool) async throws {
+        try await vault.save(asset, data: data, fileExtension: fileExtension, locked: locked)
+    }
+
     public func saveVideoFile(_ asset: Asset, sourceURL: URL) async throws {
         try await vault.saveVideoFile(asset, sourceURL: sourceURL)
     }

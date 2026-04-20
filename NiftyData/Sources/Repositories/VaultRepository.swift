@@ -18,13 +18,21 @@ private let log = Logger(subsystem: "com.hwcho99.niftymomnt", category: "VaultRe
 public actor VaultRepository: VaultProtocol {
     private let config: AppConfig
     private let assetsDirectory: URL
+    /// Piqd v0.2 — Roll captures land in a sibling sub-namespace so v0.8 can enforce
+    /// the 9 PM unlock ritual by locking this directory. For non-Piqd variants this
+    /// equals `assetsDirectory`.
+    private let rollAssetsDirectory: URL
     nonisolated(unsafe) private let storageSubject = CurrentValueSubject<Int64, Never>(0)
 
     public init(config: AppConfig) {
         self.config = config
         self.assetsDirectory = Self.resolveAssetsDirectory(namespace: config.namespace)
+        self.rollAssetsDirectory = Self.resolveRollAssetsDirectory(namespace: config.namespace)
         do {
             try FileManager.default.createDirectory(at: assetsDirectory, withIntermediateDirectories: true)
+            if rollAssetsDirectory != assetsDirectory {
+                try FileManager.default.createDirectory(at: rollAssetsDirectory, withIntermediateDirectories: true)
+            }
             log.debug("VaultRepository init — assets dir: \(self.assetsDirectory.path)")
         } catch {
             log.error("VaultRepository init — failed to create assets dir: \(error)")
@@ -40,6 +48,19 @@ public actor VaultRepository: VaultProtocol {
         return base.appendingPathComponent("assets", isDirectory: true)
     }
 
+    /// Piqd-only: `Documents/{ns}/roll/assets/`. For non-Piqd variants (nil namespace)
+    /// this falls back to the main assets directory — Roll is a Piqd concept.
+    private static func resolveRollAssetsDirectory(namespace: String?) -> URL {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        guard let ns = namespace else {
+            return docs.appendingPathComponent("assets", isDirectory: true)
+        }
+        return docs
+            .appendingPathComponent(ns, isDirectory: true)
+            .appendingPathComponent("roll", isDirectory: true)
+            .appendingPathComponent("assets", isDirectory: true)
+    }
+
     public nonisolated var storageUsedBytes: AnyPublisher<Int64, Never> {
         storageSubject.eraseToAnyPublisher()
     }
@@ -47,16 +68,32 @@ public actor VaultRepository: VaultProtocol {
     // MARK: - VaultProtocol
 
     public func save(_ asset: Asset, data: Data) async throws {
-        let fileURL = fileURL(for: asset.id, type: asset.type)
+        try await save(asset, data: data, fileExtension: nil, locked: false)
+    }
+
+    /// Piqd v0.2 — save with explicit container extension (e.g. `"heic"`) and Roll-mode
+    /// routing. When `locked` is true the bytes go to `Documents/{ns}/roll/assets/` and
+    /// the sidecar records the choice so `load`/`delete` can find the file.
+    public func save(
+        _ asset: Asset,
+        data: Data,
+        fileExtension: String?,
+        locked: Bool
+    ) async throws {
+        let ext = fileExtension ?? defaultFileExtension(for: asset.type)
+        let dir = locked ? rollAssetsDirectory : assetsDirectory
+        let fileURL = dir.appendingPathComponent("\(asset.id.uuidString).\(ext)")
         let metaURL = metaURL(for: asset.id)
-        log.debug("save — writing \(data.count)B to \(fileURL.lastPathComponent)")
+        log.debug("save — writing \(data.count)B to \(fileURL.lastPathComponent) locked=\(locked)")
         do {
             try data.write(to: fileURL, options: .atomic)
         } catch {
-            log.error("save — JPEG write failed: \(error)")
+            log.error("save — image write failed: \(error)")
             throw error
         }
-        let record = AssetRecord(from: asset)
+        var record = AssetRecord(from: asset)
+        record.storageExtension = ext
+        record.locked = locked ? true : nil
         let encoded = try JSONEncoder().encode(record)
         do {
             try encoded.write(to: metaURL, options: .atomic)
@@ -137,7 +174,7 @@ public actor VaultRepository: VaultProtocol {
             return (asset, plainData)
         }
 
-        let fileURL = fileURL(for: assetID, type: asset.type)
+        let fileURL = resolvedFileURL(for: assetID, type: asset.type, record: record)
         guard let data = try? Data(contentsOf: fileURL) else {
             throw VaultError.notFound
         }
@@ -195,17 +232,19 @@ public actor VaultRepository: VaultProtocol {
     }
 
     public func delete(_ assetID: UUID) async throws {
-        let (asset, _) = try await load(assetID)
-        let fileURL = fileURL(for: assetID, type: asset.type)
         let metaURL = metaURL(for: assetID)
+        let record = (try? Data(contentsOf: metaURL)).flatMap {
+            try? JSONDecoder().decode(AssetRecord.self, from: $0)
+        }
+        let assetType = record.flatMap { AssetType(rawValue: $0.type) } ?? .still
+        let fileURL = resolvedFileURL(for: assetID, type: assetType, record: record)
         let derivURL = derivativeFileURL(for: assetID)
         let encURL = encryptedFileURL(for: assetID)
         try? FileManager.default.removeItem(at: fileURL)
         try? FileManager.default.removeItem(at: metaURL)
         try? FileManager.default.removeItem(at: derivURL)
         try? FileManager.default.removeItem(at: encURL)
-        // Remove Live Photo companion MOV if present.
-        if asset.type == .live {
+        if assetType == .live {
             try? FileManager.default.removeItem(at: liveMovieURL(for: assetID))
         }
     }
@@ -301,16 +340,29 @@ public actor VaultRepository: VaultProtocol {
 
 private extension VaultRepository {
     func fileURL(for id: UUID, type: AssetType) -> URL {
-        let ext: String
+        let ext = defaultFileExtension(for: type)
+        return assetsDirectory.appendingPathComponent("\(id.uuidString).\(ext)")
+    }
+
+    func defaultFileExtension(for type: AssetType) -> String {
         switch type {
         case .still, .live, .l4c, .movingStill:
-            ext = "jpg"
+            return "jpg"
         case .clip, .atmosphere, .sequence, .dual:
-            ext = "mov"
+            return "mov"
         case .echo:
-            ext = "m4a"
+            return "m4a"
         }
-        return assetsDirectory.appendingPathComponent("\(id.uuidString).\(ext)")
+    }
+
+    /// Piqd v0.2 — resolves to the correct directory (locked Roll vs main) and extension
+    /// based on the sidecar record. Falls back to the legacy computed path when the record
+    /// has no `storageExtension` / `locked` info (pre-v0.2 sidecars).
+    func resolvedFileURL(for id: UUID, type: AssetType, record: AssetRecord?) -> URL {
+        let locked = record?.locked ?? false
+        let dir = locked ? rollAssetsDirectory : assetsDirectory
+        let ext = record?.storageExtension ?? defaultFileExtension(for: type)
+        return dir.appendingPathComponent("\(id.uuidString).\(ext)")
     }
 
     func metaURL(for id: UUID) -> URL {
@@ -433,6 +485,10 @@ private struct AssetRecord: Codable {
     let duration: Double?
     // v0.8: false = public, true = encrypted in vault. Absent in pre-v0.8 sidecars → defaults false.
     var isPrivate: Bool?
+    // Piqd v0.2: container extension on disk (e.g. "heic", "jpg"). Absent → derive from type.
+    var storageExtension: String?
+    // Piqd v0.2: true when bytes live in the Roll sub-namespace. Absent → false (main vault).
+    var locked: Bool?
 
     init(from asset: Asset) {
         id = asset.id.uuidString
@@ -444,6 +500,8 @@ private struct AssetRecord: Codable {
         transcript = asset.transcript
         duration = asset.duration
         isPrivate = asset.isPrivate ? true : nil  // omit false (saves space; decodes as nil → false)
+        storageExtension = nil
+        locked = nil
     }
 
     func toAsset() -> Asset {

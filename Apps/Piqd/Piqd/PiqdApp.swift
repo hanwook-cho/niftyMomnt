@@ -25,13 +25,33 @@ struct PiqdApp: App {
             try? FileManager.default.removeItem(at: piqd)
         }
 
-        let config = AppConfig.piqd_v0_1
+        // UI-test hooks for ModeStore. Cleared/seeded before ModeStore reads its defaults.
+        let env = ProcessInfo.processInfo.environment
+        if env["PIQD_RESET_LAST_MODE"] == "1" {
+            UserDefaults(suiteName: "piqd")?.removeObject(forKey: "piqd.captureMode")
+        }
+        if let forced = env["PIQD_FORCE_LAST_MODE"],
+           forced == "snap" || forced == "roll" {
+            UserDefaults(suiteName: "piqd")?.set(forced, forKey: "piqd.captureMode")
+        }
+
+        let config = AppConfig.piqd_v0_2
+
+        // Piqd v0.2 — dev knobs (loaded once at launch; XCUITest can seed via PIQD_DEV_*).
+        let devSettings = DevSettingsStore()
 
         // Platform adapters
         let captureAdapter = AVCaptureAdapter(config: config)
         let indexingAdapter = CoreMLIndexingAdapter(config: config, weather: nil)
         let vaultRepo = VaultRepository(config: config)
         let graphRepo = GraphRepository(config: config)
+        // Dev knob: dailyLimit is captured at launch. Changing the value in dev settings
+        // takes effect on the next launch. (Live updates would need a Sendable bridge from
+        // the @MainActor DevSettingsStore into the actor — out of scope for v0.2.)
+        let rollCounter = RollCounterRepository(
+            config: config,
+            dailyLimit: devSettings.rollDailyLimit
+        )
         // SoundStampAdapter is constructed but never activated — .soundStamp is not in
         // piqd_v0_1.features, so CaptureEngine.isSoundStampEnabled is false and the pipeline
         // stays idle. Passing it satisfies CaptureEngine's non-optional requirement.
@@ -61,12 +81,19 @@ struct PiqdApp: App {
             graph: graphManager
         )
 
+        let modeStore = ModeStore()
+        let imageEncoder: ImageEncoder = HEICEncoder()
+
         container = PiqdAppContainer(
             config: config,
             captureUseCase: captureUseCase,
             vaultManager: vaultManager,
             graphManager: graphManager,
-            captureSession: captureAdapter.session
+            captureSession: captureAdapter.session,
+            modeStore: modeStore,
+            devSettings: devSettings,
+            rollCounter: rollCounter,
+            imageEncoder: imageEncoder
         )
     }
 

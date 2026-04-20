@@ -11,6 +11,9 @@ struct PiqdVaultDebugView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var assets: [Asset] = []
     @State private var errorText: String?
+    @State private var rollUsed: Int = 0
+    @State private var rollLimit: Int = 24
+    @State private var showDevSettings = false
 
     private let columns = [
         GridItem(.adaptive(minimum: 100), spacing: 4)
@@ -25,6 +28,20 @@ struct PiqdVaultDebugView: View {
                         .foregroundStyle(.red)
                         .padding()
                 }
+
+                HStack(spacing: 8) {
+                    Label("Roll \(rollUsed)/\(rollLimit)", systemImage: "film")
+                        .font(.caption)
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(Capsule().fill(.orange.opacity(0.15)))
+                    Label("Mode: \(container.modeStore.mode.rawValue)", systemImage: "camera.aperture")
+                        .font(.caption)
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(Capsule().fill(.gray.opacity(0.15)))
+                    Spacer()
+                }
+                .padding(.horizontal, 8)
+
                 LazyVGrid(columns: columns, spacing: 4) {
                     ForEach(assets, id: \.id) { asset in
                         PiqdDebugThumbnail(assetID: asset.id, vault: container.vaultManager)
@@ -39,9 +56,18 @@ struct PiqdVaultDebugView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showDevSettings = true } label: {
+                        Image(systemName: "wrench.and.screwdriver")
+                    }
+                    .accessibilityIdentifier("piqd-debug-dev-settings")
+                }
             }
             .task { await reload() }
             .refreshable { await reload() }
+            .sheet(isPresented: $showDevSettings) {
+                PiqdDevSettingsView(store: container.devSettings, onClose: { showDevSettings = false })
+            }
         }
     }
 
@@ -53,6 +79,8 @@ struct PiqdVaultDebugView: View {
             assets = moments
                 .flatMap { $0.assets }
                 .sorted { $0.capturedAt > $1.capturedAt }
+            rollUsed = (try? await container.rollCounter.currentCount()) ?? 0
+            rollLimit = await container.rollCounter.currentLimit()
         } catch {
             errorText = error.localizedDescription
         }

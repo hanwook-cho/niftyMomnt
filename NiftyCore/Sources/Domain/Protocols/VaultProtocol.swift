@@ -5,6 +5,10 @@ import Foundation
 
 public protocol VaultProtocol: AnyObject, Sendable {
     func save(_ asset: Asset, data: Data) async throws
+    /// Piqd v0.2 — save with explicit container extension (e.g. "heic") and Roll-mode
+    /// locked routing. Adopters that do not distinguish (test mocks, niftyMomnt legacy)
+    /// may forward to the default `save(_:data:)`.
+    func save(_ asset: Asset, data: Data, fileExtension: String?, locked: Bool) async throws
     /// Moves a video file from sourceURL into the vault without loading it into memory.
     func saveVideoFile(_ asset: Asset, sourceURL: URL) async throws
     /// Moves an audio file from sourceURL into the vault without loading it into memory.
@@ -25,4 +29,12 @@ public protocol VaultProtocol: AnyObject, Sendable {
     /// Encrypts the asset file in-place (AES-GCM) and marks the sidecar as private.
     /// After this call the asset's data is only accessible via `load(_:)` / `loadPrimary(_:)`.
     func moveToVault(assetID: UUID) async throws
+}
+
+public extension VaultProtocol {
+    /// Default forwards to `save(_:data:)` — concrete Piqd adapters override to honor
+    /// `fileExtension` and `locked`.
+    func save(_ asset: Asset, data: Data, fileExtension: String?, locked: Bool) async throws {
+        try await save(asset, data: data)
+    }
 }

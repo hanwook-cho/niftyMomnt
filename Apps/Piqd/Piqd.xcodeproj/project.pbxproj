@@ -11,13 +11,21 @@
 		088CDD62BE70AF4599757BB9 /* CameraPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875613EC3011E66CBED946F2 /* CameraPreviewView.swift */; };
 		0ABB22A51E413F200C4BBC26 /* NiftyData in Frameworks */ = {isa = PBXBuildFile; productRef = D573630EDB426970D58ED8FD /* NiftyData */; };
 		34F2A72EE427A586D232B039 /* PiqdAppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 279D2B73905D44964F953E82 /* PiqdAppContainer.swift */; };
+		3D7D0C29AC8EA7B0A03C1ED0 /* ModePill.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0869CC6219AD5B6332A432 /* ModePill.swift */; };
 		3F7E27FDD6AE38C30EE02A25 /* PiqdUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECCC3D31406AB1441602D61 /* PiqdUITests.swift */; };
+		7394563EE607E580E3F6E3DE /* PiqdDevSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 526A6B001D1391B841AD8985 /* PiqdDevSettingsView.swift */; };
 		85E708F3A5A20465F897563B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0BAFF4E03D6585CBBE2287DE /* Assets.xcassets */; };
 		A234A41E017AC49A3D8C3E33 /* PiqdVaultDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63930AB65B928A8ADECA8569 /* PiqdVaultDebugView.swift */; };
 		A304FE9183DB16AD76CB606B /* PiqdCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07BA6A9EC78DB6D0CD539B1A /* PiqdCaptureView.swift */; };
+		A790EDBFEE6F54A6677F82CE /* ModeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31D36459944764E9C1ADA3B7 /* ModeStore.swift */; };
 		A7E62A1BB65ACF761CDB209F /* PiqdRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81525CAE3CAFA242F4BAE842 /* PiqdRootView.swift */; };
+		B701C53021FC457454E2D58A /* RollFullOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 935FF5B37E24F11CFF39BDB3 /* RollFullOverlay.swift */; };
 		CB28F05D74DD0D5C9AEBDFFD /* AppConfig+Piqd.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDA6C4CB6BEA885C4EB002D5 /* AppConfig+Piqd.swift */; };
+		CB5D208C969455EA521B2984 /* GrainOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD77E57B74CA07FEF63AF2A /* GrainOverlayView.swift */; };
+		CB715841E8C07E00DD0B296D /* ModeSwitchSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCE21AD10981EF8FB776F62E /* ModeSwitchSheet.swift */; };
+		DF7C58D77E47FE795473145E /* FilmCounterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B0906DFD3AE95F1157FE0C /* FilmCounterView.swift */; };
 		EDE1BB6F10A36A55541D80E8 /* PiqdApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C52C6ACC36E1E13C5273DAC /* PiqdApp.swift */; };
+		F6FC1FB523030A83898AE8ED /* DevSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81207B79722F7C3959ED7189 /* DevSettingsStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -35,12 +43,20 @@
 		0BAFF4E03D6585CBBE2287DE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0E5ACDAD94AF840DC5D16F4F /* NiftyData */ = {isa = PBXFileReference; lastKnownFileType = folder; name = NiftyData; path = ../../NiftyData; sourceTree = SOURCE_ROOT; };
 		12AC20D64D4E0D2E6B3E03CE /* NiftyCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = NiftyCore; path = ../../NiftyCore; sourceTree = SOURCE_ROOT; };
+		1CD77E57B74CA07FEF63AF2A /* GrainOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrainOverlayView.swift; sourceTree = "<group>"; };
 		279D2B73905D44964F953E82 /* PiqdAppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdAppContainer.swift; sourceTree = "<group>"; };
+		27B0906DFD3AE95F1157FE0C /* FilmCounterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmCounterView.swift; sourceTree = "<group>"; };
+		31D36459944764E9C1ADA3B7 /* ModeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeStore.swift; sourceTree = "<group>"; };
 		4C52C6ACC36E1E13C5273DAC /* PiqdApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdApp.swift; sourceTree = "<group>"; };
+		526A6B001D1391B841AD8985 /* PiqdDevSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdDevSettingsView.swift; sourceTree = "<group>"; };
 		63930AB65B928A8ADECA8569 /* PiqdVaultDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdVaultDebugView.swift; sourceTree = "<group>"; };
 		77F3379F941C30CDDB421095 /* PiqdUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PiqdUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		81207B79722F7C3959ED7189 /* DevSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevSettingsStore.swift; sourceTree = "<group>"; };
 		81525CAE3CAFA242F4BAE842 /* PiqdRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdRootView.swift; sourceTree = "<group>"; };
 		875613EC3011E66CBED946F2 /* CameraPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreviewView.swift; sourceTree = "<group>"; };
+		935FF5B37E24F11CFF39BDB3 /* RollFullOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RollFullOverlay.swift; sourceTree = "<group>"; };
+		BCE21AD10981EF8FB776F62E /* ModeSwitchSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeSwitchSheet.swift; sourceTree = "<group>"; };
+		CE0869CC6219AD5B6332A432 /* ModePill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModePill.swift; sourceTree = "<group>"; };
 		D6589D2BC87B34F2016DC55C /* Piqd.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Piqd.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EDA6C4CB6BEA885C4EB002D5 /* AppConfig+Piqd.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppConfig+Piqd.swift"; sourceTree = "<group>"; };
 		EECCC3D31406AB1441602D61 /* PiqdUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdUITests.swift; sourceTree = "<group>"; };
@@ -79,6 +95,8 @@
 		3690FEC75479E2B49C8E7F6A /* Debug */ = {
 			isa = PBXGroup;
 			children = (
+				81207B79722F7C3959ED7189 /* DevSettingsStore.swift */,
+				526A6B001D1391B841AD8985 /* PiqdDevSettingsView.swift */,
 				63930AB65B928A8ADECA8569 /* PiqdVaultDebugView.swift */,
 			);
 			path = Debug;
@@ -129,7 +147,13 @@
 			isa = PBXGroup;
 			children = (
 				875613EC3011E66CBED946F2 /* CameraPreviewView.swift */,
+				27B0906DFD3AE95F1157FE0C /* FilmCounterView.swift */,
+				1CD77E57B74CA07FEF63AF2A /* GrainOverlayView.swift */,
+				CE0869CC6219AD5B6332A432 /* ModePill.swift */,
+				31D36459944764E9C1ADA3B7 /* ModeStore.swift */,
+				BCE21AD10981EF8FB776F62E /* ModeSwitchSheet.swift */,
 				07BA6A9EC78DB6D0CD539B1A /* PiqdCaptureView.swift */,
+				935FF5B37E24F11CFF39BDB3 /* RollFullOverlay.swift */,
 			);
 			path = Capture;
 			sourceTree = "<group>";
@@ -241,11 +265,19 @@
 			files = (
 				CB28F05D74DD0D5C9AEBDFFD /* AppConfig+Piqd.swift in Sources */,
 				088CDD62BE70AF4599757BB9 /* CameraPreviewView.swift in Sources */,
+				F6FC1FB523030A83898AE8ED /* DevSettingsStore.swift in Sources */,
+				DF7C58D77E47FE795473145E /* FilmCounterView.swift in Sources */,
+				CB5D208C969455EA521B2984 /* GrainOverlayView.swift in Sources */,
+				3D7D0C29AC8EA7B0A03C1ED0 /* ModePill.swift in Sources */,
+				A790EDBFEE6F54A6677F82CE /* ModeStore.swift in Sources */,
+				CB715841E8C07E00DD0B296D /* ModeSwitchSheet.swift in Sources */,
 				EDE1BB6F10A36A55541D80E8 /* PiqdApp.swift in Sources */,
 				34F2A72EE427A586D232B039 /* PiqdAppContainer.swift in Sources */,
 				A304FE9183DB16AD76CB606B /* PiqdCaptureView.swift in Sources */,
+				7394563EE607E580E3F6E3DE /* PiqdDevSettingsView.swift in Sources */,
 				A7E62A1BB65ACF761CDB209F /* PiqdRootView.swift in Sources */,
 				A234A41E017AC49A3D8C3E33 /* PiqdVaultDebugView.swift in Sources */,
+				B701C53021FC457454E2D58A /* RollFullOverlay.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

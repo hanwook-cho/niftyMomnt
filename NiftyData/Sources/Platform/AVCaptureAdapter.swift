@@ -448,7 +448,7 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
 
     // MARK: - Mode / Camera Switch
 
-    public func switchMode(to mode: CaptureMode, gestureTime: Double) async throws {
+    public func reconfigureSession(to mode: CaptureMode, gestureTime: Double) async throws {
         guard mode != currentMode else { return }
         log.debug("switchMode \(self.currentMode.rawValue) → \(mode.rawValue)")
 

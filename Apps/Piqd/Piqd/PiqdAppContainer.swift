@@ -14,18 +14,31 @@ public final class PiqdAppContainer {
     public let vaultManager: VaultManager
     public let graphManager: GraphManager
     public let captureSession: AVCaptureSession
+    // Piqd v0.2 additions
+    public let modeStore: ModeStore
+    public let devSettings: DevSettingsStore
+    public let rollCounter: RollCounterRepository
+    public let imageEncoder: ImageEncoder
 
     public init(
         config: AppConfig,
         captureUseCase: CaptureMomentUseCase,
         vaultManager: VaultManager,
         graphManager: GraphManager,
-        captureSession: AVCaptureSession
+        captureSession: AVCaptureSession,
+        modeStore: ModeStore,
+        devSettings: DevSettingsStore,
+        rollCounter: RollCounterRepository,
+        imageEncoder: ImageEncoder
     ) {
         self.config = config
         self.captureUseCase = captureUseCase
         self.vaultManager = vaultManager
         self.graphManager = graphManager
         self.captureSession = captureSession
+        self.modeStore = modeStore
+        self.devSettings = devSettings
+        self.rollCounter = rollCounter
+        self.imageEncoder = imageEncoder
     }
 }

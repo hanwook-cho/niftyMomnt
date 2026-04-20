@@ -16,7 +16,7 @@ public protocol CaptureEngineProtocol: AnyObject {
     func startRecording(mode: CaptureMode) async throws
     /// Stops recording and returns the Asset (with duration). Temp file at tmpdir/{id}.mov.
     func stopRecording() async throws -> Asset
-    func switchMode(to mode: CaptureMode, gestureTime: Double) async throws
+    func reconfigureSession(to mode: CaptureMode, gestureTime: Double) async throws
     func switchCamera() async throws
     func focusAndLock(at point: CGPoint, frameSize: CGSize) async throws
     func unlockFocusAndExposure() async

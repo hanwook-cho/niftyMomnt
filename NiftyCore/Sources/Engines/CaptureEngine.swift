@@ -84,18 +84,18 @@ public final class CaptureEngine: CaptureEngineProtocol {
         return asset
     }
 
-    public func switchMode(to mode: CaptureMode, gestureTime: Double) async throws {
+    public func reconfigureSession(to mode: CaptureMode, gestureTime: Double) async throws {
         let wasStill = currentMode() == .still
         let isStill = mode == .still
         if wasStill && !isStill {
             await soundStampPipeline.deactivatePreRoll()
         }
-        try await captureAdapter.switchMode(to: mode, gestureTime: gestureTime)
+        try await captureAdapter.reconfigureSession(to: mode, gestureTime: gestureTime)
         if isStill && isSoundStampEnabled {
             do {
                 try await soundStampPipeline.activatePreRoll()
             } catch {
-                log.warning("switchMode — activatePreRoll failed, Sound Stamp disabled for this session: \(error)")
+                log.warning("reconfigureSession — activatePreRoll failed, Sound Stamp disabled for this session: \(error)")
             }
         }
         captureStateSubject.send(.ready(mode: mode))
