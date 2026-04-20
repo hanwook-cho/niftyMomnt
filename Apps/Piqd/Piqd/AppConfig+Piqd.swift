@@ -54,4 +54,26 @@ extension AppConfig {
         sharing: SharingConfig(maxCircleSize: 0, labEnabled: false),
         storage: StorageConfig(smartArchiveEnabled: false, iCloudSyncEnabled: false)
     )
+
+    /// v0.3 — Snap Format Selector. Adds Sequence / Clip / Dual to v0.2's Still-only Snap.
+    /// Enables `.sequenceCapture` + `.dualCamera` features and widens `assetTypes` to
+    /// [still, sequence, clip, dual]. Roll Mode remains Still-only (Roll Live Photo pinned
+    /// to v0.9). Sharing + drafts + iCloud still gated off.
+    /// See piqd_interim_v0.3_plan.md.
+    static let piqd_v0_3 = AppConfig(
+        appVariant: .piqd,
+        assetTypes: [.still, .sequence, .clip, .dual],
+        aiModes: .onDevice,
+        features: [.snapMode, .rollMode, .sequenceCapture, .dualCamera],
+        sharing: SharingConfig(maxCircleSize: 0, labEnabled: false),
+        storage: StorageConfig(
+            smartArchiveEnabled: false,
+            iCloudSyncEnabled: false,
+            clipQuality: ClipQualityConfig(
+                maxResolution: .uhd4K,
+                maxFrameRate: 60,
+                proOnlyHighFPS: true
+            )
+        )
+    )
 }

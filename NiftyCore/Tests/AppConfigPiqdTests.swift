@@ -34,6 +34,55 @@ final class AppConfigPiqdTests: XCTestCase {
         XCTAssertEqual(piqdFull().sharing.ephemeralPolicy, .snap)
     }
 
+    // MARK: - v0.3 mask — Snap Format Selector
+
+    func test_piqd_v0_3_snapFormatsFeatureFlags() {
+        let c = piqdV03()
+        XCTAssertTrue(c.features.contains(.snapMode))
+        XCTAssertTrue(c.features.contains(.rollMode))
+        XCTAssertTrue(c.features.contains(.sequenceCapture))
+        XCTAssertTrue(c.features.contains(.dualCamera))
+        XCTAssertFalse(c.features.contains(.p2pSharing))
+        XCTAssertFalse(c.features.contains(.iCloudRollPackage))
+        XCTAssertFalse(c.features.contains(.trustedSharing))
+    }
+
+    func test_piqd_v0_3_assetTypesAreFour() {
+        let c = piqdV03()
+        XCTAssertTrue(c.assetTypes.contains(.still))
+        XCTAssertTrue(c.assetTypes.contains(.sequence))
+        XCTAssertTrue(c.assetTypes.contains(.clip))
+        XCTAssertTrue(c.assetTypes.contains(.dual))
+        XCTAssertFalse(c.assetTypes.contains(.live))
+        XCTAssertFalse(c.assetTypes.contains(.movingStill))
+    }
+
+    func test_piqd_v0_3_isStrictSupersetOf_v0_2() {
+        // U12 — v0.3 = v0.2 + exactly { .sequenceCapture, .dualCamera } features and
+        // { .sequence, .clip, .dual } asset types. No other bits flipped.
+        let v2 = piqdV02()
+        let v3 = piqdV03()
+
+        let newFeatures = v3.features.subtracting(v2.features)
+        XCTAssertEqual(newFeatures, [.sequenceCapture, .dualCamera])
+        XCTAssertTrue(v3.features.isSuperset(of: v2.features))
+
+        let newAssets = v3.assetTypes.subtracting(v2.assetTypes)
+        XCTAssertEqual(newAssets, [.sequence, .clip, .dual])
+        XCTAssertTrue(v3.assetTypes.isSuperset(of: v2.assetTypes))
+
+        XCTAssertEqual(v3.sharing.maxCircleSize, v2.sharing.maxCircleSize)
+        XCTAssertFalse(v3.storage.iCloudSyncEnabled)
+        XCTAssertFalse(v3.storage.smartArchiveEnabled)
+    }
+
+    func test_piqd_v0_3_clipQualityIsWired() {
+        let c = piqdV03()
+        XCTAssertNotNil(c.storage.clipQuality)
+        XCTAssertEqual(c.storage.clipQuality?.maxFrameRate, 60)
+        XCTAssertTrue(c.storage.clipQuality?.proOnlyHighFPS ?? false)
+    }
+
     // MARK: - v0.1 mask
 
     func test_piqd_v0_1_onlySnapMode() {
@@ -113,6 +162,36 @@ final class AppConfigPiqdTests: XCTestCase {
             features: [.snapMode],
             sharing: SharingConfig(maxCircleSize: 0, labEnabled: false),
             storage: StorageConfig(smartArchiveEnabled: false, iCloudSyncEnabled: false)
+        )
+    }
+
+    private func piqdV02() -> AppConfig {
+        AppConfig(
+            appVariant: .piqd,
+            assetTypes: .still,
+            aiModes: .onDevice,
+            features: [.snapMode, .rollMode],
+            sharing: SharingConfig(maxCircleSize: 0, labEnabled: false),
+            storage: StorageConfig(smartArchiveEnabled: false, iCloudSyncEnabled: false)
+        )
+    }
+
+    private func piqdV03() -> AppConfig {
+        AppConfig(
+            appVariant: .piqd,
+            assetTypes: [.still, .sequence, .clip, .dual],
+            aiModes: .onDevice,
+            features: [.snapMode, .rollMode, .sequenceCapture, .dualCamera],
+            sharing: SharingConfig(maxCircleSize: 0, labEnabled: false),
+            storage: StorageConfig(
+                smartArchiveEnabled: false,
+                iCloudSyncEnabled: false,
+                clipQuality: ClipQualityConfig(
+                    maxResolution: .uhd4K,
+                    maxFrameRate: 60,
+                    proOnlyHighFPS: true
+                )
+            )
         )
     }
 }

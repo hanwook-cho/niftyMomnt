@@ -19,6 +19,21 @@ public final class ModeStore {
 
     public private(set) var mode: CaptureMode
 
+    /// Piqd v0.3 — last-used Snap capture format. Persisted. Roll Mode always reports `.still`
+    /// via `effectiveFormat(for:)` regardless of what's stored here (Roll is Still-only
+    /// through v0.8; Roll Live Photo arrives in v0.9). Defaults to `.still` on first launch.
+    public private(set) var snapFormat: CaptureFormat
+
+    /// Format that should actually drive the camera session for the given mode.
+    /// Roll always forces `.still`; Snap returns the user's last-selected Snap format.
+    public func effectiveFormat(for mode: CaptureMode) -> CaptureFormat {
+        switch mode {
+        case .roll: return .still
+        case .snap: return snapFormat
+        default:    return .still
+        }
+    }
+
     // Dev-menu tap sequence state — not persisted.
     private var tapCount: Int = 0
     private var lastTapAt: Date?
@@ -34,13 +49,15 @@ public final class ModeStore {
     private let now: NowProvider
 
     private static let modeKey = "piqd.captureMode"
+    private static let snapFormatKey = "piqd.lastSnapFormat"
 
     // MARK: - Init
 
     public init(
         defaults: UserDefaults = UserDefaults(suiteName: "piqd") ?? .standard,
         now: NowProvider = SystemNowProvider(),
-        defaultMode: CaptureMode = .snap
+        defaultMode: CaptureMode = .snap,
+        defaultSnapFormat: CaptureFormat = .still
     ) {
         self.defaults = defaults
         self.now = now
@@ -51,6 +68,12 @@ public final class ModeStore {
         } else {
             self.mode = defaultMode
         }
+        if let raw = defaults.string(forKey: Self.snapFormatKey),
+           let saved = CaptureFormat(rawValue: raw) {
+            self.snapFormat = saved
+        } else {
+            self.snapFormat = defaultSnapFormat
+        }
     }
 
     // MARK: - Mode switching
@@ -60,6 +83,13 @@ public final class ModeStore {
         guard newMode != mode else { return }
         mode = newMode
         defaults.set(newMode.rawValue, forKey: Self.modeKey)
+    }
+
+    /// Persist a newly-selected Snap format. No-op if unchanged. Has no effect on Roll.
+    public func setSnapFormat(_ newFormat: CaptureFormat) {
+        guard newFormat != snapFormat else { return }
+        snapFormat = newFormat
+        defaults.set(newFormat.rawValue, forKey: Self.snapFormatKey)
     }
 
     // MARK: - Dev-menu tap gesture
