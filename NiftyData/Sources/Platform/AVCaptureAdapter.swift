@@ -1221,3 +1221,68 @@ private final class EchoRecordingSession: @unchecked Sendable {
         try? FileManager.default.removeItem(at: fileURL)
     }
 }
+
+// MARK: - Piqd v0.3 — CaptureFormat configuration
+
+/// Piqd v0.3 entry point for the Snap-Mode format selector. Maps the format to the
+/// existing CaptureMode output-class plumbing + single-commit session reconfiguration.
+/// Exposed as an extension to keep the v0.3 delta surgical.
+///
+/// Mapping (per plan row 11 / U11):
+///   • `.still`    → photo output (`.still` CaptureMode)         — photoOutput retained.
+///   • `.sequence` → photo output (`.still` CaptureMode)         — photoOutput retained;
+///                    cadence is driven by `SequenceCaptureController` above, not by the
+///                    adapter.
+///   • `.clip`     → movie output (`.clip` CaptureMode)          — swaps photoOutput →
+///                    AVCaptureMovieFileOutput + audio input.
+///   • `.dual`     → requires `AVCaptureMultiCamSession` + two movie outputs; wiring of
+///                    the two movie outputs lives in a dedicated `DualMovieRecorder`
+///                    adapter (Wave 2b). Here we only validate hardware support + route
+///                    the session to the dual-cam path.
+public extension AVCaptureAdapter {
+
+    enum FormatConfigureError: Error {
+        /// `.dual` was requested but the active session is not an AVCaptureMultiCamSession
+        /// (device lacks MultiCam support, or AppConfig.features omitted `.dualCamera`).
+        case dualCamUnavailable
+    }
+
+    /// True iff `.dual` is a legal selection on this device + this adapter's session.
+    /// UI should read this to disable/hide the Dual segment; `CaptureActivityStore`
+    /// mirrors it for XCUITests (UI11).
+    var isDualFormatSupported: Bool {
+        AVCaptureMultiCamSession.isMultiCamSupported && isSessionMultiCam
+    }
+
+    /// Reconfigure the capture session for the given Snap-Mode format. Single-commit via
+    /// the existing `reconfigureSession(to:gestureTime:)` path.
+    func configure(for format: CaptureFormat, gestureTime: Double = CACurrentMediaTime()) async throws {
+        switch format {
+        case .still, .sequence:
+            // Both use the photo output path. Sequence's cadence is owned by
+            // SequenceCaptureController; the adapter only keeps photoOutput attached.
+            try await reconfigureSession(to: .still, gestureTime: gestureTime)
+
+        case .clip:
+            try await reconfigureSession(to: .clip, gestureTime: gestureTime)
+
+        case .dual:
+            guard isDualFormatSupported else {
+                throw FormatConfigureError.dualCamUnavailable
+            }
+            // Dual-cam session setup (photo-class primary) is already handled by
+            // `configureDualCameraSession(for:)` at session start. Video-format Dual
+            // attaches two AVCaptureMovieFileOutputs via a DualMovieRecorder adapter —
+            // that adapter reuses this `session` reference. No further reconfigure here.
+            // Roll-mode flip button is hidden by the view layer (FR-SNAP-FLIP-04).
+            // Intentional no-op beyond the hardware check.
+            break
+        }
+    }
+
+    /// Internal helper mirroring the private `isDualCamSession` flag through a computed
+    /// property so this extension (which lives outside the class scope) can read it.
+    private var isSessionMultiCam: Bool {
+        session is AVCaptureMultiCamSession
+    }
+}
