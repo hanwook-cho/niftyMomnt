@@ -38,6 +38,37 @@ public final class DevSettingsStore {
         didSet { persist(\.longHoldDurationSeconds, Self.keyLongHold, longHoldDurationSeconds) }
     }
 
+    // MARK: - Piqd v0.3 knobs (Snap Format Selector)
+
+    /// Clip-mode recording ceiling. Production choices: 5 / 10 / 15 seconds; default 10.
+    /// Any value outside {5, 10, 15} is clamped to the nearest allowed value at init time.
+    public var clipMaxDurationSeconds: Int {
+        didSet { persist(\.clipMaxDurationSeconds, Self.keyClipMaxDuration, clipMaxDurationSeconds) }
+    }
+
+    /// Sequence frame cadence in milliseconds. Production default 333; range 100…1000 so
+    /// design can feel-test spacing without a rebuild.
+    public var sequenceIntervalMs: Int {
+        didSet { persist(\.sequenceIntervalMs, Self.keySequenceIntervalMs, sequenceIntervalMs) }
+    }
+
+    /// Number of frames a Sequence capture fires. Production default 6; range 3…12.
+    public var sequenceFrameCount: Int {
+        didSet { persist(\.sequenceFrameCount, Self.keySequenceFrameCount, sequenceFrameCount) }
+    }
+
+    /// Exercises the assembler-failure discard path: when true, `StoryEngine.assembleSequence`
+    /// is wrapped in a throwing stub so `PiqdCaptureView` can verify no vault row lands (UI13).
+    public var forceSequenceAssemblyFailure: Bool {
+        didSet { persist(\.forceSequenceAssemblyFailure, Self.keyForceAsmFail, forceSequenceAssemblyFailure) }
+    }
+
+    /// Simulates non-MultiCam hardware so the Dual segment renders disabled without needing
+    /// an older device in the sim farm (UI11 inverse).
+    public var forceDualCamUnavailable: Bool {
+        didSet { persist(\.forceDualCamUnavailable, Self.keyForceDualUnavail, forceDualCamUnavailable) }
+    }
+
     // MARK: - Storage
 
     private let defaults: UserDefaults
@@ -46,6 +77,11 @@ public final class DevSettingsStore {
     private static let keyGrainEnabled = "grainOverlayEnabled"
     private static let keyHapticEnabled = "hapticEnabled"
     private static let keyLongHold = "longHoldDurationSeconds"
+    private static let keyClipMaxDuration = "clipMaxDurationSeconds"
+    private static let keySequenceIntervalMs = "sequenceIntervalMs"
+    private static let keySequenceFrameCount = "sequenceFrameCount"
+    private static let keyForceAsmFail = "forceSequenceAssemblyFailure"
+    private static let keyForceDualUnavail = "forceDualCamUnavailable"
 
     // MARK: - Init
 
@@ -74,11 +110,40 @@ public final class DevSettingsStore {
             longHold = v
         }
 
+        // Piqd v0.3 defaults + launch-arg overrides.
+        var clipMax = (defaults.object(forKey: Self.keyClipMaxDuration) as? Int) ?? 10
+        var seqIntervalMs = (defaults.object(forKey: Self.keySequenceIntervalMs) as? Int) ?? 333
+        var seqFrameCount = (defaults.object(forKey: Self.keySequenceFrameCount) as? Int) ?? 6
+        var forceAsmFail = (defaults.object(forKey: Self.keyForceAsmFail) as? Bool) ?? false
+        var forceDualUnavail = (defaults.object(forKey: Self.keyForceDualUnavail) as? Bool) ?? false
+
+        if let v = Self.readInt(environment: environment, launchArguments: launchArguments, key: "PIQD_DEV_CLIP_MAX_DURATION") {
+            clipMax = v
+        }
+        if let v = Self.readInt(environment: environment, launchArguments: launchArguments, key: "PIQD_DEV_SEQUENCE_INTERVAL_MS") {
+            seqIntervalMs = v
+        }
+        if let v = Self.readInt(environment: environment, launchArguments: launchArguments, key: "PIQD_DEV_SEQUENCE_FRAME_COUNT") {
+            seqFrameCount = v
+        }
+        if let v = Self.readBool(environment: environment, launchArguments: launchArguments, key: "PIQD_DEV_FORCE_SEQUENCE_ASSEMBLY_FAILURE") {
+            forceAsmFail = v
+        }
+        if let v = Self.readBool(environment: environment, launchArguments: launchArguments, key: "PIQD_DEV_FORCE_DUAL_CAM_UNAVAILABLE") {
+            forceDualUnavail = v
+        }
+
         // Clamp.
         self.rollDailyLimit = max(1, min(240, rollLimit))
         self.grainOverlayEnabled = grain
         self.hapticEnabled = haptic
         self.longHoldDurationSeconds = max(0.05, min(2.0, longHold))
+        // Clip ceiling — clamp to allowed choice set {5, 10, 15}.
+        self.clipMaxDurationSeconds = [5, 10, 15].min(by: { abs($0 - clipMax) < abs($1 - clipMax) }) ?? 10
+        self.sequenceIntervalMs = max(100, min(1000, seqIntervalMs))
+        self.sequenceFrameCount = max(3, min(12, seqFrameCount))
+        self.forceSequenceAssemblyFailure = forceAsmFail
+        self.forceDualCamUnavailable = forceDualUnavail
     }
 
     public func resetDefaults() {
@@ -86,6 +151,11 @@ public final class DevSettingsStore {
         grainOverlayEnabled = true
         hapticEnabled = true
         longHoldDurationSeconds = 0.6
+        clipMaxDurationSeconds = 10
+        sequenceIntervalMs = 333
+        sequenceFrameCount = 6
+        forceSequenceAssemblyFailure = false
+        forceDualCamUnavailable = false
     }
 
     // MARK: - Helpers

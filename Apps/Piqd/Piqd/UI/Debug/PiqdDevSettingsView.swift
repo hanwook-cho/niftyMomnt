@@ -39,6 +39,50 @@ struct PiqdDevSettingsView: View {
                         .accessibilityIdentifier("piqd-dev-longhold-slider")
                 }
 
+                Section("Snap — Clip") {
+                    // Clip ceiling is one of three discrete values (5 / 10 / 15s), per the
+                    // v0.3 plan. We use a Picker bound to an IntEnum-like set to enforce it.
+                    Picker("Ceiling", selection: $store.clipMaxDurationSeconds) {
+                        Text("5s").tag(5)
+                        Text("10s").tag(10)
+                        Text("15s").tag(15)
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("piqd-dev-clip-ceiling")
+                }
+
+                Section("Snap — Sequence") {
+                    HStack {
+                        Text("Interval")
+                        Spacer()
+                        Text("\(store.sequenceIntervalMs) ms")
+                            .foregroundStyle(.secondary)
+                    }
+                    Slider(value: Binding(
+                        get: { Double(store.sequenceIntervalMs) },
+                        set: { store.sequenceIntervalMs = Int($0) }
+                    ), in: 100...1000, step: 50)
+                        .accessibilityIdentifier("piqd-dev-sequence-interval")
+
+                    Stepper(value: $store.sequenceFrameCount, in: 3...12, step: 1) {
+                        HStack {
+                            Text("Frame count")
+                            Spacer()
+                            Text("\(store.sequenceFrameCount)")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .accessibilityIdentifier("piqd-dev-sequence-frame-count")
+
+                    Toggle("Force assembly failure", isOn: $store.forceSequenceAssemblyFailure)
+                        .accessibilityIdentifier("piqd-dev-force-asm-fail")
+                }
+
+                Section("Snap — Dual") {
+                    Toggle("Force dual-cam unavailable", isOn: $store.forceDualCamUnavailable)
+                        .accessibilityIdentifier("piqd-dev-force-dual-unavail")
+                }
+
                 Section {
                     Button("Reset to defaults", role: .destructive) {
                         store.resetDefaults()
