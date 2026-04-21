@@ -17,17 +17,65 @@ public final class StoryEngine: Sendable {
     private let vault: any VaultProtocol
     private let graph: any GraphProtocol
     private let lab: any LabClientProtocol
+    // Piqd v0.3 — optional so existing niftyMomnt callers don't need to inject one.
+    // Required only for Sequence assembly. `assembleSequence` throws `.assemblerUnavailable`
+    // if the app forgot to wire it.
+    private let sequenceAssembler: (any SequenceAssemblerProtocol)?
 
     public init(
         config: AppConfig,
         vault: any VaultProtocol,
         graph: any GraphProtocol,
-        lab: any LabClientProtocol
+        lab: any LabClientProtocol,
+        sequenceAssembler: (any SequenceAssemblerProtocol)? = nil
     ) {
         self.config = config
         self.vault = vault
         self.graph = graph
         self.lab = lab
+        self.sequenceAssembler = sequenceAssembler
+    }
+
+    // MARK: - assembleSequence (Piqd v0.3)
+
+    public enum SequenceAssemblyError: Error, Equatable {
+        case assemblerUnavailable
+        case wrongFrameCount(got: Int, expected: Int)
+        case missingFrame(URL)
+    }
+
+    /// Compose `frameURLs` (HEIC, in capture order) into a looping 9:16 H.264 MP4 and return
+    /// a `SequenceStrip` with `shareReady=true`. `outputURL` is where the MP4 should land —
+    /// typically the vault's temp or final location. Throws `.assemblerUnavailable` if no
+    /// `SequenceAssemblerProtocol` was injected. The controller already guarantees
+    /// `frameURLs.count == 6` under normal paths, but we still validate here for defensive
+    /// depth in case a future caller passes a partial list.
+    public func assembleSequence(
+        frameURLs: [URL],
+        outputURL: URL,
+        frameDurationSeconds: Double = 0.333
+    ) async throws -> SequenceStrip {
+        guard let assembler = sequenceAssembler else {
+            throw SequenceAssemblyError.assemblerUnavailable
+        }
+        guard frameURLs.count == 6 else {
+            throw SequenceAssemblyError.wrongFrameCount(got: frameURLs.count, expected: 6)
+        }
+        for url in frameURLs where !FileManager.default.fileExists(atPath: url.path) {
+            throw SequenceAssemblyError.missingFrame(url)
+        }
+
+        let (assembledURL, duration) = try await assembler.assemble(
+            frameURLs: frameURLs,
+            outputURL: outputURL,
+            frameDurationSeconds: frameDurationSeconds
+        )
+        return SequenceStrip(
+            frameURLs: frameURLs,
+            assembledVideoURL: assembledURL,
+            durationSeconds: duration,
+            shareReady: true
+        )
     }
 
     // MARK: - assembleReel
