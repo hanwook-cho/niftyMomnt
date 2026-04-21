@@ -19,6 +19,8 @@ public final class PiqdAppContainer {
     public let devSettings: DevSettingsStore
     public let rollCounter: RollCounterRepository
     public let imageEncoder: ImageEncoder
+    // Piqd v0.3 — single source of truth for "capture in flight" (Sequence/Clip/Dual).
+    public let captureActivity: CaptureActivityStore
 
     public init(
         config: AppConfig,
@@ -29,7 +31,8 @@ public final class PiqdAppContainer {
         modeStore: ModeStore,
         devSettings: DevSettingsStore,
         rollCounter: RollCounterRepository,
-        imageEncoder: ImageEncoder
+        imageEncoder: ImageEncoder,
+        captureActivity: CaptureActivityStore = CaptureActivityStore()
     ) {
         self.config = config
         self.captureUseCase = captureUseCase
@@ -40,5 +43,6 @@ public final class PiqdAppContainer {
         self.devSettings = devSettings
         self.rollCounter = rollCounter
         self.imageEncoder = imageEncoder
+        self.captureActivity = captureActivity
     }
 }

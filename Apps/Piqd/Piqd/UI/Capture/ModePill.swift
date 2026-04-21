@@ -16,6 +16,10 @@ struct ModePill: View {
     let mode: CaptureMode
     let holdDuration: Double
     let hapticEnabled: Bool
+    /// Piqd v0.3 — while a Sequence/Clip/Dual capture is running, the pill dims to 40%,
+    /// rejects hit-testing, and cancels any in-flight long-hold timer (FR-MODE-09). Driven
+    /// by `CaptureActivityStore.isCapturing` from the parent.
+    let isLocked: Bool
     let onTap: () -> Void
     let onLongHoldTriggered: () -> Void
 
@@ -61,6 +65,13 @@ struct ModePill: View {
                     .animation(.linear(duration: 0.05), value: holdProgress)
             }
         }
+        .opacity(isLocked ? 0.4 : 1.0)
+        .allowsHitTesting(!isLocked)
+        .animation(.easeInOut(duration: 0.12), value: isLocked)
+        .onChange(of: isLocked) { _, locked in
+            // Cancel any in-flight long-hold timer the moment a capture starts.
+            if locked { cancelInFlightHold() }
+        }
         .contentShape(Capsule())
         // Use DragGesture(minimumDistance:0) over .onLongPressGesture so XCUITest's
         // press(forDuration:) synthesis reliably fires onChanged (touch-down) and
@@ -82,6 +93,17 @@ struct ModePill: View {
         .accessibilityIdentifier("piqd-mode-pill")
         .accessibilityLabel("Mode: \(label). Long-press to change.")
         .accessibilityAddTraits(.isButton)
+        .accessibilityValue(isLocked ? "locked" : "")
+    }
+
+    /// Cancels the outstanding long-hold deadline task and winds back the ring without
+    /// firing `onLongHoldTriggered`. Used when the parent tells us we're locked mid-hold.
+    private func cancelInFlightHold() {
+        holdTask?.cancel()
+        holdTask = nil
+        pressStart = nil
+        didFireLongHold = false
+        withAnimation(.easeOut(duration: 0.15)) { holdProgress = 0 }
     }
 
     private func beginPress() {

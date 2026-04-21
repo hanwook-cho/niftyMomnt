@@ -93,3 +93,4 @@ playground.xcworkspace
 
 # ── Simulator data ────────────────────────────────────────────────────────────
 iOSSimulatorDevice/
+*.xcappdata/

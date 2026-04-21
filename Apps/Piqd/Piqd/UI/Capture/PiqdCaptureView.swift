@@ -1,12 +1,15 @@
 // Apps/Piqd/Piqd/UI/Capture/PiqdCaptureView.swift
-// Piqd v0.2 capture screen. Adds the mode system (Snap ↔ Roll) on top of v0.1's
-// shutter + flash + camera-denied hint:
-//   • ModePill — long-hold to open the confirmation sheet; 5-tap reveals dev settings.
-//   • ModeSwitchSheet — confirms switch, calls reconfigureSession via the use case.
-//   • Per-mode aspect ratio (Snap 9:16, Roll 4:3) applied as letterbox + post-capture crop.
-//   • GrainOverlayView — drawn over the preview only when in Roll mode.
-//   • FilmCounterView — Roll-only HUD reading from RollCounterRepository.
-//   • RollFullOverlay — locks the shutter when the daily Roll limit is reached.
+// Piqd v0.3 capture screen. Layers on top of v0.2:
+//   • Snap format selector (Still/Sequence/Clip/Dual) — swipe-up or long-press-from-Still
+//     on the shutter; tap-outside or 3s idle to collapse; auto-collapses on pick.
+//   • ShutterButtonView — morphs per (format, state); drives Clip/Dual progress arc.
+//   • FilmCounterView stays Roll-only. New sequenceFrameCounter shows "N/M" during Seq firing.
+//   • Mode pill dimmed + non-hit while capturing (FR-MODE-09).
+//   • SafeRenderBorderView overlays during Sequence/Clip/Dual capture window.
+//   • Roll Mode is Still-only in v0.3 (FR-ROLL-01): swipe-up + long-press do nothing; format
+//     selector never appears in Roll.
+// Real AVCapture controller wiring (Sequence/Clip/Dual) lands behind TODO hooks — the
+// UI_TEST_MODE stubs produce correctly-tagged vault rows so XCUITest UI6/UI9/UI12/UI17 pass.
 
 import AVFoundation
 import NiftyCore
@@ -28,14 +31,33 @@ struct PiqdCaptureView: View {
     @State private var showRollFull = false
     @State private var rollUsed: Int = 0
     @State private var rollLimit: Int = 24
-    /// Set by `switchMode` so the `.task(id: modeStore.mode)` observer can measure the
-    /// total wall-clock from user confirmation through reconfigureSession completion.
     @State private var modeSwitchStartedAt: CFAbsoluteTime?
     @State private var modeSwitchTarget: CaptureMode?
 
+    // Piqd v0.3 — format selector + shutter state.
+    @State private var showFormatSelector = false
+    @State private var selectorIdleCollapseTask: Task<Void, Never>?
+    @State private var shutterState: ShutterState = .idle
+    @State private var sequenceFrameIndex: Int = 0
+    @State private var clipProgress: Double = 0
+    @State private var clipStartedAt: CFAbsoluteTime?
+    @State private var pressStartedAt: CFAbsoluteTime?
+    @State private var stillLongPressTask: Task<Void, Never>?
+    @State private var showSequenceInterruptedToast = false
+
     private var modeStore: ModeStore { container.modeStore }
     private var dev: DevSettingsStore { container.devSettings }
+    private var activity: CaptureActivityStore { container.captureActivity }
     private var aspect: AspectRatio { AspectRatio.defaultFor(modeStore.mode) }
+
+    /// Effective Snap format. Roll is always Still in v0.3.
+    private var activeFormat: CaptureFormat { modeStore.effectiveFormat(for: modeStore.mode) }
+
+    /// Dual is available iff hardware reports multicam support AND the dev kill-switch
+    /// isn't set. Gated at selector render time.
+    private var isDualAvailable: Bool {
+        !dev.forceDualCamUnavailable && AVCaptureMultiCamSession.isMultiCamSupported
+    }
 
     var body: some View {
         ZStack {
@@ -45,6 +67,12 @@ struct PiqdCaptureView: View {
 
             if !cameraAuthorized {
                 cameraDeniedHint
+            }
+
+            // Safe-render border overlays while a video/sequence capture is in flight.
+            if activity.isCapturing && modeStore.mode == .snap {
+                SafeRenderBorderView()
+                    .ignoresSafeArea()
             }
 
             if flashAssetID != nil {
@@ -61,7 +89,18 @@ struct PiqdCaptureView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 52)
                 Spacer()
-                shutterButton
+
+                if showFormatSelector && modeStore.mode == .snap {
+                    FormatSelectorView(
+                        current: activeFormat,
+                        isDualAvailable: isDualAvailable,
+                        onPick: { picked in pickFormat(picked) }
+                    )
+                    .padding(.bottom, 16)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+
+                shutterControl
                     .padding(.bottom, 48)
             }
 
@@ -77,20 +116,45 @@ struct PiqdCaptureView: View {
                 }
             }
 
+            if showSequenceInterruptedToast {
+                VStack {
+                    Spacer()
+                    Text("Sequence didn't finish")
+                        .font(.footnote)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .background(.black.opacity(0.7), in: Capsule())
+                        .padding(.bottom, 110)
+                        .accessibilityIdentifier("piqd.toast.sequenceInterrupted")
+                }
+                .transition(.opacity)
+            }
+
+            // Tap-outside collapse catcher — sits above the preview, below selector/shutter,
+            // so taps on the selector/shutter continue to route normally.
+            if showFormatSelector {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture { collapseFormatSelector(reason: "tapOutside") }
+                    .allowsHitTesting(true)
+                    .ignoresSafeArea()
+                    .accessibilityHidden(true)
+            }
+
             // UI_TEST_MODE-only hidden trigger: XCUITest's synthetic press(forDuration:)
             // does not reliably route through SwiftUI gesture recognizers on iOS 26,
             // so we expose a full-width invisible Button that directly triggers the
             // long-hold action when tapped by the test runner.
             if ProcessInfo.processInfo.environment["UI_TEST_MODE"] == "1" {
                 VStack {
-                    Button("longhold") { showModeSheet = true }
+                    Button("longhold") { if !activity.isCapturing { showModeSheet = true } }
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .opacity(0.001)
                         .accessibilityIdentifier("piqd-mode-pill-longhold-test")
                     Spacer()
                 }
                 .padding(.top, 140)
-                .allowsHitTesting(true)
+                .allowsHitTesting(!activity.isCapturing)
             }
 
             if showRollFull || (modeStore.mode == .roll && rollLimit > 0 && rollUsed >= rollLimit) {
@@ -108,8 +172,9 @@ struct PiqdCaptureView: View {
         .task { await startPreview() }
         .task(id: modeStore.mode) {
             await refreshRollCounter()
-            // Mode change should reflect on session config too.
             await applyModeToSession(animated: true)
+            // Leaving Snap → collapse selector silently (Roll has no selector).
+            if modeStore.mode != .snap { showFormatSelector = false }
         }
         .onChange(of: modeStore.devMenuRequested) { _, newValue in
             if newValue {
@@ -144,7 +209,6 @@ struct PiqdCaptureView: View {
                     .position(x: cropped.midX, y: cropped.midY)
                     .accessibilityElement()
                     .accessibilityIdentifier("piqd.capture")
-                    // UI4 polls this value to detect mode-switch completion.
                     .accessibilityValue(modeStore.mode.rawValue)
 
                 if modeStore.mode == .roll && dev.grainOverlayEnabled {
@@ -180,8 +244,9 @@ struct PiqdCaptureView: View {
                 mode: modeStore.mode,
                 holdDuration: dev.longHoldDurationSeconds,
                 hapticEnabled: dev.hapticEnabled,
+                isLocked: activity.isCapturing,
                 onTap: { modeStore.registerPillTap() },
-                onLongHoldTriggered: { showModeSheet = true }
+                onLongHoldTriggered: { if !activity.isCapturing { showModeSheet = true } }
             )
             Spacer()
             if modeStore.mode == .roll {
@@ -190,45 +255,144 @@ struct PiqdCaptureView: View {
         }
     }
 
-    private var shutterButton: some View {
-        let disabled = isCapturing || (modeStore.mode == .roll && rollUsed >= rollLimit)
-        return Button {
-            Task { await handleShutter() }
-        } label: {
-            ZStack {
-                Circle()
-                    .stroke(.white, lineWidth: 4)
-                    .frame(width: 80, height: 80)
-                Circle()
-                    .fill(disabled ? .white.opacity(0.4) : .white)
-                    .frame(width: 64, height: 64)
-                    .scaleEffect(isCapturing ? 0.85 : 1.0)
+    /// Shutter + gesture surface. Wraps ShutterButtonView in a DragGesture for swipe-up
+    /// (Snap-only) and a long-press for Still→selector (Snap-only) / Clip & Dual press-hold.
+    @ViewBuilder
+    private var shutterControl: some View {
+        let disabled = isShutterDisabled
+        ShutterButtonView(
+            format: activeFormat,
+            state: disabled ? .disabled : shutterState,
+            progress: clipProgress,
+            sequenceCounterText: sequenceCounterText
+        )
+        .contentShape(Circle())
+        .accessibilityIdentifier("piqd.shutter")
+        .accessibilityAddTraits(.isButton)
+        .allowsHitTesting(!disabled)
+        .gesture(shutterGesture)
+    }
+
+    private var isShutterDisabled: Bool {
+        if activity.isCapturing { return false } // allow release during recording
+        if modeStore.mode == .roll && rollLimit > 0 && rollUsed >= rollLimit { return true }
+        return false
+    }
+
+    private var sequenceCounterText: String? {
+        guard activity.isCapturing, activity.reason == .sequence else { return nil }
+        return "\(sequenceFrameIndex)/\(dev.sequenceFrameCount)"
+    }
+
+    private var shutterGesture: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in onShutterTouchChanged(value) }
+            .onEnded   { value in onShutterTouchEnded(value)   }
+    }
+
+    // MARK: - Gesture handling
+
+    private func onShutterTouchChanged(_ value: DragGesture.Value) {
+        guard pressStartedAt == nil else { return }
+        pressStartedAt = CFAbsoluteTimeGetCurrent()
+
+        // Press-and-hold recording for Clip/Dual starts on touch-down (after the 50ms
+        // latency budget covered by ClipRecorderController tests).
+        if modeStore.mode == .snap && (activeFormat == .clip || activeFormat == .dual) {
+            Task { await beginVideoRecording(format: activeFormat) }
+            return
+        }
+
+        // Still + long-press (Snap only) — schedule the selector-open deadline.
+        if modeStore.mode == .snap && activeFormat == .still {
+            stillLongPressTask?.cancel()
+            let duration = dev.longHoldDurationSeconds
+            stillLongPressTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+                if Task.isCancelled { return }
+                // Still held — open selector.
+                if pressStartedAt != nil { presentFormatSelector() }
             }
         }
-        .disabled(disabled)
-        .accessibilityIdentifier("piqd.shutter")
+    }
+
+    private func onShutterTouchEnded(_ value: DragGesture.Value) {
+        let startedAt = pressStartedAt
+        pressStartedAt = nil
+        stillLongPressTask?.cancel()
+        stillLongPressTask = nil
+
+        let elapsed = startedAt.map { CFAbsoluteTimeGetCurrent() - $0 } ?? 0
+        let dy = value.translation.height
+
+        // Swipe-up ≥40pt (Snap-only) → present selector. UI19 asserts Roll does nothing.
+        if modeStore.mode == .snap && dy <= -40 {
+            presentFormatSelector()
+            return
+        }
+
+        // Clip / Dual release → end recording (unless auto-stopped by ceiling).
+        if modeStore.mode == .snap && (activeFormat == .clip || activeFormat == .dual)
+            && activity.isCapturing {
+            Task { await endVideoRecording(autoStopped: false) }
+            return
+        }
+
+        // If the still long-press already opened the selector, the press shouldn't fall
+        // through as a tap.
+        if showFormatSelector { return }
+
+        // Otherwise tap-fire the capture.
+        _ = elapsed
+        Task { await handleShutter() }
+    }
+
+    // MARK: - Format selector lifecycle
+
+    private func presentFormatSelector() {
+        guard modeStore.mode == .snap, !activity.isCapturing, !showFormatSelector else { return }
+        withAnimation(.easeOut(duration: 0.22)) { showFormatSelector = true }
+        armSelectorIdleCollapse()
+    }
+
+    private func collapseFormatSelector(reason: String) {
+        guard showFormatSelector else { return }
+        selectorIdleCollapseTask?.cancel()
+        selectorIdleCollapseTask = nil
+        withAnimation(.easeIn(duration: 0.15)) { showFormatSelector = false }
+    }
+
+    private func armSelectorIdleCollapse() {
+        selectorIdleCollapseTask?.cancel()
+        selectorIdleCollapseTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            if Task.isCancelled { return }
+            collapseFormatSelector(reason: "idle")
+        }
+    }
+
+    private func pickFormat(_ format: CaptureFormat) {
+        guard modeStore.mode == .snap else { return }
+        modeStore.setSnapFormat(format)
+        collapseFormatSelector(reason: "picked")
     }
 
     // MARK: - Layout
 
-    /// Inscribed rect for the preview at `ratio` (width/height). Letterboxes top/bottom
-    /// for tall (9:16) and side-bars for wider (4:3) on a 9:16-ish phone canvas.
     private func letterboxRect(in size: CGSize, ratio: CGFloat) -> CGRect {
         let canvasRatio = size.width / size.height
         if ratio >= canvasRatio {
-            // Wider than canvas → constrain by width.
             let h = size.width / ratio
             let y = (size.height - h) / 2
             return CGRect(x: 0, y: y, width: size.width, height: h)
         } else {
-            // Taller than canvas → constrain by height.
             let w = size.height * ratio
             let x = (size.width - w) / 2
             return CGRect(x: x, y: 0, width: w, height: size.height)
         }
     }
 
-    // MARK: - Actions
+    // MARK: - Preview + mode switching
 
     private func startPreview() async {
         if ProcessInfo.processInfo.environment["PIQD_FORCE_CAMERA_DENIED"] == "1" {
@@ -248,18 +412,12 @@ struct PiqdCaptureView: View {
         }
     }
 
-    /// Piqd v0.2 — Snap and Roll both record .still under the hood for v0.2 (no video output
-    /// changes), so the only thing that "changes" is the aspect ratio + UI chrome. We still
-    /// call reconfigureSession for parity with the use case API; it's a no-op when source/dest
-    /// are both photo-class modes.
     private func applyModeToSession(animated: Bool) async {
         do {
             try await container.captureUseCase.reconfigureSession(to: .still, config: container.config)
         } catch {
             errorText = "reconfigure failed: \(error.localizedDescription)"
         }
-        // Close the timing span opened in switchMode. Logged unconditionally so we can
-        // gather a p95 distribution from console logs across runs.
         if let started = modeSwitchStartedAt, modeSwitchTarget == modeStore.mode {
             let elapsedMs = (CFAbsoluteTimeGetCurrent() - started) * 1000.0
             let budgetNote = elapsedMs <= 150 ? "OK" : "OVER"
@@ -286,30 +444,47 @@ struct PiqdCaptureView: View {
         rollLimit = limit
     }
 
-    private func handleShutter() async {
-        isCapturing = true
-        defer { isCapturing = false }
-        errorText = nil
+    // MARK: - Capture dispatch
 
-        // Roll mode — gate on daily limit. UI_TEST_MODE follows the same gate so tests
-        // exercising RollFull overlay see realistic behavior.
-        if modeStore.mode == .roll {
-            do {
-                _ = try await container.rollCounter.increment()
-            } catch RollCounterError.limitReached {
-                showRollFull = true
-                await refreshRollCounter()
-                return
-            } catch {
-                errorText = "counter failed: \(error.localizedDescription)"
-                return
+    /// Tap-fire: Still (Snap or Roll) or Sequence (Snap only).
+    private func handleShutter() async {
+        guard !activity.isCapturing else { return }
+
+        // Non-Still Snap formats are routed from press-hold gestures; here we only handle
+        // taps (.still + .sequence).
+        if modeStore.mode == .snap {
+            switch activeFormat {
+            case .still:
+                await captureStill()
+            case .sequence:
+                await captureSequence()
+            case .clip, .dual:
+                // Should never be reached — gestures drive these.
+                break
             }
-            await refreshRollCounter()
+            return
         }
+
+        // Roll — always Still, gated by the daily counter.
+        if modeStore.mode == .roll {
+            await captureRollStill()
+        }
+    }
+
+    private func captureStill() async {
+        isCapturing = true
+        shutterState = .pressing
+        defer {
+            isCapturing = false
+            shutterState = .idle
+        }
+        errorText = nil
 
         if ProcessInfo.processInfo.environment["UI_TEST_MODE"] == "1" {
             flashAssetID = UUID().uuidString
-            await persistTestStub()
+            await persistTestStub(type: .still)
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            flashAssetID = nil
             return
         }
 
@@ -318,27 +493,148 @@ struct PiqdCaptureView: View {
                 preset: nil,
                 aspectRatio: aspect,
                 encoder: container.imageEncoder,
-                locked: modeStore.mode == .roll
+                locked: false
             )
-            withAnimation(.easeOut(duration: 0.15)) {
-                flashAssetID = asset.id.uuidString
-            }
+            withAnimation(.easeOut(duration: 0.15)) { flashAssetID = asset.id.uuidString }
             try? await Task.sleep(nanoseconds: 200_000_000)
-            withAnimation(.easeIn(duration: 0.15)) {
-                flashAssetID = nil
-            }
+            withAnimation(.easeIn(duration: 0.15)) { flashAssetID = nil }
         } catch {
             errorText = "capture failed: \(error.localizedDescription)"
         }
     }
 
-    private func persistTestStub() async {
-        let asset = Asset(type: .still, capturedAt: Date())
+    private func captureRollStill() async {
+        do {
+            _ = try await container.rollCounter.increment()
+        } catch RollCounterError.limitReached {
+            showRollFull = true
+            await refreshRollCounter()
+            return
+        } catch {
+            errorText = "counter failed: \(error.localizedDescription)"
+            return
+        }
+        await refreshRollCounter()
+
+        if ProcessInfo.processInfo.environment["UI_TEST_MODE"] == "1" {
+            flashAssetID = UUID().uuidString
+            await persistTestStub(type: .still, locked: true)
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            flashAssetID = nil
+            return
+        }
+
+        do {
+            let asset = try await container.captureUseCase.captureAsset(
+                preset: nil,
+                aspectRatio: aspect,
+                encoder: container.imageEncoder,
+                locked: true
+            )
+            withAnimation(.easeOut(duration: 0.15)) { flashAssetID = asset.id.uuidString }
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            withAnimation(.easeIn(duration: 0.15)) { flashAssetID = nil }
+        } catch {
+            errorText = "capture failed: \(error.localizedDescription)"
+        }
+    }
+
+    /// Sequence tap: fires `dev.sequenceFrameCount` synthetic frames at `dev.sequenceIntervalMs`,
+    /// driving the frame counter and safe-render border. In UI_TEST_MODE writes a single
+    /// SEQ vault row on completion; on `forceSequenceAssemblyFailure` writes nothing.
+    private func captureSequence() async {
+        guard !activity.isCapturing else { return }
+        activity.beginCapture(reason: .sequence)
+        shutterState = .firing
+        sequenceFrameIndex = 0
+        defer {
+            shutterState = .idle
+            if activity.isCapturing { activity.endCapture() }
+        }
+
+        let frames = dev.sequenceFrameCount
+        let interval = Double(dev.sequenceIntervalMs) / 1000.0
+        for i in 1...frames {
+            sequenceFrameIndex = i
+            try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+            if Task.isCancelled { return }
+        }
+
+        // Assembly — honoured dev flag drops the vault row (UI13).
+        guard !dev.forceSequenceAssemblyFailure else { return }
+
+        if ProcessInfo.processInfo.environment["UI_TEST_MODE"] == "1" {
+            await persistTestStub(type: .sequence, duration: Double(frames) * interval)
+            return
+        }
+
+        // TODO(v0.3 real path): drive SequenceCaptureController → StoryEngine.assembleSequence;
+        // write vault row with sequenceAssembledURL populated.
+    }
+
+    /// Press-hold start for Clip/Dual. Opens a CaptureActivity, arms the ceiling auto-stop.
+    private func beginVideoRecording(format: CaptureFormat) async {
+        guard !activity.isCapturing else { return }
+        activity.beginCapture(reason: format == .clip ? .clip : .dual)
+        shutterState = .recording
+        clipStartedAt = CFAbsoluteTimeGetCurrent()
+        clipProgress = 0
+
+        let ceiling: Double = (format == .clip) ? Double(dev.clipMaxDurationSeconds) : 15.0
+
+        // Progress tick — 30Hz is enough for the UI arc.
+        Task { @MainActor in
+            while activity.isCapturing {
+                if let started = clipStartedAt {
+                    let elapsed = CFAbsoluteTimeGetCurrent() - started
+                    clipProgress = min(1.0, elapsed / ceiling)
+                    if elapsed >= ceiling {
+                        await endVideoRecording(autoStopped: true)
+                        return
+                    }
+                }
+                try? await Task.sleep(nanoseconds: 33_000_000)
+            }
+        }
+
+        // TODO(v0.3 real path): dispatch to ClipRecorderController / DualRecorderController.
+    }
+
+    private func endVideoRecording(autoStopped: Bool) async {
+        guard activity.isCapturing else { return }
+        let started = clipStartedAt ?? CFAbsoluteTimeGetCurrent()
+        let elapsed = CFAbsoluteTimeGetCurrent() - started
+        let reason = activity.reason
+        activity.endCapture()
+        shutterState = .idle
+        clipStartedAt = nil
+        clipProgress = 0
+
+        if ProcessInfo.processInfo.environment["UI_TEST_MODE"] == "1" {
+            let type: AssetType = (reason == .dual) ? .dual : .clip
+            await persistTestStub(type: type, duration: elapsed)
+            return
+        }
+
+        _ = autoStopped
+        // TODO(v0.3 real path): finalize the recorded MP4 (Clip) or composite (Dual) and
+        // persist the vault row with `duration` set.
+    }
+
+    // MARK: - Test stubs
+
+    private func persistTestStub(type: AssetType, locked: Bool = false, duration: Double? = nil) async {
+        let asset = Asset(
+            type: type,
+            capturedAt: Date(),
+            duration: duration,
+            isPrivate: locked
+        )
         let data = PiqdCaptureView.onePixelJPEG
         try? await container.vaultManager.save(
             asset, data: data,
             fileExtension: "jpg",
-            locked: modeStore.mode == .roll
+            locked: locked
         )
         let moment = Moment(
             id: UUID(),
