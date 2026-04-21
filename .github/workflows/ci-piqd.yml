@@ -1,15 +1,17 @@
 # .github/workflows/ci-piqd.yml
-# v0.1 plan §4.14 — build the Piqd scheme and run the §5 automated suite on the
+# v0.3 plan §4 row 20 — build the Piqd scheme and run the §5 automated suite on the
 # iPhone 17 simulator (iOS 26.4) which matches local dev. The plan originally
 # spec'd "iPhone 15 Pro" but that runtime is no longer available on the
-# `macos-15`/`macos-26` runners — iPhone 17 is the v0.1 sign-off target.
+# `macos-15`/`macos-26` runners — iPhone 17 is the v0.3 sign-off target.
 #
 # Jobs:
-#   1. unit        — NiftyCore + NiftyData SPM test bundles (U1–U7, PiqdNamespaceTests)
-#   2. ui          — PiqdUITests UI1–UI6 + P2 cold-launch perf
-#   3. perf-data   — PiqdPerformanceTests P1 + P3 (measure blocks — reported, non-gating)
+#   1. unit-niftycore  — NiftyCore SPM test bundle (U1–U14 including Piqd v0.3 format
+#                         gate, Sequence/Clip/Dual controllers, CaptureActivityStore)
+#   2. unit-niftydata  — NiftyData SPM test bundle (GRDB migrations, adapter config)
+#   3. ui              — PiqdUITests (v0.1 UI1–UI6) + PiqdFormatSelectorUITests (v0.3
+#                         UI1–UI19 format-selector / shutter-morph / capture-lock)
 
-name: Piqd v0.1 CI
+name: Piqd v0.3 CI
 
 on:
   push:
