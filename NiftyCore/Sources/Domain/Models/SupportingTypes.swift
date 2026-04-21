@@ -307,11 +307,19 @@ public enum CaptureState: Sendable {
     case error(CaptureError)
 }
 
-public enum CaptureError: Error, Sendable {
+public enum CaptureError: Error, Sendable, Equatable {
     case sessionFailed
     case captureFailed
     case modeSwitchFailed
     case unauthorized
+    /// Piqd v0.3 — the requested CaptureFormat is not valid in the current CaptureMode.
+    /// Raised when Roll mode receives anything other than `.still` (FR-ROLL-01: Roll is
+    /// Still-only through v0.8).
+    case unsupportedFormatForMode(format: String, mode: String)
+    /// Piqd v0.3 — the UseCase was asked to `execute(format:)` for a non-still format but no
+    /// dedicated controller is wired yet. The PiqdCaptureView owns Sequence/Clip/Dual
+    /// controllers directly; this is a hint that the caller should use those paths instead.
+    case formatRequiresDedicatedController(format: String)
 }
 
 public struct CaptureTelemetry: Sendable {

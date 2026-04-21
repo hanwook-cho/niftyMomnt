@@ -61,6 +61,41 @@ public final class CaptureMomentUseCase {
         return asset
     }
 
+    // MARK: - Piqd v0.3 — format/mode gate (PRD FR-ROLL-01 / FR-MODE-09)
+
+    /// Piqd v0.3 entry point for the Snap Mode format selector. Validates that `format` is
+    /// legal under `mode` (Roll is Still-only in v0.3) and dispatches:
+    ///   - `.still` → existing `execute(mode:config:)` path.
+    ///   - `.sequence / .clip / .dual` → throws `.formatRequiresDedicatedController`, which
+    ///     signals the caller to drive the relevant controller (SequenceCaptureController /
+    ///     ClipRecorderController / DualRecorderController) directly. Those controllers own
+    ///     the press/release gesture state that this stateless UseCase cannot observe.
+    ///
+    /// Full dispatch-through-controllers wiring lands in Wave 3 when `PiqdCaptureView` injects
+    /// the three controllers into the UseCase. Until then, the PiqdCaptureView is expected to
+    /// call the controllers itself.
+    public func execute(format: CaptureFormat, mode: CaptureMode, config: AppConfig) async throws -> Asset {
+        try Self.validate(format: format, mode: mode)
+        switch format {
+        case .still:
+            return try await execute(mode: mode, config: config)
+        case .sequence, .clip, .dual:
+            throw CaptureError.formatRequiresDedicatedController(format: format.rawValue)
+        }
+    }
+
+    /// Pure validation — safe to call without any engine side effects. Lets the UI gate the
+    /// shutter + format selector without hitting AVCaptureAdapter. Nonisolated so tests and
+    /// non-MainActor callers can invoke it synchronously.
+    public nonisolated static func validate(format: CaptureFormat, mode: CaptureMode) throws {
+        if mode == .roll && format != .still {
+            throw CaptureError.unsupportedFormatForMode(
+                format: format.rawValue,
+                mode: mode.rawValue
+            )
+        }
+    }
+
     /// Captures a still photo, classifies it, persists to vault + graph, posts notification.
     /// Full v0.2 pipeline: camera → classify + palette + ambient (concurrent) → geocode → vault → graph → notify.
     /// - Parameters:
