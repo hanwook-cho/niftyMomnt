@@ -60,6 +60,10 @@ public struct Asset: Identifiable, Equatable, Sendable {
     public var derivative: DerivativeAsset? // Set by Fix — nil if no fix applied
     public var selectedPresetName: String? // v0.4: user-chosen preset name at capture time
     public var isPrivate: Bool             // v0.8: true when asset is in the private vault
+    /// Piqd v0.3 — for `.sequence` assets, the URL of the assembled looping 9:16 MP4.
+    /// Nil for every other asset type. Populated by `StoryEngine.assembleSequence` before
+    /// the vault row is written.
+    public var sequenceAssembledURL: URL?
 
     public init(
         id: UUID = UUID(),
@@ -75,7 +79,8 @@ public struct Asset: Identifiable, Equatable, Sendable {
         duration: TimeInterval? = nil,
         derivative: DerivativeAsset? = nil,
         selectedPresetName: String? = nil,
-        isPrivate: Bool = false
+        isPrivate: Bool = false,
+        sequenceAssembledURL: URL? = nil
     ) {
         self.id = id
         self.type = type
@@ -91,5 +96,6 @@ public struct Asset: Identifiable, Equatable, Sendable {
         self.derivative = derivative
         self.selectedPresetName = selectedPresetName
         self.isPrivate = isPrivate
+        self.sequenceAssembledURL = sequenceAssembledURL
     }
 }

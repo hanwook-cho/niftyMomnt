@@ -34,15 +34,18 @@ public actor GraphRepository: GraphProtocol {
                 try db.execute(sql: """
                     INSERT INTO assets (id, type, captured_at, location_lat, location_lon,
                                         vibe_tags, ambient_weather, ambient_temp_c,
-                                        ambient_sun_pos, palette_json, preset_name)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                        ambient_sun_pos, palette_json, preset_name,
+                                        duration_seconds, sequence_assembled_url)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(id) DO UPDATE SET
                         vibe_tags       = excluded.vibe_tags,
                         ambient_weather = excluded.ambient_weather,
                         ambient_temp_c  = excluded.ambient_temp_c,
                         ambient_sun_pos = excluded.ambient_sun_pos,
                         palette_json    = excluded.palette_json,
-                        preset_name     = excluded.preset_name
+                        preset_name     = excluded.preset_name,
+                        duration_seconds       = excluded.duration_seconds,
+                        sequence_assembled_url = excluded.sequence_assembled_url
                     """,
                     arguments: [
                         asset.id.uuidString,
@@ -55,7 +58,9 @@ public actor GraphRepository: GraphProtocol {
                         asset.ambient.temperatureC,
                         asset.ambient.sunPosition?.rawValue,
                         paletteJSON,
-                        asset.selectedPresetName
+                        asset.selectedPresetName,
+                        asset.duration,
+                        asset.sequenceAssembledURL?.absoluteString
                     ]
                 )
             }
@@ -338,7 +343,8 @@ public actor GraphRepository: GraphProtocol {
                 let assetRows = try Row.fetchAll(db, sql: """
                     SELECT a.id, a.type, a.captured_at, a.location_lat, a.location_lon,
                            a.vibe_tags, a.ambient_weather, a.ambient_temp_c,
-                           a.ambient_sun_pos, a.palette_json, a.preset_name, a.is_private
+                           a.ambient_sun_pos, a.palette_json, a.preset_name, a.is_private,
+                           a.duration_seconds, a.sequence_assembled_url
                     FROM assets a
                     JOIN moment_assets ma ON ma.asset_id = a.id
                     WHERE ma.moment_id = ?
@@ -382,6 +388,7 @@ public actor GraphRepository: GraphProtocol {
                         return decoded
                     }()
 
+                    let assembledURL: URL? = (aRow["sequence_assembled_url"] as? String).flatMap(URL.init(string:))
                     return Asset(
                         id: aId,
                         type: assetType,
@@ -390,8 +397,10 @@ public actor GraphRepository: GraphProtocol {
                         vibeTags: vibeTags,
                         palette: palette,
                         ambient: ambient,
+                        duration: aRow["duration_seconds"] as? Double,
                         selectedPresetName: aRow["preset_name"] as? String,
-                        isPrivate: assetIsPrivate
+                        isPrivate: assetIsPrivate,
+                        sequenceAssembledURL: assembledURL
                     )
                 }
 
@@ -478,7 +487,8 @@ public actor GraphRepository: GraphProtocol {
             let assetRows = try Row.fetchAll(db, sql: """
                 SELECT a.id, a.type, a.captured_at, a.location_lat, a.location_lon,
                        a.vibe_tags, a.ambient_weather, a.ambient_temp_c,
-                       a.ambient_sun_pos, a.palette_json, a.preset_name, a.is_private
+                       a.ambient_sun_pos, a.palette_json, a.preset_name, a.is_private,
+                       a.duration_seconds, a.sequence_assembled_url
                 FROM assets a
                 JOIN moment_assets ma ON ma.asset_id = a.id
                 WHERE ma.moment_id = ?
@@ -515,6 +525,7 @@ public actor GraphRepository: GraphProtocol {
                           let decoded = try? JSONDecoder().decode(ChromaticPalette.self, from: data) else { return nil }
                     return decoded
                 }()
+                let assembledURL: URL? = (aRow["sequence_assembled_url"] as? String).flatMap(URL.init(string:))
                 return Asset(
                     id: aId,
                     type: assetType,
@@ -523,8 +534,10 @@ public actor GraphRepository: GraphProtocol {
                     vibeTags: vibeTags,
                     palette: palette,
                     ambient: ambient,
+                    duration: aRow["duration_seconds"] as? Double,
                     selectedPresetName: aRow["preset_name"] as? String,
-                    isPrivate: ((aRow["is_private"] as? Int64) ?? 0) != 0
+                    isPrivate: ((aRow["is_private"] as? Int64) ?? 0) != 0,
+                    sequenceAssembledURL: assembledURL
                 )
             }
         }
@@ -836,6 +849,12 @@ extension GraphRepository {
             "ALTER TABLE assets ADD COLUMN preset_name TEXT",
             // v0.8: private vault flag (0 = public, 1 = private)
             "ALTER TABLE assets ADD COLUMN is_private INTEGER NOT NULL DEFAULT 0",
+            // Piqd v0.3 (m_v0_3_asset_type_extension): persist Clip/Dual duration +
+            // Sequence assembled-strip URL. assets.type is plain TEXT with no CHECK
+            // constraint, so the new .sequence / .clip / .dual values insert without a
+            // schema widening step.
+            "ALTER TABLE assets ADD COLUMN duration_seconds REAL",
+            "ALTER TABLE assets ADD COLUMN sequence_assembled_url TEXT",
         ]
         for sql in migrations {
             try? db.execute(sql: sql) // swallows "duplicate column" on existing DBs
