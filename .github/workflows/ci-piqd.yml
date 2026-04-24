@@ -34,7 +34,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DESTINATION: "platform=iOS Simulator,name=iPhone 17,OS=26.4"
+  # Don't pin OS — the macos-26 runner's installed iOS runtime drifts (was 26.4
+  # at v0.3 sign-off, may be a different point release on any given run). With
+  # OS=latest, Xcode picks whichever iOS Simulator runtime is actually present
+  # for the iPhone 17 device, which is what we want for CI.
+  DESTINATION: "platform=iOS Simulator,name=iPhone 17,OS=latest"
 
 jobs:
   unit-niftycore:
@@ -46,6 +50,8 @@ jobs:
         run: |
           sudo xcode-select -s /Applications/Xcode.app
           xcodebuild -version
+      - name: List available simulators (diagnostic)
+        run: xcrun simctl list devices available | grep -E "iPhone 17|iOS" | head -30
       - name: xcodebuild test (NiftyCore)
         working-directory: NiftyCore
         run: |
@@ -66,6 +72,8 @@ jobs:
         run: |
           sudo xcode-select -s /Applications/Xcode.app
           xcodebuild -version
+      - name: List available simulators (diagnostic)
+        run: xcrun simctl list devices available | grep -E "iPhone 17|iOS" | head -30
       - name: xcodebuild test (NiftyData)
         working-directory: NiftyData
         run: |
@@ -86,6 +94,8 @@ jobs:
         run: |
           sudo xcode-select -s /Applications/Xcode.app
           xcodebuild -version
+      - name: List available simulators (diagnostic)
+        run: xcrun simctl list devices available | grep -E "iPhone 17|iOS" | head -30
       - name: Resolve Swift packages
         working-directory: Apps/Piqd
         run: xcodebuild -resolvePackageDependencies -project Piqd.xcodeproj
