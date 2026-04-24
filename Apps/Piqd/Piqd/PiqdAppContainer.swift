@@ -32,7 +32,7 @@ public final class PiqdAppContainer {
         devSettings: DevSettingsStore,
         rollCounter: RollCounterRepository,
         imageEncoder: ImageEncoder,
-        captureActivity: CaptureActivityStore = CaptureActivityStore()
+        captureActivity: CaptureActivityStore
     ) {
         self.config = config
         self.captureUseCase = captureUseCase

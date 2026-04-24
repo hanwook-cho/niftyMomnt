@@ -36,6 +36,7 @@ struct FormatSelectorView: View {
         )
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("piqd.formatSelector")
+        .accessibilityValue(current.rawValue)
     }
 
     @ViewBuilder
@@ -59,6 +60,7 @@ struct FormatSelectorView: View {
         }
         .buttonStyle(.plain)
         .disabled(disabled)
+        .allowsHitTesting(!disabled)
         .accessibilityIdentifier("piqd.formatSelector.\(f.rawValue)")
         .accessibilityAddTraits(selected ? .isSelected : [])
     }

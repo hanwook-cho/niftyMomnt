@@ -32,8 +32,6 @@ struct ShutterButtonView: View {
     let state: ShutterState
     /// 0…1 — drives the outer arc on Clip/Dual while recording. Ignored otherwise.
     let progress: Double
-    /// "N/M" displayed below the shutter during Sequence firing. Nil hides it.
-    let sequenceCounterText: String?
 
     private static let diameter: CGFloat = 80
     private static let innerDiameter: CGFloat = 64
@@ -49,39 +47,28 @@ struct ShutterButtonView: View {
     private var isDisabled: Bool { state == .disabled }
 
     var body: some View {
-        VStack(spacing: 10) {
-            ZStack {
-                // Outer ring — always present, colored per format.
+        ZStack {
+            // Outer ring — always present, colored per format.
+            Circle()
+                .stroke(ringColor.opacity(isDisabled ? 0.4 : 1.0), lineWidth: Self.lineWidth)
+                .frame(width: Self.diameter, height: Self.diameter)
+
+            // Capture-progress arc (Clip / Dual while recording). Drawn on top of the
+            // static ring so the fill depletes cleanly.
+            if (format == .clip || format == .dual) && state == .recording {
                 Circle()
-                    .stroke(ringColor.opacity(isDisabled ? 0.4 : 1.0), lineWidth: Self.lineWidth)
+                    .trim(from: 0, to: CGFloat(max(0, min(1, progress))))
+                    .stroke(.white, style: StrokeStyle(lineWidth: Self.lineWidth, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
                     .frame(width: Self.diameter, height: Self.diameter)
-
-                // Capture-progress arc (Clip / Dual while recording). Drawn on top of the
-                // static ring so the fill depletes cleanly.
-                if (format == .clip || format == .dual) && state == .recording {
-                    Circle()
-                        .trim(from: 0, to: CGFloat(max(0, min(1, progress))))
-                        .stroke(.white, style: StrokeStyle(lineWidth: Self.lineWidth, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                        .frame(width: Self.diameter, height: Self.diameter)
-                        .accessibilityIdentifier("piqd.clipDurationArc")
-                }
-
-                innerMark
-                    .scaleEffect(state == .pressing || state == .recording ? 0.85 : 1.0)
-                    .animation(.easeInOut(duration: 0.08), value: state)
             }
-            .frame(width: Self.diameter, height: Self.diameter)
-            .animation(.easeInOut(duration: 0.08), value: format)
 
-            if let counter = sequenceCounterText {
-                Text(counter)
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.white)
-                    .accessibilityIdentifier("piqd.sequenceFrameCounter")
-            }
+            innerMark
+                .scaleEffect(state == .pressing || state == .recording ? 0.85 : 1.0)
+                .animation(.easeInOut(duration: 0.08), value: state)
         }
-        .accessibilityValue("\(format.rawValue).\(state.rawValue)")
+        .frame(width: Self.diameter, height: Self.diameter)
+        .animation(.easeInOut(duration: 0.08), value: format)
     }
 
     @ViewBuilder
@@ -135,10 +122,10 @@ struct ShutterButtonView: View {
 #if DEBUG
 #Preview("Shutter morph") {
     VStack(spacing: 24) {
-        ShutterButtonView(format: .still, state: .idle, progress: 0, sequenceCounterText: nil)
-        ShutterButtonView(format: .sequence, state: .firing, progress: 0, sequenceCounterText: "3/6")
-        ShutterButtonView(format: .clip, state: .recording, progress: 0.4, sequenceCounterText: nil)
-        ShutterButtonView(format: .dual, state: .recording, progress: 0.75, sequenceCounterText: nil)
+        ShutterButtonView(format: .still, state: .idle, progress: 0)
+        ShutterButtonView(format: .sequence, state: .firing, progress: 0)
+        ShutterButtonView(format: .clip, state: .recording, progress: 0.4)
+        ShutterButtonView(format: .dual, state: .recording, progress: 0.75)
     }
     .padding()
     .background(.black)

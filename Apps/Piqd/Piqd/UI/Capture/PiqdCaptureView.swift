@@ -43,6 +43,7 @@ struct PiqdCaptureView: View {
     @State private var clipStartedAt: CFAbsoluteTime?
     @State private var pressStartedAt: CFAbsoluteTime?
     @State private var stillLongPressTask: Task<Void, Never>?
+    @State private var clipDwellTask: Task<Void, Never>?
     @State private var showSequenceInterruptedToast = false
 
     private var modeStore: ModeStore { container.modeStore }
@@ -84,6 +85,17 @@ struct PiqdCaptureView: View {
                     .accessibilityIdentifier("piqd.captureIndicator")
             }
 
+            // Tap-outside collapse catcher — sits above the preview but below the selector
+            // + shutter so taps on those controls route normally. Any other tap collapses.
+            if showFormatSelector {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture { collapseFormatSelector(reason: "tapOutside") }
+                    .allowsHitTesting(true)
+                    .ignoresSafeArea()
+                    .accessibilityHidden(true)
+            }
+
             VStack {
                 topHUD
                     .padding(.horizontal, 16)
@@ -104,7 +116,10 @@ struct PiqdCaptureView: View {
                     .padding(.bottom, 48)
             }
 
-            if let errorText {
+            // In UI_TEST_MODE we suppress the error banner — AVCapture on simulator will
+            // always fail `reconfigureSession`, and the banner would otherwise cover the
+            // format selector (FR-SNAP-* tests rely on tapping selector segments).
+            if let errorText, ProcessInfo.processInfo.environment["UI_TEST_MODE"] != "1" {
                 VStack {
                     Spacer()
                     Text(errorText)
@@ -130,17 +145,6 @@ struct PiqdCaptureView: View {
                 .transition(.opacity)
             }
 
-            // Tap-outside collapse catcher — sits above the preview, below selector/shutter,
-            // so taps on the selector/shutter continue to route normally.
-            if showFormatSelector {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture { collapseFormatSelector(reason: "tapOutside") }
-                    .allowsHitTesting(true)
-                    .ignoresSafeArea()
-                    .accessibilityHidden(true)
-            }
-
             // UI_TEST_MODE-only hidden trigger: XCUITest's synthetic press(forDuration:)
             // does not reliably route through SwiftUI gesture recognizers on iOS 26,
             // so we expose a full-width invisible Button that directly triggers the
@@ -155,6 +159,37 @@ struct PiqdCaptureView: View {
                 }
                 .padding(.top, 140)
                 .allowsHitTesting(!activity.isCapturing)
+            }
+
+            // UI_TEST_MODE capture-lock mirror. Existence of `piqd.captureLock` indicates
+            // that the app is in a locked state (any format recording/firing).
+            if ProcessInfo.processInfo.environment["UI_TEST_MODE"] == "1" && activity.isCapturing {
+                VStack {
+                    Text("lock")
+                        .font(.system(size: 1))
+                        .foregroundStyle(.white.opacity(0.01))
+                        .accessibilityIdentifier("piqd.captureLock")
+                    Spacer()
+                }
+                .allowsHitTesting(false)
+            }
+
+            // UI_TEST_MODE shutter state mirror. A Text element keyed by
+            // (activeFormat.state) — existence polling on identifier avoids iOS 26
+            // accessibilityValue caching. We use `.id(...)` to force SwiftUI to
+            // rebuild the element whenever the tuple changes.
+            if ProcessInfo.processInfo.environment["UI_TEST_MODE"] == "1" {
+                let mirrorState: ShutterState = isShutterDisabled ? .disabled : shutterState
+                let mirrorKey = "\(activeFormat.rawValue).\(mirrorState.rawValue)"
+                VStack {
+                    Text(mirrorKey)
+                        .font(.system(size: 1))
+                        .foregroundStyle(.white.opacity(0.01))
+                        .accessibilityIdentifier("piqd.shutter.state.\(mirrorKey)")
+                        .id(mirrorKey)
+                    Spacer()
+                }
+                .allowsHitTesting(false)
             }
 
             if showRollFull || (modeStore.mode == .roll && rollLimit > 0 && rollUsed >= rollLimit) {
@@ -260,17 +295,35 @@ struct PiqdCaptureView: View {
     @ViewBuilder
     private var shutterControl: some View {
         let disabled = isShutterDisabled
-        ShutterButtonView(
-            format: activeFormat,
-            state: disabled ? .disabled : shutterState,
-            progress: clipProgress,
-            sequenceCounterText: sequenceCounterText
-        )
-        .contentShape(Circle())
-        .accessibilityIdentifier("piqd.shutter")
-        .accessibilityAddTraits(.isButton)
-        .allowsHitTesting(!disabled)
-        .gesture(shutterGesture)
+        let effectiveState: ShutterState = disabled ? .disabled : shutterState
+        let a11yValue = "\(activeFormat.rawValue).\(effectiveState.rawValue)"
+        ZStack {
+            ShutterButtonView(
+                format: activeFormat,
+                state: effectiveState,
+                progress: clipProgress
+            )
+            .contentShape(Circle())
+            .allowsHitTesting(!disabled)
+            .gesture(shutterGesture)
+            .accessibilityIdentifier("piqd.shutter")
+            .accessibilityAddTraits(.isButton)
+            .accessibilityValue(a11yValue)
+            // Drives `piqd.shutter`'s `isEnabled` in XCUITest (v0.1 UI9 relies on this).
+            .disabled(disabled)
+
+            if let counter = sequenceCounterText {
+                VStack {
+                    Spacer()
+                    Text(counter)
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.white)
+                        .accessibilityIdentifier("piqd.sequenceFrameCounter")
+                        .offset(y: 30)
+                }
+                .allowsHitTesting(false)
+            }
+        }
     }
 
     private var isShutterDisabled: Bool {
@@ -293,13 +346,28 @@ struct PiqdCaptureView: View {
     // MARK: - Gesture handling
 
     private func onShutterTouchChanged(_ value: DragGesture.Value) {
-        guard pressStartedAt == nil else { return }
+        // If a dwell/press is already tracking, watch for swipe-up to cancel a pending
+        // Clip/Dual dwell (swipe intent supersedes press-hold intent).
+        if pressStartedAt != nil {
+            if value.translation.height <= -20 {
+                clipDwellTask?.cancel()
+                clipDwellTask = nil
+            }
+            return
+        }
         pressStartedAt = CFAbsoluteTimeGetCurrent()
 
-        // Press-and-hold recording for Clip/Dual starts on touch-down (after the 50ms
-        // latency budget covered by ClipRecorderController tests).
+        // Press-and-hold recording for Clip/Dual: require a brief dwell (120ms) so that
+        // a swipe-up gesture doesn't accidentally start recording. Cancelled on release
+        // or if the user moves upward past the swipe threshold.
         if modeStore.mode == .snap && (activeFormat == .clip || activeFormat == .dual) {
-            Task { await beginVideoRecording(format: activeFormat) }
+            clipDwellTask?.cancel()
+            clipDwellTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 120_000_000)
+                if Task.isCancelled { return }
+                if pressStartedAt == nil { return }
+                await beginVideoRecording(format: activeFormat)
+            }
             return
         }
 
@@ -321,12 +389,24 @@ struct PiqdCaptureView: View {
         pressStartedAt = nil
         stillLongPressTask?.cancel()
         stillLongPressTask = nil
+        clipDwellTask?.cancel()
+        clipDwellTask = nil
 
         let elapsed = startedAt.map { CFAbsoluteTimeGetCurrent() - $0 } ?? 0
         let dy = value.translation.height
 
         // Swipe-up ≥40pt (Snap-only) → present selector. UI19 asserts Roll does nothing.
         if modeStore.mode == .snap && dy <= -40 {
+            // Safety: if a Clip/Dual recording slipped through (e.g. dwell fired right
+            // before the swipe passed threshold), end it without persisting so the
+            // selector can open cleanly.
+            if activity.isCapturing &&
+               (activity.reason == .clip || activity.reason == .dual) {
+                activity.endCapture()
+                shutterState = .idle
+                clipStartedAt = nil
+                clipProgress = 0
+            }
             presentFormatSelector()
             return
         }
@@ -483,8 +563,6 @@ struct PiqdCaptureView: View {
         if ProcessInfo.processInfo.environment["UI_TEST_MODE"] == "1" {
             flashAssetID = UUID().uuidString
             await persistTestStub(type: .still)
-            try? await Task.sleep(nanoseconds: 150_000_000)
-            flashAssetID = nil
             return
         }
 
@@ -519,8 +597,6 @@ struct PiqdCaptureView: View {
         if ProcessInfo.processInfo.environment["UI_TEST_MODE"] == "1" {
             flashAssetID = UUID().uuidString
             await persistTestStub(type: .still, locked: true)
-            try? await Task.sleep(nanoseconds: 150_000_000)
-            flashAssetID = nil
             return
         }
 

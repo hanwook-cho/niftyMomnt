@@ -28,7 +28,9 @@ struct PiqdApp: App {
         // UI-test hooks for ModeStore. Cleared/seeded before ModeStore reads its defaults.
         let env = ProcessInfo.processInfo.environment
         if env["PIQD_RESET_LAST_MODE"] == "1" {
-            UserDefaults(suiteName: "piqd")?.removeObject(forKey: "piqd.captureMode")
+            let defaults = UserDefaults(suiteName: "piqd")
+            defaults?.removeObject(forKey: "piqd.captureMode")
+            defaults?.removeObject(forKey: "piqd.lastSnapFormat")
         }
         if let forced = env["PIQD_FORCE_LAST_MODE"],
            forced == "snap" || forced == "roll" {
@@ -83,6 +85,7 @@ struct PiqdApp: App {
 
         let modeStore = ModeStore()
         let imageEncoder: ImageEncoder = HEICEncoder()
+        let captureActivity = CaptureActivityStore()
 
         container = PiqdAppContainer(
             config: config,
@@ -93,7 +96,8 @@ struct PiqdApp: App {
             modeStore: modeStore,
             devSettings: devSettings,
             rollCounter: rollCounter,
-            imageEncoder: imageEncoder
+            imageEncoder: imageEncoder,
+            captureActivity: captureActivity
         )
     }
 
