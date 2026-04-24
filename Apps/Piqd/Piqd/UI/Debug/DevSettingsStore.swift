@@ -8,6 +8,7 @@
 // and written through so the persisted store stays consistent.
 
 import Foundation
+import NiftyCore
 import Observation
 
 @MainActor
@@ -69,6 +70,13 @@ public final class DevSettingsStore {
         didSet { persist(\.forceDualCamUnavailable, Self.keyForceDualUnavail, forceDualCamUnavailable) }
     }
 
+    /// Composite layout used for both Dual Still and Dual Video output. PIP is the
+    /// default (rear full-frame, front inset top-right); topBottom and sideBySide
+    /// produce 50/50 splits.
+    public var dualLayout: DualLayout {
+        didSet { defaults.set(dualLayout.rawValue, forKey: Self.keyDualLayout) }
+    }
+
     // MARK: - Storage
 
     private let defaults: UserDefaults
@@ -82,6 +90,7 @@ public final class DevSettingsStore {
     private static let keySequenceFrameCount = "sequenceFrameCount"
     private static let keyForceAsmFail = "forceSequenceAssemblyFailure"
     private static let keyForceDualUnavail = "forceDualCamUnavailable"
+    private static let keyDualLayout = "dualLayout"
 
     // MARK: - Init
 
@@ -116,6 +125,7 @@ public final class DevSettingsStore {
         var seqFrameCount = (defaults.object(forKey: Self.keySequenceFrameCount) as? Int) ?? 6
         var forceAsmFail = (defaults.object(forKey: Self.keyForceAsmFail) as? Bool) ?? false
         var forceDualUnavail = (defaults.object(forKey: Self.keyForceDualUnavail) as? Bool) ?? false
+        var dualLayoutRaw = (defaults.object(forKey: Self.keyDualLayout) as? String) ?? DualLayout.pip.rawValue
 
         if let v = Self.readInt(environment: environment, launchArguments: launchArguments, key: "PIQD_DEV_CLIP_MAX_DURATION") {
             clipMax = v
@@ -132,6 +142,9 @@ public final class DevSettingsStore {
         if let v = Self.readBool(environment: environment, launchArguments: launchArguments, key: "PIQD_DEV_FORCE_DUAL_CAM_UNAVAILABLE") {
             forceDualUnavail = v
         }
+        if let s = environment["PIQD_DEV_DUAL_LAYOUT"] ?? Self.argValue(launchArguments, flag: "-PIQD_DEV_DUAL_LAYOUT") {
+            dualLayoutRaw = s
+        }
 
         // Clamp.
         self.rollDailyLimit = max(1, min(240, rollLimit))
@@ -144,6 +157,7 @@ public final class DevSettingsStore {
         self.sequenceFrameCount = max(3, min(12, seqFrameCount))
         self.forceSequenceAssemblyFailure = forceAsmFail
         self.forceDualCamUnavailable = forceDualUnavail
+        self.dualLayout = DualLayout(rawValue: dualLayoutRaw) ?? .pip
     }
 
     public func resetDefaults() {
@@ -156,6 +170,7 @@ public final class DevSettingsStore {
         sequenceFrameCount = 6
         forceSequenceAssemblyFailure = false
         forceDualCamUnavailable = false
+        dualLayout = .pip
     }
 
     // MARK: - Helpers

@@ -37,7 +37,7 @@ struct PiqdApp: App {
             UserDefaults(suiteName: "piqd")?.set(forced, forKey: "piqd.captureMode")
         }
 
-        let config = AppConfig.piqd_v0_2
+        let config = AppConfig.piqd_v0_3
 
         // Piqd v0.2 — dev knobs (loaded once at launch; XCUITest can seed via PIQD_DEV_*).
         let devSettings = DevSettingsStore()
@@ -87,17 +87,33 @@ struct PiqdApp: App {
         let imageEncoder: ImageEncoder = HEICEncoder()
         let captureActivity = CaptureActivityStore()
 
+        // Piqd v0.3 — Sequence assembly chain. StoryEngine never calls `lab` from
+        // `assembleSequence`, so a no-op LabClient keeps the signature satisfied without
+        // pulling in networking.
+        let sequenceAssembler = AVSequenceAssembler()
+        let storyEngine = StoryEngine(
+            config: config,
+            vault: vaultRepo,
+            graph: graphRepo,
+            lab: PiqdNoopLabClient(),
+            sequenceAssembler: sequenceAssembler
+        )
+
         container = PiqdAppContainer(
             config: config,
             captureUseCase: captureUseCase,
             vaultManager: vaultManager,
             graphManager: graphManager,
             captureSession: captureAdapter.session,
+            captureAdapter: captureAdapter,
             modeStore: modeStore,
             devSettings: devSettings,
             rollCounter: rollCounter,
             imageEncoder: imageEncoder,
-            captureActivity: captureActivity
+            captureActivity: captureActivity,
+            storyEngine: storyEngine,
+            sequenceFrameCapturer: captureAdapter,
+            makeSequenceTicker: { DispatchSourceTimerTicker() }
         )
     }
 

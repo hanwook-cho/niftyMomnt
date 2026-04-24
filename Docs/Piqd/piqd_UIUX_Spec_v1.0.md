@@ -457,6 +457,25 @@ Dismiss animation:  150ms slide down + fade-out (on selection or 3s idle)
 Format switch feedback:
   Shutter button morphs to new format shape (80ms)
   No sound, subtle haptic: UISelectionFeedbackGenerator
+
+Dual sub-mode toggle (NEW — only when Dual format is active):
+  Container:    capsule, .black opacity 0.4 background
+  Width:        200pt, centered
+  Position:     between format selector and shutter (Y = shutterCenterY − 80pt)
+  Segments:     [Still]  [Video]
+  Persistence:  piqd.dualMediaKind in UserDefaults("piqd")
+  Behavior:     hidden during active capture; switching reconfigures the
+                multi-cam session (photo outputs ⇄ movie outputs).
+  a11y id:      piqd.dual.kind
+
+Dual composite layout (configured in dev settings; promoted to user
+Settings in a later release). Three options shared by Still and Video:
+  - PIP        — rear full-frame, front inset top-right (~30% width)
+  - Top/Bottom — rear top half, front bottom half (BeReal style)
+  - Side·by·Side — rear left half, front right half
+Note: Top/Bottom and Side·by·Side video composites currently render with
+small letterbox bars within each half. Edge-to-edge fill for split-layout
+video is deferred (see PRD §5.2.4 Deferred).
 ```
 
 ### 2.8 Unsent Badge

@@ -2,6 +2,7 @@
 // Piqd v0.2 — hidden dev knobs UI. Reached via 5-tap on the mode pill or via the debug
 // menu. All edits write through DevSettingsStore so they persist for the next launch.
 
+import NiftyCore
 import SwiftUI
 
 struct PiqdDevSettingsView: View {
@@ -81,6 +82,13 @@ struct PiqdDevSettingsView: View {
                 Section("Snap — Dual") {
                     Toggle("Force dual-cam unavailable", isOn: $store.forceDualCamUnavailable)
                         .accessibilityIdentifier("piqd-dev-force-dual-unavail")
+                    Picker("Layout", selection: $store.dualLayout) {
+                        Text("PIP").tag(DualLayout.pip)
+                        Text("Top/Bottom").tag(DualLayout.topBottom)
+                        Text("Side-by-Side").tag(DualLayout.sideBySide)
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("piqd-dev-dual-layout")
                 }
 
                 Section {

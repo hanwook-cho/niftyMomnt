@@ -276,12 +276,17 @@ Snap Mode is for reactive, social, in-the-moment capture. The shutter is always 
 
 #### 4.3.2 Capture Formats
 
-**Dual Capture** (`AssetType.dual`)
-- Simultaneous front and rear camera recording via `AVCaptureMultiCamSession`
-- Output: side-by-side or picture-in-picture composite MP4
-- Gated to iPhone 15+ (all models support `AVCaptureMultiCamSession`)
-- Use case: reaction content, "POV + subject" moments, vlog-style capture
-- AppConfig flag: `.dual` in `assetTypes`
+**Dual Capture** (`AssetType.dual` for video; `AssetType.still` for still composite)
+- Simultaneous front and rear capture via `AVCaptureMultiCamSession` (no-connection topology, explicit `AVCaptureConnection` per port).
+- Two media kinds, selected via a Still/Video sub-toggle above the shutter when Dual is active:
+  - **Dual Video** — two `AVCaptureMovieFileOutput` streams composited by `DualCompositor` into one MP4. Audio from primary only. Vault asset type `.dual`.
+  - **Dual Still** — two `AVCapturePhotoOutput` photos composited by `DualStillCompositor` into one JPEG (re-encoded to HEIC at vault-write). Vault asset type `.still`.
+- Composite **layout** is shared by both kinds: `.pip` (default), `.topBottom`, `.sideBySide`. Stored in `DevSettingsStore.dualLayout`.
+- Render canvas: 9:16 portrait (1080×1920). Layout placement math is shared via `DualCompositor.layoutRects(canvas:layout:)`.
+- Split layouts (Top/Bottom, Side-by-Side) currently use aspect-fit for video — `AVMutableVideoCompositionLayerInstruction` does not clip transformed sources, so aspect-fill would overlap the other half. Stills aspect-fill via `UIGraphicsImageRenderer` clipping.
+- Gated to devices reporting `AVCaptureMultiCamSession.isMultiCamSupported`.
+- Use case: reaction content, "POV + subject" moments, BeReal-style stills, vlog-style video.
+- AppConfig flag: `.dualCamera` in `features`; `.dual` in `assetTypes` (still composite uses `.still`).
 
 **Video Clips** (`AssetType.clip`)
 - Fixed short duration — user-configurable between 5s, 10s, 15s (default 10s)

@@ -254,6 +254,25 @@ public final class CaptureMomentUseCase {
         try await engine.reconfigureSession(to: mode, gestureTime: gestureTime > 0 ? gestureTime : t)
     }
 
+    /// Reconfigures the session outputs for a Snap-Mode format pick (Still/Sequence/Clip/Dual).
+    /// Wraps `CaptureEngineProtocol.configure(for:gestureTime:)` with latency logging.
+    public func configure(for format: CaptureFormat,
+                          config: AppConfig,
+                          dualKind: DualMediaKind = .video,
+                          dualLayout: DualLayout = .pip,
+                          gestureTime: Double = 0) async throws {
+        let t = CACurrentMediaTime()
+        if gestureTime > 0 {
+            log.debug("configure(for:) → \(format.rawValue) dualKind=\(dualKind.rawValue) dualLayout=\(dualLayout.rawValue) [task-start lag: \(String(format: "%.3f", t - gestureTime))s]")
+        } else {
+            log.debug("configure(for:) → \(format.rawValue) dualKind=\(dualKind.rawValue) dualLayout=\(dualLayout.rawValue)")
+        }
+        try await engine.configure(for: format,
+                                   dualKind: dualKind,
+                                   dualLayout: dualLayout,
+                                   gestureTime: gestureTime > 0 ? gestureTime : t)
+    }
+
     /// Starts media recording for Clip / Echo / Atmosphere. Call stopVideoRecording() to finalise.
     public func startVideoRecording(mode: CaptureMode, config: AppConfig) async throws {
         log.debug("startVideoRecording mode=\(mode.rawValue)")

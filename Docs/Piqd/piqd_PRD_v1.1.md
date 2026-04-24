@@ -290,14 +290,39 @@ Snap Mode has four formats selectable via the format selector pill above the shu
 
 #### 5.2.4 Dual Capture
 
+Dual is a single format with two **media kinds** — Still and Video — selected via a
+sub-toggle that appears above the shutter when Dual is the active format. Both
+kinds share a configurable composite **layout**.
+
 **Requirements:**
-- FR-SNAP-DUAL-01: Simultaneously records front and rear cameras via AVCaptureMultiCamSession.
-- FR-SNAP-DUAL-02: Output: composite MP4, picture-in-picture (rear primary, front inset). Layout not user-configurable in v1.0.
-- FR-SNAP-DUAL-03: Available on all iPhone 15+ models.
-- FR-SNAP-DUAL-04: Activated by selecting Dual in the format selector. Flip button hidden when Dual is active.
-- FR-SNAP-DUAL-05: Maximum duration 15 seconds.
-- FR-SNAP-DUAL-06: Composite clip shareable within 1 second of stop.
-- FR-SNAP-DUAL-07: Shutter button visual: red ring + split diagonal circle (communicates dual-camera nature).
+- FR-SNAP-DUAL-01: Simultaneously captures front and rear cameras via `AVCaptureMultiCamSession` using a no-connection topology with explicit `AVCaptureConnection` wiring per port.
+- FR-SNAP-DUAL-02: Two media kinds:
+  - **Dual Video** — both cameras record `AVCaptureMovieFileOutput` streams; on stop, the two MOVs are composited via `DualCompositor` into a single MP4. Audio captured on the primary stream only.
+  - **Dual Still** — both cameras fire `AVCapturePhotoOutput.capturePhoto` near-simultaneously; the two photos are composited via `DualStillCompositor` into a single JPEG (re-encoded to HEIC by the vault). Asset type is `.still`; the dual nature is a capture-time concern only.
+- FR-SNAP-DUAL-03: Available on devices that report `AVCaptureMultiCamSession.isMultiCamSupported`. Selector segment renders disabled otherwise.
+- FR-SNAP-DUAL-04: Activated by selecting Dual in the format selector. Flip button hidden when Dual is active. Sub-toggle (Still / Video) sits above the shutter and is hidden during active capture.
+- FR-SNAP-DUAL-05: Dual Video maximum duration 15 seconds (uses the same configurable Clip ceiling). Dual Still is single-shot.
+- FR-SNAP-DUAL-06: Composite (still or video) shareable within 1 second of stop.
+- FR-SNAP-DUAL-07: Shutter button visual: red ring + split diagonal circle (communicates dual-camera nature). Dual Still uses the still-capture flash; Dual Video uses the recording progress arc.
+- FR-SNAP-DUAL-08: User-selectable composite **layout**, applied to both Still and Video output:
+  - **PIP** (default) — rear full-frame, front inset top-right, ~30% width.
+  - **Top / Bottom** — rear top half, front bottom half (BeReal style).
+  - **Side-by-Side** — rear left half, front right half.
+- FR-SNAP-DUAL-09: Sub-mode toggle (Still / Video) persists across launches under `piqd.dualMediaKind`. Layout choice persists under `dualLayout` in the dev settings store (promoted to a user-facing setting in a later release).
+- FR-SNAP-DUAL-10: Switching media kind reconfigures the multi-cam session (photo outputs ⇄ movie outputs). Switching layout does not reconfigure the session — the new layout is applied on the next composite.
+- FR-SNAP-DUAL-11: Render canvas is 9:16 portrait (1080×1920). Split layouts (Top/Bottom, Side-by-Side) currently render with small letterbox bars within each half — edge-to-edge fill for split layouts is **deferred** (see "Deferred" below). PIP renders edge-to-edge.
+
+**Deferred (post-v1.0):**
+- Edge-to-edge fill (true aspect-fill) for Top/Bottom and Side-by-Side layouts. Requires `AVVideoCompositionCoreAnimationTool` with masking layers; current implementation uses aspect-fit to avoid layer overlap because `AVMutableVideoCompositionLayerInstruction` does not natively clip transformed sources to a target rect.
+- User-facing Settings screen for layout selection (currently lives in dev settings).
+- Per-kind layout (e.g. PIP for Video, Top/Bottom for Still) — today layout is shared.
+
+**Acceptance criteria:**
+- [ ] Selecting Dual reveals the Still / Video sub-toggle above the shutter when idle.
+- [ ] Switching the sub-toggle reconfigures the session within 300ms.
+- [ ] Dual Still composite written to vault as a single asset (`.still`), playable inline.
+- [ ] Dual Video composite written to vault as `.dual`, playable inline.
+- [ ] Changing the layout in dev settings takes effect on the next capture without requiring a relaunch.
 
 ### 5.3 Format Selector
 

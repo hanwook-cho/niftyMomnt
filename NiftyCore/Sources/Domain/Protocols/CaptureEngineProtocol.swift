@@ -17,6 +17,14 @@ public protocol CaptureEngineProtocol: AnyObject {
     /// Stops recording and returns the Asset (with duration). Temp file at tmpdir/{id}.mov.
     func stopRecording() async throws -> Asset
     func reconfigureSession(to mode: CaptureMode, gestureTime: Double) async throws
+    /// Reconfigures the session outputs for a Snap-Mode format. Still/Sequence share the
+    /// photo output path; Clip swaps in movie output; Dual requires an active
+    /// `AVCaptureMultiCamSession` (throws otherwise). Single `beginConfiguration`/`commit`.
+    /// `dualKind` and `dualLayout` are only consulted when `format == .dual`.
+    func configure(for format: CaptureFormat,
+                   dualKind: DualMediaKind,
+                   dualLayout: DualLayout,
+                   gestureTime: Double) async throws
     func switchCamera() async throws
     func focusAndLock(at point: CGPoint, frameSize: CGSize) async throws
     func unlockFocusAndExposure() async

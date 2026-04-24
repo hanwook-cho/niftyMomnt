@@ -46,6 +46,13 @@ struct PiqdCaptureView: View {
     @State private var clipDwellTask: Task<Void, Never>?
     @State private var showSequenceInterruptedToast = false
 
+    /// Dual sub-mode toggle. Persisted across launches in UserDefaults("piqd").
+    /// Only consulted when activeFormat == .dual.
+    @State private var dualMediaKind: DualMediaKind = {
+        let raw = UserDefaults(suiteName: "piqd")?.string(forKey: "piqd.dualMediaKind") ?? DualMediaKind.video.rawValue
+        return DualMediaKind(rawValue: raw) ?? .video
+    }()
+
     private var modeStore: ModeStore { container.modeStore }
     private var dev: DevSettingsStore { container.devSettings }
     private var activity: CaptureActivityStore { container.captureActivity }
@@ -110,6 +117,12 @@ struct PiqdCaptureView: View {
                     )
                     .padding(.bottom, 16)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+
+                if modeStore.mode == .snap && activeFormat == .dual && !activity.isCapturing {
+                    dualMediaKindToggle
+                        .padding(.bottom, 12)
+                        .transition(.opacity)
                 }
 
                 shutterControl
@@ -211,6 +224,9 @@ struct PiqdCaptureView: View {
             // Leaving Snap → collapse selector silently (Roll has no selector).
             if modeStore.mode != .snap { showFormatSelector = false }
         }
+        .onChange(of: dev.dualLayout) { _, newLayout in
+            container.captureAdapter.setDualLayout(newLayout)
+        }
         .onChange(of: modeStore.devMenuRequested) { _, newValue in
             if newValue {
                 showDevSettings = true
@@ -239,7 +255,12 @@ struct PiqdCaptureView: View {
         GeometryReader { geo in
             let cropped = letterboxRect(in: geo.size, ratio: aspect.ratio)
             ZStack {
-                CameraPreviewView(session: container.captureSession)
+                CameraPreviewView(
+                    session: container.captureSession,
+                    onPreviewLayerReady: { layer in
+                        container.captureAdapter.attachPrimaryPreview(layer)
+                    }
+                )
                     .frame(width: cropped.width, height: cropped.height)
                     .position(x: cropped.midX, y: cropped.midY)
                     .accessibilityElement()
@@ -286,6 +307,39 @@ struct PiqdCaptureView: View {
             Spacer()
             if modeStore.mode == .roll {
                 FilmCounterView(used: rollUsed, limit: rollLimit)
+            }
+        }
+    }
+
+    /// Dual sub-mode segmented control — visible only when activeFormat == .dual and
+    /// the capture pipeline is idle. Switching reconfigures the session (photo outputs
+    /// vs movie outputs).
+    @ViewBuilder
+    private var dualMediaKindToggle: some View {
+        Picker("Dual media", selection: $dualMediaKind) {
+            Text("Still").tag(DualMediaKind.still)
+            Text("Video").tag(DualMediaKind.video)
+        }
+        .pickerStyle(.segmented)
+        .frame(width: 200)
+        .padding(.vertical, 4)
+        .padding(.horizontal, 8)
+        .background(.black.opacity(0.4), in: Capsule())
+        .accessibilityIdentifier("piqd.dual.kind")
+        .onChange(of: dualMediaKind) { _, newKind in
+            UserDefaults(suiteName: "piqd")?.set(newKind.rawValue, forKey: "piqd.dualMediaKind")
+            guard ProcessInfo.processInfo.environment["UI_TEST_MODE"] != "1" else { return }
+            Task {
+                do {
+                    try await container.captureUseCase.configure(
+                        for: .dual,
+                        config: container.config,
+                        dualKind: newKind,
+                        dualLayout: dev.dualLayout
+                    )
+                } catch {
+                    errorText = "dual switch failed: \(error.localizedDescription)"
+                }
             }
         }
     }
@@ -357,17 +411,11 @@ struct PiqdCaptureView: View {
         }
         pressStartedAt = CFAbsoluteTimeGetCurrent()
 
-        // Press-and-hold recording for Clip/Dual: require a brief dwell (120ms) so that
-        // a swipe-up gesture doesn't accidentally start recording. Cancelled on release
-        // or if the user moves upward past the swipe threshold.
-        if modeStore.mode == .snap && (activeFormat == .clip || activeFormat == .dual) {
-            clipDwellTask?.cancel()
-            clipDwellTask = Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 120_000_000)
-                if Task.isCancelled { return }
-                if pressStartedAt == nil { return }
-                await beginVideoRecording(format: activeFormat)
-            }
+        // Clip / Dual-Video use tap-toggle (not press-hold). Start/stop is handled in
+        // onShutterTouchEnded; touch-down only arms the long-press Still branch below.
+        // Dual-Still falls through to a regular tap (handled like .still).
+        if modeStore.mode == .snap &&
+            (activeFormat == .clip || (activeFormat == .dual && dualMediaKind == .video)) {
             return
         }
 
@@ -411,10 +459,15 @@ struct PiqdCaptureView: View {
             return
         }
 
-        // Clip / Dual release → end recording (unless auto-stopped by ceiling).
-        if modeStore.mode == .snap && (activeFormat == .clip || activeFormat == .dual)
-            && activity.isCapturing {
-            Task { await endVideoRecording(autoStopped: false) }
+        // Clip / Dual-Video tap-toggle: tap to start; tap again to stop early.
+        // Ceiling auto-stop still fires via the progress-tick task in beginVideoRecording.
+        if modeStore.mode == .snap &&
+            (activeFormat == .clip || (activeFormat == .dual && dualMediaKind == .video)) {
+            if activity.isCapturing {
+                Task { await endVideoRecording(autoStopped: false) }
+            } else {
+                Task { await beginVideoRecording(format: activeFormat) }
+            }
             return
         }
 
@@ -453,8 +506,23 @@ struct PiqdCaptureView: View {
 
     private func pickFormat(_ format: CaptureFormat) {
         guard modeStore.mode == .snap else { return }
+        let previous = modeStore.snapFormat
         modeStore.setSnapFormat(format)
         collapseFormatSelector(reason: "picked")
+        guard format != previous else { return }
+        if ProcessInfo.processInfo.environment["UI_TEST_MODE"] == "1" { return }
+        Task {
+            do {
+                try await container.captureUseCase.configure(
+                    for: format,
+                    config: container.config,
+                    dualKind: dualMediaKind,
+                    dualLayout: dev.dualLayout
+                )
+            } catch {
+                errorText = "format switch failed: \(error.localizedDescription)"
+            }
+        }
     }
 
     // MARK: - Layout
@@ -487,6 +555,20 @@ struct PiqdCaptureView: View {
         do {
             try await container.captureUseCase.startPreview(mode: .still, config: container.config)
             cameraAuthorized = true
+            // If the persisted Snap format is not .still (e.g. Clip or Sequence from last
+            // launch), the session is currently photo-output from startPreview. Align the
+            // session outputs with the persisted format so tap-hold recording finds
+            // AVCaptureMovieFileOutput attached. pickFormat() skips this on relaunch because
+            // format == previous, so we do it here at mount.
+            if modeStore.mode == .snap, activeFormat != .still,
+               ProcessInfo.processInfo.environment["UI_TEST_MODE"] != "1" {
+                try await container.captureUseCase.configure(
+                    for: activeFormat,
+                    config: container.config,
+                    dualKind: dualMediaKind,
+                    dualLayout: dev.dualLayout
+                )
+            }
         } catch {
             errorText = "preview failed: \(error.localizedDescription)"
         }
@@ -538,9 +620,15 @@ struct PiqdCaptureView: View {
                 await captureStill()
             case .sequence:
                 await captureSequence()
-            case .clip, .dual:
-                // Should never be reached — gestures drive these.
+            case .clip:
+                // Should never be reached — Clip is gesture-driven (tap-toggle).
                 break
+            case .dual:
+                // Dual-Still falls through to the same captureStill() path; the adapter's
+                // dual photo session fans out to both photo outputs internally.
+                if dualMediaKind == .still {
+                    await captureStill()
+                }
             }
             return
         }
@@ -615,9 +703,11 @@ struct PiqdCaptureView: View {
         }
     }
 
-    /// Sequence tap: fires `dev.sequenceFrameCount` synthetic frames at `dev.sequenceIntervalMs`,
-    /// driving the frame counter and safe-render border. In UI_TEST_MODE writes a single
-    /// SEQ vault row on completion; on `forceSequenceAssemblyFailure` writes nothing.
+    /// Sequence tap: fires `dev.sequenceFrameCount` frames at `dev.sequenceIntervalMs` through
+    /// `SequenceCaptureController`, assembles them into a looping 9:16 MP4 via
+    /// `StoryEngine.assembleSequence`, and writes a `.sequence` vault row with
+    /// `sequenceAssembledURL` populated. In UI_TEST_MODE writes a single SEQ stub row;
+    /// on `forceSequenceAssemblyFailure` writes nothing.
     private func captureSequence() async {
         guard !activity.isCapturing else { return }
         activity.beginCapture(reason: .sequence)
@@ -629,26 +719,107 @@ struct PiqdCaptureView: View {
         }
 
         let frames = dev.sequenceFrameCount
-        let interval = Double(dev.sequenceIntervalMs) / 1000.0
-        for i in 1...frames {
-            sequenceFrameIndex = i
-            try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
-            if Task.isCancelled { return }
-        }
-
-        // Assembly — honoured dev flag drops the vault row (UI13).
-        guard !dev.forceSequenceAssemblyFailure else { return }
+        let intervalMs = dev.sequenceIntervalMs
+        let interval = Double(intervalMs) / 1000.0
 
         if ProcessInfo.processInfo.environment["UI_TEST_MODE"] == "1" {
+            // Sim path — legacy sleep loop so UI tests see the counter animate.
+            for i in 1...frames {
+                sequenceFrameIndex = i
+                try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+                if Task.isCancelled { return }
+            }
+            guard !dev.forceSequenceAssemblyFailure else { return }
             await persistTestStub(type: .sequence, duration: Double(frames) * interval)
             return
         }
 
-        // TODO(v0.3 real path): drive SequenceCaptureController → StoryEngine.assembleSequence;
-        // write vault row with sequenceAssembledURL populated.
+        // Cosmetic per-frame counter — not driven by the controller's internal ticker, but
+        // close enough for the UI (counter is a 1…N overlay with no timing contract).
+        let counterTask = Task { @MainActor in
+            for i in 1...frames {
+                sequenceFrameIndex = i
+                try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+                if Task.isCancelled { return }
+            }
+        }
+        defer { counterTask.cancel() }
+
+        let controller = SequenceCaptureController(
+            capturer: container.sequenceFrameCapturer,
+            ticker: container.makeSequenceTicker(),
+            frameCount: frames,
+            intervalMs: intervalMs
+        )
+        controller.tap(zoom: 0)  // 0 → skip zoom application (see AVCaptureAdapter.captureFrame)
+        let outcome = await controller.outcome()
+
+        switch outcome {
+        case .interrupted:
+            errorText = "sequence interrupted"
+            return
+        case .completed(let urls, _):
+            guard !dev.forceSequenceAssemblyFailure else {
+                for u in urls { try? FileManager.default.removeItem(at: u) }
+                return
+            }
+            await assembleAndPersistSequence(frameURLs: urls, frameDurationSeconds: interval)
+        }
     }
 
-    /// Press-hold start for Clip/Dual. Opens a CaptureActivity, arms the ceiling auto-stop.
+    /// Composes captured frames into an MP4 via StoryEngine, then writes the `.sequence` vault
+    /// row. Always deletes the per-frame temp files, whether assembly succeeded or not.
+    private func assembleAndPersistSequence(frameURLs: [URL], frameDurationSeconds: Double) async {
+        let outputURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("sequence-\(UUID().uuidString)")
+            .appendingPathExtension("mp4")
+        defer {
+            for u in frameURLs { try? FileManager.default.removeItem(at: u) }
+        }
+        do {
+            let strip = try await container.storyEngine.assembleSequence(
+                frameURLs: frameURLs,
+                outputURL: outputURL,
+                frameDurationSeconds: frameDurationSeconds
+            )
+            let asset = Asset(
+                type: .sequence,
+                capturedAt: Date(),
+                duration: strip.durationSeconds,
+                sequenceAssembledURL: strip.assembledVideoURL
+            )
+            try await container.vaultManager.saveVideoFile(asset, sourceURL: strip.assembledVideoURL)
+            // Create a Moment wrapping the sequence asset so it surfaces in the vault grid.
+            // CaptureMomentUseCase's still path runs classification/ambient/geocode/merge — none
+            // of that applies to a pre-assembled sequence MP4 here, so we stamp a minimal
+            // moment directly. Matches the shape of persistTestStub.
+            let df = DateFormatter()
+            df.dateFormat = "EEEE"
+            let moment = Moment(
+                label: df.string(from: asset.capturedAt),
+                assets: [asset],
+                centroid: GPSCoordinate(latitude: 0, longitude: 0),
+                startTime: asset.capturedAt,
+                endTime: asset.capturedAt,
+                heroAssetID: asset.id
+            )
+            try await container.graphManager.saveMoment(moment)
+            NotificationCenter.default.post(name: .niftyMomentCaptured, object: nil)
+            withAnimation(.easeOut(duration: 0.15)) { flashAssetID = asset.id.uuidString }
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            withAnimation(.easeIn(duration: 0.15)) { flashAssetID = nil }
+        } catch {
+            errorText = "sequence assembly failed: \(error.localizedDescription)"
+        }
+    }
+
+    /// Press-hold start for Clip/Dual. Opens a CaptureActivity, arms the ceiling auto-stop,
+    /// and (outside UI_TEST_MODE) calls `captureUseCase.startVideoRecording` which attaches
+    /// `AVCaptureMovieFileOutput` and begins writing to a temp `.mov`. Dual is intentionally
+    /// not wired yet — it needs `DualMovieRecorder` / `DualCompositor` concretes plus
+    /// `.dualCamera` in AppConfig.piqd. The format-selector's `configure(for: .dual)` already
+    /// throws `dualCamUnavailable`, so we should not reach this method with `format == .dual`
+    /// in production, but UI_TEST_MODE still uses the stub path below.
     private func beginVideoRecording(format: CaptureFormat) async {
         guard !activity.isCapturing else { return }
         activity.beginCapture(reason: format == .clip ? .clip : .dual)
@@ -673,7 +844,20 @@ struct PiqdCaptureView: View {
             }
         }
 
-        // TODO(v0.3 real path): dispatch to ClipRecorderController / DualRecorderController.
+        if ProcessInfo.processInfo.environment["UI_TEST_MODE"] == "1" { return }
+
+        // Clip and Dual both drive the same .clip recording path on the adapter.
+        // For Dual, the adapter fans out to two AVCaptureMovieFileOutputs internally
+        // (set up by `configure(for: .dual)`); the companion MOV URL is retained on the
+        // adapter for Stage B's PIP compositor.
+        do {
+            try await container.captureUseCase.startVideoRecording(mode: .clip, config: container.config)
+        } catch {
+            errorText = "\(format == .dual ? "dual" : "clip") start failed: \(error.localizedDescription)"
+            activity.endCapture()
+            shutterState = .idle
+            clipStartedAt = nil
+        }
     }
 
     private func endVideoRecording(autoStopped: Bool) async {
@@ -693,8 +877,25 @@ struct PiqdCaptureView: View {
         }
 
         _ = autoStopped
-        // TODO(v0.3 real path): finalize the recorded MP4 (Clip) or composite (Dual) and
-        // persist the vault row with `duration` set.
+        guard reason == .clip || reason == .dual else { return }
+
+        // AVCaptureMovieFileOutput throws -11805 "Cannot Record" if stopped before ~0.5s of
+        // frames are written (seen on-device with brief taps). Hold here until the recording
+        // has had enough wall-clock to produce a valid MP4. The 0.6s floor is conservative.
+        let minRecordingSeconds: Double = 0.6
+        if elapsed < minRecordingSeconds {
+            let deficit = minRecordingSeconds - elapsed
+            try? await Task.sleep(nanoseconds: UInt64(deficit * 1_000_000_000))
+        }
+
+        do {
+            let asset = try await container.captureUseCase.stopVideoRecording(config: container.config)
+            withAnimation(.easeOut(duration: 0.15)) { flashAssetID = asset.id.uuidString }
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            withAnimation(.easeIn(duration: 0.15)) { flashAssetID = nil }
+        } catch {
+            errorText = "clip save failed: \(error.localizedDescription)"
+        }
     }
 
     // MARK: - Test stubs

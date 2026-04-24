@@ -8,11 +8,15 @@ import UIKit
 
 struct CameraPreviewView: UIViewRepresentable {
     let session: AVCaptureSession
+    /// Called once with the underlying preview layer so the adapter can re-wire an explicit
+    /// preview connection under the dual-video no-connection topology.
+    var onPreviewLayerReady: ((AVCaptureVideoPreviewLayer) -> Void)? = nil
 
     func makeUIView(context: Context) -> _PiqdPreviewUIView {
         let view = _PiqdPreviewUIView()
         view.previewLayer.session = session
         view.previewLayer.videoGravity = .resizeAspectFill
+        onPreviewLayerReady?(view.previewLayer)
         return view
     }
 

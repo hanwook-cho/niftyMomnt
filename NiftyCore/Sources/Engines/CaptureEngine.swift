@@ -101,6 +101,16 @@ public final class CaptureEngine: CaptureEngineProtocol {
         captureStateSubject.send(.ready(mode: mode))
     }
 
+    public func configure(for format: CaptureFormat,
+                          dualKind: DualMediaKind,
+                          dualLayout: DualLayout,
+                          gestureTime: Double) async throws {
+        try await captureAdapter.configure(for: format,
+                                           dualKind: dualKind,
+                                           dualLayout: dualLayout,
+                                           gestureTime: gestureTime)
+    }
+
     public func switchCamera() async throws {
         try await captureAdapter.switchCamera()
     }

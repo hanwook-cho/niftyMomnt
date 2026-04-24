@@ -130,6 +130,14 @@ struct ModePill: View {
             UIImpactFeedbackGenerator(style: .soft).impactOccurred()
         }
         #endif
+        // Presenting the mode sheet steals touch tracking, so .onEnded won't fire for
+        // this drag. Reset gesture state here — otherwise pressStart stays non-nil and
+        // the *next* touch-down (in the new mode) is ignored by the `pressStart == nil`
+        // guard, requiring a stray tap to clear it.
+        pressStart = nil
+        holdTask?.cancel()
+        holdTask = nil
+        withAnimation(.easeOut(duration: 0.15)) { holdProgress = 0 }
         onLongHoldTriggered()
     }
 

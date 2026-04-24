@@ -28,6 +28,10 @@ final class MockCaptureAdapter: CaptureEngineProtocol {
         Asset(type: .clip, capturedAt: Date())
     }
     func reconfigureSession(to mode: CaptureMode, gestureTime: Double) async throws {}
+    func configure(for format: CaptureFormat,
+                   dualKind: DualMediaKind,
+                   dualLayout: DualLayout,
+                   gestureTime: Double) async throws {}
     func switchCamera() async throws {}
     func focusAndLock(at point: CGPoint, frameSize: CGSize) async throws {}
     func unlockFocusAndExposure() async {}

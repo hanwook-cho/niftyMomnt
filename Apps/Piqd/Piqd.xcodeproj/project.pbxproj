@@ -12,6 +12,7 @@
 		0ABB22A51E413F200C4BBC26 /* NiftyData in Frameworks */ = {isa = PBXBuildFile; productRef = D573630EDB426970D58ED8FD /* NiftyData */; };
 		287B14B998815214993450B2 /* FormatSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71D85D4225DB3739374D2BA5 /* FormatSelectorView.swift */; };
 		34F2A72EE427A586D232B039 /* PiqdAppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 279D2B73905D44964F953E82 /* PiqdAppContainer.swift */; };
+		B1C2D3E4F5A6B7C8D9E0F1A2 /* PiqdNoopLabClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* PiqdNoopLabClient.swift */; };
 		3D7D0C29AC8EA7B0A03C1ED0 /* ModePill.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0869CC6219AD5B6332A432 /* ModePill.swift */; };
 		3F7E27FDD6AE38C30EE02A25 /* PiqdUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECCC3D31406AB1441602D61 /* PiqdUITests.swift */; };
 		532ED0C0AE4F0B54A4CE97E0 /* PiqdFormatSelectorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A0EB5730AF30F1041963E8 /* PiqdFormatSelectorUITests.swift */; };
@@ -49,6 +50,7 @@
 		12AC20D64D4E0D2E6B3E03CE /* NiftyCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = NiftyCore; path = ../../NiftyCore; sourceTree = SOURCE_ROOT; };
 		1CD77E57B74CA07FEF63AF2A /* GrainOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrainOverlayView.swift; sourceTree = "<group>"; };
 		279D2B73905D44964F953E82 /* PiqdAppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdAppContainer.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* PiqdNoopLabClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdNoopLabClient.swift; sourceTree = "<group>"; };
 		27B0906DFD3AE95F1157FE0C /* FilmCounterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmCounterView.swift; sourceTree = "<group>"; };
 		31D36459944764E9C1ADA3B7 /* ModeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeStore.swift; sourceTree = "<group>"; };
 		4C52C6ACC36E1E13C5273DAC /* PiqdApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdApp.swift; sourceTree = "<group>"; };
@@ -137,6 +139,7 @@
 				0BAFF4E03D6585CBBE2287DE /* Assets.xcassets */,
 				4C52C6ACC36E1E13C5273DAC /* PiqdApp.swift */,
 				279D2B73905D44964F953E82 /* PiqdAppContainer.swift */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* PiqdNoopLabClient.swift */,
 				81525CAE3CAFA242F4BAE842 /* PiqdRootView.swift */,
 				2E3BF1D9D15549E5535D2341 /* UI */,
 			);
@@ -284,6 +287,7 @@
 				CB715841E8C07E00DD0B296D /* ModeSwitchSheet.swift in Sources */,
 				EDE1BB6F10A36A55541D80E8 /* PiqdApp.swift in Sources */,
 				34F2A72EE427A586D232B039 /* PiqdAppContainer.swift in Sources */,
+				B1C2D3E4F5A6B7C8D9E0F1A2 /* PiqdNoopLabClient.swift in Sources */,
 				A304FE9183DB16AD76CB606B /* PiqdCaptureView.swift in Sources */,
 				7394563EE607E580E3F6E3DE /* PiqdDevSettingsView.swift in Sources */,
 				A7E62A1BB65ACF761CDB209F /* PiqdRootView.swift in Sources */,

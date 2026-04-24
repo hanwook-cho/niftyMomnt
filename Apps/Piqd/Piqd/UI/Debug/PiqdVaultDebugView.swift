@@ -2,6 +2,8 @@
 // Minimal debug grid of captured assets, used to verify v0.1 persistence on-device.
 // Flattens all Moments' assets into a single grid so every captured frame is visible.
 
+import AVFoundation
+import AVKit
 import NiftyCore
 import SwiftUI
 import UIKit
@@ -14,6 +16,7 @@ struct PiqdVaultDebugView: View {
     @State private var rollUsed: Int = 0
     @State private var rollLimit: Int = 24
     @State private var showDevSettings = false
+    @State private var playerURL: URL?
 
     private let columns = [
         GridItem(.adaptive(minimum: 100), spacing: 4)
@@ -44,21 +47,24 @@ struct PiqdVaultDebugView: View {
 
                 LazyVGrid(columns: columns, spacing: 4) {
                     ForEach(assets, id: \.id) { asset in
+                        let isVideo = asset.type == .clip || asset.type == .dual || asset.type == .sequence
                         ZStack(alignment: .topLeading) {
                             PiqdDebugThumbnail(assetID: asset.id, vault: container.vaultManager)
                                 .aspectRatio(1, contentMode: .fit)
                             PiqdTypeBadge(type: asset.type)
                                 .padding(4)
-                            if asset.type == .clip || asset.type == .dual {
-                                // Play affordance — actual AVPlayer inline playback wires
-                                // to `Documents/piqd/assets/{id}.mp4` once the real Clip /
-                                // Dual capture paths land. Tap triggers audio playback.
+                            if isVideo {
                                 Image(systemName: "play.circle.fill")
                                     .font(.system(size: 28))
                                     .foregroundStyle(.white.opacity(0.85), .black.opacity(0.5))
                                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                                     .accessibilityIdentifier("piqd.vault.play.\(asset.id.uuidString)")
                             }
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            guard isVideo else { return }
+                            Task { await playVideo(assetID: asset.id) }
                         }
                         .accessibilityElement(children: .contain)
                         .accessibilityIdentifier("piqd-vault-row-\(asset.id.uuidString)")
@@ -84,6 +90,25 @@ struct PiqdVaultDebugView: View {
             .sheet(isPresented: $showDevSettings) {
                 PiqdDevSettingsView(store: container.devSettings, onClose: { showDevSettings = false })
             }
+            .sheet(item: Binding(
+                get: { playerURL.map { IdentifiedURL(url: $0) } },
+                set: { playerURL = $0?.url }
+            )) { item in
+                PiqdVideoPlayerSheet(url: item.url) { playerURL = nil }
+            }
+        }
+    }
+
+    private func playVideo(assetID: UUID) async {
+        do {
+            let (_, data) = try await container.vaultManager.loadPrimary(assetID)
+            let tmp = FileManager.default.temporaryDirectory
+                .appendingPathComponent("play-\(assetID.uuidString)")
+                .appendingPathExtension("mov")
+            try data.write(to: tmp)
+            await MainActor.run { self.playerURL = tmp }
+        } catch {
+            await MainActor.run { self.errorText = "playback failed: \(error.localizedDescription)" }
         }
     }
 
@@ -165,11 +190,73 @@ private struct PiqdDebugThumbnail: View {
     private func load() async {
         do {
             let (_, data) = try await vault.loadPrimary(assetID)
+            // Images (still/sequence-frame stubs under UI_TEST_MODE) decode directly.
             if let ui = UIImage(data: data) {
+                await MainActor.run { self.image = ui }
+                return
+            }
+            // Video payload (real Sequence MP4, future Clip/Dual): generate a poster frame
+            // by writing bytes to tmp and pulling the first image via AVAssetImageGenerator.
+            if let ui = Self.posterFrame(from: data) {
                 await MainActor.run { self.image = ui }
             }
         } catch {
             // Silent — debug view; keep placeholder on failure.
+        }
+    }
+
+    /// Extracts frame-0 from an MP4/MOV payload. Used for `.sequence` (and later `.clip`/`.dual`)
+    /// where the vault's primary file is a video. Synchronous generator; a ~2s loop decodes in <50ms.
+    private static func posterFrame(from data: Data) -> UIImage? {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("thumb-\(UUID().uuidString)")
+            .appendingPathExtension("mov")
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        guard (try? data.write(to: tmp)) != nil else { return nil }
+        let asset = AVURLAsset(url: tmp)
+        let gen = AVAssetImageGenerator(asset: asset)
+        gen.appliesPreferredTrackTransform = true
+        guard let cg = try? gen.copyCGImage(at: .zero, actualTime: nil) else { return nil }
+        return UIImage(cgImage: cg)
+    }
+}
+
+private struct IdentifiedURL: Identifiable {
+    let url: URL
+    var id: String { url.absoluteString }
+}
+
+private struct PiqdVideoPlayerSheet: View {
+    let url: URL
+    let onClose: () -> Void
+    @State private var player: AVPlayer?
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let player {
+                    VideoPlayer(player: player)
+                        .ignoresSafeArea()
+                } else {
+                    Color.black.overlay(ProgressView().tint(.white))
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { onClose() }
+                }
+            }
+        }
+        .task {
+            let p = AVPlayer(url: url)
+            p.actionAtItemEnd = .pause
+            self.player = p
+            p.play()
+        }
+        .onDisappear {
+            player?.pause()
+            try? FileManager.default.removeItem(at: url)
         }
     }
 }

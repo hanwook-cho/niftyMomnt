@@ -49,6 +49,29 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
     private var videoDeviceInput: AVCaptureDeviceInput?
     private var photoOutput: AVCapturePhotoOutput?
     private var movieOutput: AVCaptureMovieFileOutput?
+    /// Secondary AVCaptureMovieFileOutput used only in Dual-video format. Non-nil ⇒
+    /// `startRecording(mode:)` runs both outputs; `stopRecording()` awaits both.
+    /// The MOV URL is stored in `secondaryMovieURL` so Stage B's compositor can pick it up.
+    private var secondaryMovieOutput: AVCaptureMovieFileOutput?
+    private var activeSecondaryMovieDelegate: MovieDelegate?
+    /// Temp URL of the companion secondary stream from the most recent Dual recording.
+    /// Consumed by Stage B's DualCompositor; cleared on the next Dual start.
+    public private(set) var secondaryMovieURL: URL?
+    /// Secondary AVCapturePhotoOutput used only in Dual-still format. Non-nil ⇒
+    /// `captureAsset()` fans out to both photo outputs and composites the result.
+    private var secondaryPhotoOutput: AVCapturePhotoOutput?
+    private var activeSecondaryPhotoDelegate: PhotoDelegate?
+    /// Layout used to compose Dual Still and Dual Video outputs. Set by `configure(for:layout:)`.
+    private var dualLayout: DualLayout = .pip
+    /// Weak ref to the view's primary preview layer. Under dual-video topology the session's
+    /// inputs are added with `addInputWithNoConnections`, which breaks the layer's auto-wired
+    /// preview connection — so we need to re-add an explicit connection after reconfiguring
+    /// and restore auto-connect when we leave Dual.
+    private weak var primaryPreviewLayer: AVCaptureVideoPreviewLayer?
+
+    public func attachPrimaryPreview(_ layer: AVCaptureVideoPreviewLayer) {
+        primaryPreviewLayer = layer
+    }
     /// Retained so we can remove it cleanly without iterating session.inputs post-stopRunning.
     private var audioDeviceInput: AVCaptureDeviceInput?
     private var isSessionConfigured = false
@@ -58,6 +81,10 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
     private var isSwitchingMode = false
     /// Retained until the photo delegate callback fires.
     private var activePhotoDelegate: PhotoDelegate?
+    /// Per-call strong refs for concurrent Sequence frame captures. Keyed by UUID per call so
+    /// overlapping requests (Task-per-tick from `SequenceCaptureController`) don't stomp each
+    /// other the way a single shared slot would. Cleared after the awaiting call resumes.
+    private var inFlightFrameDelegates: [UUID: PhotoDelegate] = [:]
     /// Retained until the movie file is fully written.
     private var activeMovieDelegate: MovieDelegate?
     /// Retained while Echo is recording audio-only media.
@@ -291,18 +318,57 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
                 .appendingPathExtension("mov")
             : nil
 
-        let jpegData = try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Data, Error>) in
-            let delegate = PhotoDelegate(continuation: cont, isLiveCapture: liveMovTempURL != nil)
-            activePhotoDelegate = delegate
-            let settings = AVCapturePhotoSettings()
-            settings.flashMode = .auto
-            if let movURL = liveMovTempURL {
-                settings.livePhotoMovieFileURL = movURL
-                log.debug("captureAsset — Live Photo MOV temp: \(movURL.lastPathComponent)")
+        // Dual Still: issue both capturePhoto calls before awaiting either continuation
+        // so both ISPs start in parallel. Each Task { @MainActor in ... } runs sync
+        // through its capturePhoto trigger, suspends on the continuation, then yields
+        // the main actor for the next Task to issue its own capturePhoto.
+        let isDualStill = (secondaryPhotoOutput != nil)
+        let secOut = secondaryPhotoOutput
+
+        let primaryTask: Task<Data, Error> = Task { @MainActor in
+            try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Data, Error>) in
+                let delegate = PhotoDelegate(continuation: cont, isLiveCapture: liveMovTempURL != nil)
+                activePhotoDelegate = delegate
+                let settings = AVCapturePhotoSettings()
+                settings.flashMode = .auto
+                if let movURL = liveMovTempURL {
+                    settings.livePhotoMovieFileURL = movURL
+                    log.debug("captureAsset — Live Photo MOV temp: \(movURL.lastPathComponent)")
+                }
+                photoOutput.capturePhoto(with: settings, delegate: delegate)
             }
-            photoOutput.capturePhoto(with: settings, delegate: delegate)
         }
+
+        let secondaryTask: Task<Data, Error>? = secOut.map { secondaryOutput in
+            Task { @MainActor in
+                try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Data, Error>) in
+                    let delegate = PhotoDelegate(continuation: cont, isLiveCapture: false)
+                    activeSecondaryPhotoDelegate = delegate
+                    let settings = AVCapturePhotoSettings()
+                    settings.flashMode = .off
+                    secondaryOutput.capturePhoto(with: settings, delegate: delegate)
+                }
+            }
+        }
+
+        let primaryData = try await primaryTask.value
         activePhotoDelegate = nil
+        let secondaryData: Data? = try await secondaryTask?.value
+        activeSecondaryPhotoDelegate = nil
+
+        let jpegData: Data
+        if isDualStill, let secondaryData {
+            log.info("captureAsset — dual still: compositing primary=\(primaryData.count)B + secondary=\(secondaryData.count)B layout=\(self.dualLayout.rawValue)")
+            let compositor = DualStillCompositor(layout: self.dualLayout)
+            do {
+                jpegData = try compositor.composite(primaryData: primaryData, secondaryData: secondaryData)
+            } catch {
+                log.error("captureAsset — dual still composite failed: \(error.localizedDescription); falling back to primary")
+                jpegData = primaryData
+            }
+        } else {
+            jpegData = primaryData
+        }
         log.debug("captureAsset — delegate returned \(jpegData.count) bytes")
 
         let gps = locationProvider.currentCoordinate
@@ -395,6 +461,21 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
 
         log.debug("startRecording — mode=\(mode.rawValue) tempURL=\(tempURL.lastPathComponent)")
         movieOutput.startRecording(to: tempURL, recordingDelegate: delegate)
+
+        // Dual-video: drive the secondary movie output in parallel. Both outputs share
+        // `assetID` conceptually (the primary delegate's ID is used as the vault asset
+        // ID; the secondary MOV is stashed in `secondaryMovieURL` for Stage B compositing).
+        if let secOut = secondaryMovieOutput {
+            let secURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("dual-sec-\(assetID.uuidString)")
+                .appendingPathExtension("mov")
+            let secDelegate = MovieDelegate(assetID: assetID)
+            activeSecondaryMovieDelegate = secDelegate
+            secondaryMovieURL = secURL
+            log.debug("startRecording — dual secondary tempURL=\(secURL.lastPathComponent)")
+            secOut.startRecording(to: secURL, recordingDelegate: secDelegate)
+        }
+
         currentMode = mode
         stateSubject.send(.capturing(mode: mode))
     }
@@ -435,20 +516,109 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
         }
         log.debug("stopRecording — stopping movie output")
         movieOutput.stopRecording()
-        // Wait for the file delegate to confirm the file is fully written.
+        if let secOut = secondaryMovieOutput, secOut.isRecording {
+            log.debug("stopRecording — stopping secondary movie output")
+            secOut.stopRecording()
+        }
+        // Wait for the primary file delegate to confirm the file is fully written.
         let (assetID, duration) = try await delegate.waitForCompletion()
         activeMovieDelegate = nil
-        log.debug("stopRecording — done id=\(assetID.uuidString) duration=\(String(format: "%.1f", duration))s")
+        // Drain the secondary delegate so the companion MOV is flushed before Stage B
+        // compositing; failures here are non-fatal for Stage A (we still return the primary).
+        if let secDelegate = activeSecondaryMovieDelegate {
+            do {
+                _ = try await secDelegate.waitForCompletion()
+                log.debug("stopRecording — secondary MOV flushed")
+            } catch {
+                log.warning("stopRecording — secondary MOV finalize failed: \(error.localizedDescription)")
+                secondaryMovieURL = nil
+            }
+            activeSecondaryMovieDelegate = nil
+        }
+        let isDualCapture = secondaryMovieOutput != nil
+        log.debug("stopRecording — done id=\(assetID.uuidString) duration=\(String(format: "%.1f", duration))s dual=\(isDualCapture)")
 
         let gps = locationProvider.currentCoordinate
-        let type = assetType(for: currentMode)
+        var finalDuration = duration
+
+        // Dual-video: composite the two MOVs into a single PIP MP4 at the path the
+        // CaptureMomentUseCase expects (`tmpdir/{assetID}.mov`). On success the primary
+        // file is overwritten by the composite; on failure we keep the primary rear-only
+        // so the clip is never lost.
+        if isDualCapture, let secURL = secondaryMovieURL {
+            let primaryURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(assetID.uuidString)
+                .appendingPathExtension("mov")
+            let compositeURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("dual-out-\(assetID.uuidString)")
+                .appendingPathExtension("mov")
+            let compositor = DualCompositor(layout: self.dualLayout)
+            do {
+                let outDuration = try await compositor.composite(primaryURL: primaryURL,
+                                                                 secondaryURL: secURL,
+                                                                 outputURL: compositeURL)
+                try? FileManager.default.removeItem(at: primaryURL)
+                try FileManager.default.moveItem(at: compositeURL, to: primaryURL)
+                try? FileManager.default.removeItem(at: secURL)
+                finalDuration = CMTimeGetSeconds(outDuration)
+                log.info("stopRecording — dual composite ready at \(primaryURL.lastPathComponent) duration=\(String(format: "%.2f", finalDuration))s")
+            } catch {
+                log.error("stopRecording — dual composite failed: \(error.localizedDescription); keeping primary rear-only MOV")
+                try? FileManager.default.removeItem(at: compositeURL)
+            }
+            secondaryMovieURL = nil
+        }
+
+        let type: AssetType = isDualCapture ? .dual : assetType(for: currentMode)
         stateSubject.send(.processing)
-        return Asset(id: assetID, type: type, capturedAt: Date(), location: gps, duration: duration)
+        return Asset(id: assetID, type: type, capturedAt: Date(), location: gps, duration: finalDuration)
     }
 
     // MARK: - Mode / Camera Switch
 
     public func reconfigureSession(to mode: CaptureMode, gestureTime: Double) async throws {
+        // Leaving Dual (still or video): rebuild the session from scratch rather than
+        // mutating the multi-cam topology. Full teardown is simpler and reliable given
+        // the explicit connection wiring in the dual configs.
+        if secondaryMovieOutput != nil || secondaryPhotoOutput != nil || secondaryVideoInput != nil {
+            log.info("switchMode — leaving Dual; full teardown before reconfigure to \(mode.rawValue)")
+            try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+                sessionQueue.async { [self] in
+                    session.beginConfiguration()
+                    for out in session.outputs { session.removeOutput(out) }
+                    for inp in session.inputs { session.removeInput(inp) }
+                    for conn in session.connections { session.removeConnection(conn) }
+                    photoOutput = nil
+                    movieOutput = nil
+                    secondaryVideoOutput = nil
+                    secondaryMovieOutput = nil
+                    secondaryPhotoOutput = nil
+                    videoDeviceInput = nil
+                    secondaryVideoInput = nil
+                    audioDeviceInput = nil
+                    isSessionConfigured = false
+                    session.commitConfiguration()
+                    do {
+                        try configureSession(for: mode)
+                        isSessionConfigured = true
+                        currentMode = mode
+                        // Restore standard preview auto-connect now that the session is
+                        // back on single-camera topology.
+                        if let layer = primaryPreviewLayer {
+                            DispatchQueue.main.sync {
+                                layer.session = nil
+                                layer.session = session
+                            }
+                        }
+                        cont.resume()
+                    } catch {
+                        cont.resume(throwing: error)
+                    }
+                }
+            }
+            stateSubject.send(.ready(mode: mode))
+            return
+        }
         guard mode != currentMode else { return }
         log.debug("switchMode \(self.currentMode.rawValue) → \(mode.rawValue)")
 
@@ -1256,11 +1426,13 @@ public extension AVCaptureAdapter {
 
     /// Reconfigure the capture session for the given Snap-Mode format. Single-commit via
     /// the existing `reconfigureSession(to:gestureTime:)` path.
-    func configure(for format: CaptureFormat, gestureTime: Double = CACurrentMediaTime()) async throws {
+    /// `dualKind` and `dualLayout` are only consulted when `format == .dual`; ignored otherwise.
+    func configure(for format: CaptureFormat,
+                   dualKind: DualMediaKind = .video,
+                   dualLayout: DualLayout = .pip,
+                   gestureTime: Double = CACurrentMediaTime()) async throws {
         switch format {
         case .still, .sequence:
-            // Both use the photo output path. Sequence's cadence is owned by
-            // SequenceCaptureController; the adapter only keeps photoOutput attached.
             try await reconfigureSession(to: .still, gestureTime: gestureTime)
 
         case .clip:
@@ -1270,19 +1442,332 @@ public extension AVCaptureAdapter {
             guard isDualFormatSupported else {
                 throw FormatConfigureError.dualCamUnavailable
             }
-            // Dual-cam session setup (photo-class primary) is already handled by
-            // `configureDualCameraSession(for:)` at session start. Video-format Dual
-            // attaches two AVCaptureMovieFileOutputs via a DualMovieRecorder adapter —
-            // that adapter reuses this `session` reference. No further reconfigure here.
-            // Roll-mode flip button is hidden by the view layer (FR-SNAP-FLIP-04).
-            // Intentional no-op beyond the hardware check.
-            break
+            self.dualLayout = dualLayout
+            switch dualKind {
+            case .video:
+                try await configureDualVideoSession(gestureTime: gestureTime)
+            case .still:
+                try await configureDualStillSession(gestureTime: gestureTime)
+            }
         }
+    }
+
+    /// Updates the layout used by the next Dual capture without reconfiguring the session.
+    /// Safe to call any time; takes effect on the next `captureAsset()` / `stopRecording()`.
+    func setDualLayout(_ layout: DualLayout) {
+        self.dualLayout = layout
+    }
+
+    /// Reconfigures the shared AVCaptureMultiCamSession with two AVCaptureMovieFileOutputs
+    /// (primary back-wide + secondary front/ultrawide) plus an audio connection on the primary
+    /// output. Explicit input/output connection wiring is required for multi-cam — auto-connect
+    /// would ambiguously route both camera streams to the same output.
+    private func configureDualVideoSession(gestureTime: Double) async throws {
+        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+            sessionQueue.async { [self] in
+                guard let multi = session as? AVCaptureMultiCamSession else {
+                    cont.resume(throwing: CaptureError.sessionFailed)
+                    return
+                }
+                let tBegin = CACurrentMediaTime()
+                multi.beginConfiguration()
+
+                // Tear down everything — safest path from any prior photo/clip config.
+                for out in multi.outputs { multi.removeOutput(out) }
+                for inp in multi.inputs { multi.removeInput(inp) }
+                for conn in multi.connections { multi.removeConnection(conn) }
+                photoOutput = nil
+                movieOutput = nil
+                secondaryVideoOutput = nil
+                secondaryMovieOutput = nil
+                videoDeviceInput = nil
+                secondaryVideoInput = nil
+                audioDeviceInput = nil
+
+                do {
+                    // Primary back-wide input
+                    guard let primDev = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+                        throw CaptureError.sessionFailed
+                    }
+                    let primIn = try AVCaptureDeviceInput(device: primDev)
+                    guard multi.canAddInput(primIn) else { throw CaptureError.sessionFailed }
+                    multi.addInputWithNoConnections(primIn)
+                    videoDeviceInput = primIn
+
+                    // Secondary input — front TrueDepth preferred, then front wide, then ultrawide back.
+                    let secDev: AVCaptureDevice? = {
+                        if let d = AVCaptureDevice.default(.builtInTrueDepthCamera, for: .video, position: .front) { return d }
+                        if let d = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front) { return d }
+                        return AVCaptureDevice.default(.builtInUltraWideCamera, for: .video, position: .back)
+                    }()
+                    guard let secondary = secDev else { throw CaptureError.sessionFailed }
+                    let secIn = try AVCaptureDeviceInput(device: secondary)
+                    guard multi.canAddInput(secIn) else { throw CaptureError.sessionFailed }
+                    multi.addInputWithNoConnections(secIn)
+                    secondaryVideoInput = secIn
+
+                    // Audio (primary only).
+                    if let mic = AVCaptureDevice.default(for: .audio) {
+                        let audIn = try AVCaptureDeviceInput(device: mic)
+                        if multi.canAddInput(audIn) {
+                            multi.addInputWithNoConnections(audIn)
+                            audioDeviceInput = audIn
+                        }
+                    }
+
+                    // Primary movie output
+                    let primOut = AVCaptureMovieFileOutput()
+                    guard multi.canAddOutput(primOut) else { throw CaptureError.sessionFailed }
+                    multi.addOutputWithNoConnections(primOut)
+                    movieOutput = primOut
+
+                    guard let primPort = primIn.ports(for: .video,
+                                                      sourceDeviceType: primDev.deviceType,
+                                                      sourceDevicePosition: primDev.position).first else {
+                        throw CaptureError.sessionFailed
+                    }
+                    let primVidConn = AVCaptureConnection(inputPorts: [primPort], output: primOut)
+                    guard multi.canAddConnection(primVidConn) else { throw CaptureError.sessionFailed }
+                    multi.addConnection(primVidConn)
+
+                    // Preview connection from the primary port → registered preview layer.
+                    // Required because addInputWithNoConnections doesn't auto-wire preview.
+                    if let layer = primaryPreviewLayer {
+                        // Detach any auto-connection the layer may still hold from prior
+                        // standard-topology sessions, then re-attach in no-connection mode.
+                        DispatchQueue.main.sync {
+                            layer.session = nil
+                            layer.setSessionWithNoConnection(multi)
+                        }
+                        let previewConn = AVCaptureConnection(inputPort: primPort, videoPreviewLayer: layer)
+                        if multi.canAddConnection(previewConn) {
+                            multi.addConnection(previewConn)
+                            if #available(iOS 17.0, *),
+                               previewConn.isVideoRotationAngleSupported(90) {
+                                previewConn.videoRotationAngle = 90
+                            }
+                            log.info("configureDualVideoSession — preview connection added")
+                        } else {
+                            log.warning("configureDualVideoSession — canAddConnection(preview) false")
+                        }
+                    }
+
+                    if let audIn = audioDeviceInput,
+                       let audPort = audIn.ports.first(where: { $0.mediaType == .audio }) {
+                        let audConn = AVCaptureConnection(inputPorts: [audPort], output: primOut)
+                        if multi.canAddConnection(audConn) {
+                            multi.addConnection(audConn)
+                        }
+                    }
+
+                    // Secondary movie output (video only)
+                    let secOut = AVCaptureMovieFileOutput()
+                    guard multi.canAddOutput(secOut) else { throw CaptureError.sessionFailed }
+                    multi.addOutputWithNoConnections(secOut)
+                    secondaryMovieOutput = secOut
+
+                    guard let secPort = secIn.ports(for: .video,
+                                                    sourceDeviceType: secondary.deviceType,
+                                                    sourceDevicePosition: secondary.position).first else {
+                        throw CaptureError.sessionFailed
+                    }
+                    let secVidConn = AVCaptureConnection(inputPorts: [secPort], output: secOut)
+                    guard multi.canAddConnection(secVidConn) else { throw CaptureError.sessionFailed }
+                    multi.addConnection(secVidConn)
+
+                    // Rotation — portrait for both.
+                    if #available(iOS 17.0, *) {
+                        if primVidConn.isVideoRotationAngleSupported(90) { primVidConn.videoRotationAngle = 90 }
+                        if secVidConn.isVideoRotationAngleSupported(90) { secVidConn.videoRotationAngle = 90 }
+                    }
+
+                    currentMode = .clip
+                    isSessionConfigured = true
+                } catch {
+                    multi.commitConfiguration()
+                    cont.resume(throwing: error)
+                    return
+                }
+
+                multi.commitConfiguration()
+                let now = CACurrentMediaTime()
+                log.info("configureDualVideoSession — committed in \(String(format: "%.3f", now - tBegin))s; total from gesture \(String(format: "%.3f", now - gestureTime))s")
+                cont.resume()
+            }
+        }
+        stateSubject.send(.ready(mode: .clip))
+    }
+
+    /// Reconfigures the shared AVCaptureMultiCamSession with two AVCapturePhotoOutputs
+    /// (primary back-wide + secondary front/ultrawide) for Dual Still capture. No audio,
+    /// no movie outputs. Mirrors the wiring in configureDualVideoSession otherwise.
+    private func configureDualStillSession(gestureTime: Double) async throws {
+        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+            sessionQueue.async { [self] in
+                guard let multi = session as? AVCaptureMultiCamSession else {
+                    cont.resume(throwing: CaptureError.sessionFailed)
+                    return
+                }
+                let tBegin = CACurrentMediaTime()
+                multi.beginConfiguration()
+
+                for out in multi.outputs { multi.removeOutput(out) }
+                for inp in multi.inputs { multi.removeInput(inp) }
+                for conn in multi.connections { multi.removeConnection(conn) }
+                photoOutput = nil
+                movieOutput = nil
+                secondaryVideoOutput = nil
+                secondaryMovieOutput = nil
+                secondaryPhotoOutput = nil
+                videoDeviceInput = nil
+                secondaryVideoInput = nil
+                audioDeviceInput = nil
+
+                do {
+                    guard let primDev = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+                        throw CaptureError.sessionFailed
+                    }
+                    let primIn = try AVCaptureDeviceInput(device: primDev)
+                    guard multi.canAddInput(primIn) else { throw CaptureError.sessionFailed }
+                    multi.addInputWithNoConnections(primIn)
+                    videoDeviceInput = primIn
+
+                    let secDev: AVCaptureDevice? = {
+                        if let d = AVCaptureDevice.default(.builtInTrueDepthCamera, for: .video, position: .front) { return d }
+                        if let d = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front) { return d }
+                        return AVCaptureDevice.default(.builtInUltraWideCamera, for: .video, position: .back)
+                    }()
+                    guard let secondary = secDev else { throw CaptureError.sessionFailed }
+                    let secIn = try AVCaptureDeviceInput(device: secondary)
+                    guard multi.canAddInput(secIn) else { throw CaptureError.sessionFailed }
+                    multi.addInputWithNoConnections(secIn)
+                    secondaryVideoInput = secIn
+
+                    // Primary photo output
+                    let primOut = AVCapturePhotoOutput()
+                    guard multi.canAddOutput(primOut) else { throw CaptureError.sessionFailed }
+                    multi.addOutputWithNoConnections(primOut)
+                    photoOutput = primOut
+
+                    guard let primPort = primIn.ports(for: .video,
+                                                      sourceDeviceType: primDev.deviceType,
+                                                      sourceDevicePosition: primDev.position).first else {
+                        throw CaptureError.sessionFailed
+                    }
+                    let primConn = AVCaptureConnection(inputPorts: [primPort], output: primOut)
+                    guard multi.canAddConnection(primConn) else { throw CaptureError.sessionFailed }
+                    multi.addConnection(primConn)
+
+                    // Preview connection (no-connection topology breaks auto-wire).
+                    if let layer = primaryPreviewLayer {
+                        DispatchQueue.main.sync {
+                            layer.session = nil
+                            layer.setSessionWithNoConnection(multi)
+                        }
+                        let previewConn = AVCaptureConnection(inputPort: primPort, videoPreviewLayer: layer)
+                        if multi.canAddConnection(previewConn) {
+                            multi.addConnection(previewConn)
+                            if #available(iOS 17.0, *),
+                               previewConn.isVideoRotationAngleSupported(90) {
+                                previewConn.videoRotationAngle = 90
+                            }
+                            log.info("configureDualStillSession — preview connection added")
+                        } else {
+                            log.warning("configureDualStillSession — canAddConnection(preview) false")
+                        }
+                    }
+
+                    // Secondary photo output
+                    let secOut = AVCapturePhotoOutput()
+                    guard multi.canAddOutput(secOut) else { throw CaptureError.sessionFailed }
+                    multi.addOutputWithNoConnections(secOut)
+                    secondaryPhotoOutput = secOut
+
+                    guard let secPort = secIn.ports(for: .video,
+                                                    sourceDeviceType: secondary.deviceType,
+                                                    sourceDevicePosition: secondary.position).first else {
+                        throw CaptureError.sessionFailed
+                    }
+                    let secConn = AVCaptureConnection(inputPorts: [secPort], output: secOut)
+                    guard multi.canAddConnection(secConn) else { throw CaptureError.sessionFailed }
+                    multi.addConnection(secConn)
+
+                    if #available(iOS 17.0, *) {
+                        if primConn.isVideoRotationAngleSupported(90) { primConn.videoRotationAngle = 90 }
+                        if secConn.isVideoRotationAngleSupported(90) { secConn.videoRotationAngle = 90 }
+                    }
+
+                    currentMode = .still
+                    isSessionConfigured = true
+                } catch {
+                    multi.commitConfiguration()
+                    cont.resume(throwing: error)
+                    return
+                }
+
+                multi.commitConfiguration()
+                let now = CACurrentMediaTime()
+                log.info("configureDualStillSession — committed in \(String(format: "%.3f", now - tBegin))s; total from gesture \(String(format: "%.3f", now - gestureTime))s")
+                cont.resume()
+            }
+        }
+        stateSubject.send(.ready(mode: .still))
     }
 
     /// Internal helper mirroring the private `isDualCamSession` flag through a computed
     /// property so this extension (which lives outside the class scope) can read it.
     private var isSessionMultiCam: Bool {
         session is AVCaptureMultiCamSession
+    }
+}
+
+// MARK: - SequenceFrameCapturer (Piqd v0.3)
+//
+// Drives per-frame capture for Sequence mode. The controller awaits each call before firing
+// the next, so the single shared `photoOutput` + `activePhotoDelegate` are never contended.
+// `zoom` latched at tap-time is passed through; applied to the active video device if the
+// request differs from the current `videoZoomFactor`.
+
+extension AVCaptureAdapter: SequenceFrameCapturer {
+    public func captureFrame(zoom: Double, index: Int) async throws -> URL {
+        guard let photoOutput else {
+            log.error("captureFrame[\(index)] — photoOutput is nil")
+            throw CaptureError.sessionFailed
+        }
+
+        if zoom > 0, let device = videoDeviceInput?.device {
+            let clamped = max(device.minAvailableVideoZoomFactor,
+                              min(CGFloat(zoom), device.maxAvailableVideoZoomFactor))
+            if abs(device.videoZoomFactor - clamped) > 0.001 {
+                do {
+                    try device.lockForConfiguration()
+                    device.videoZoomFactor = clamped
+                    device.unlockForConfiguration()
+                } catch {
+                    log.warning("captureFrame[\(index)] — zoom lock failed: \(error.localizedDescription)")
+                }
+            }
+        }
+
+        // Retain the delegate in a per-call slot so overlapping Sequence ticks can't stomp
+        // each other. AVCapturePhotoOutput does NOT retain the delegate (verified: removing
+        // the shared-slot retention leaked continuations on device), so we hold it ourselves
+        // until the awaiting call resumes, then drop it.
+        let frameID = UUID()
+        let data: Data = try await withCheckedThrowingContinuation { cont in
+            let delegate = PhotoDelegate(continuation: cont, isLiveCapture: false)
+            inFlightFrameDelegates[frameID] = delegate
+            let settings = AVCapturePhotoSettings()
+            settings.flashMode = .off
+            photoOutput.capturePhoto(with: settings, delegate: delegate)
+        }
+        inFlightFrameDelegates.removeValue(forKey: frameID)
+
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("seq-\(frameID.uuidString)-\(index)")
+            .appendingPathExtension("jpg")
+        try data.write(to: tempURL)
+        log.debug("captureFrame[\(index)] → \(tempURL.lastPathComponent) (\(data.count)B)")
+        return tempURL
     }
 }
