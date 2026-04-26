@@ -91,6 +91,17 @@ struct PiqdDevSettingsView: View {
                     .accessibilityIdentifier("piqd-dev-dual-layout")
                 }
 
+                Section("Pre-shutter chrome (v0.4)") {
+                    Toggle("Backlight EV bias (+0.5)", isOn: $store.backlightCorrectionEnabled)
+                        .accessibilityIdentifier("piqd-dev-backlight-toggle")
+                    Toggle("Invisible level", isOn: $store.levelIndicatorEnabled)
+                        .accessibilityIdentifier("piqd-dev-level-toggle")
+                    Toggle("Subject guidance pill", isOn: $store.subjectGuidanceEnabled)
+                        .accessibilityIdentifier("piqd-dev-guidance-toggle")
+                    Toggle("Vibe hint glyph", isOn: $store.vibeHintEnabled)
+                        .accessibilityIdentifier("piqd-dev-vibe-toggle")
+                }
+
                 Section {
                     Button("Reset to defaults", role: .destructive) {
                         store.resetDefaults()

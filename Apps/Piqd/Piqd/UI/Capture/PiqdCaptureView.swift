@@ -53,10 +53,35 @@ struct PiqdCaptureView: View {
         return DualMediaKind(rawValue: raw) ?? .video
     }()
 
+    // Piqd v0.4 — Layer 1 chrome state.
+    @State private var layerStore: LayerStore = {
+        let env = ProcessInfo.processInfo.environment
+        // Test override — `PIQD_TEST_LAYER1_IDLE_SECONDS=<float>` lets a UI test pick
+        // a long interval for tests that exercise post-reveal chrome (where auto-retreat
+        // mid-test is noise) and a short interval for the auto-retreat test itself.
+        if let raw = env["PIQD_TEST_LAYER1_IDLE_SECONDS"], let parsed = TimeInterval(raw) {
+            return LayerStore(idleInterval: parsed)
+        }
+        let interval = env["UI_TEST_MODE"] == "1"
+            ? PiqdTokens.Layer.idleRetreatSecondsUITest
+            : PiqdTokens.Layer.idleRetreatSeconds
+        return LayerStore(idleInterval: interval)
+    }()
+    @State private var currentZoom: ZoomLevel = .wide
+    @State private var availableZoomLevels: [ZoomLevel] = [.wide]
+    @State private var pinchBaseFactor: Double = 1.0
+    @State private var lastPinchFactor: Double = 1.0
+    @State private var isFlipping: Bool = false
+    @State private var flipRotation: Double = 0
+
     private var modeStore: ModeStore { container.modeStore }
     private var dev: DevSettingsStore { container.devSettings }
     private var activity: CaptureActivityStore { container.captureActivity }
-    private var aspect: AspectRatio { AspectRatio.defaultFor(modeStore.mode) }
+    /// Active aspect ratio for both preview crop and capture-time crop. v0.4 — driven
+    /// by the Layer 1 ratio pill in Snap Still; Sequence/Clip/Dual force 9:16; Roll = 4:3.
+    private var aspect: AspectRatio {
+        modeStore.effectiveAspectRatio(for: modeStore.mode, format: activeFormat)
+    }
 
     /// Effective Snap format. Roll is always Still in v0.3.
     private var activeFormat: CaptureFormat { modeStore.effectiveFormat(for: modeStore.mode) }
@@ -92,6 +117,53 @@ struct PiqdCaptureView: View {
                     .accessibilityIdentifier("piqd.captureIndicator")
             }
 
+            // Piqd v0.4 — Layer 1 chrome (Snap only). Sits above preview, below format
+            // selector + shutter so those controls remain interactive when revealed.
+            if modeStore.mode == .snap {
+                Layer1ChromeView(
+                    isRevealed: layerStore.state == .revealed,
+                    topRight: {
+                        // FR-SNAP-FLIP-04 — hidden (not just disabled) in Dual format.
+                        if activeFormat != .dual {
+                            FlipButtonView(onTap: handleFlip)
+                                .opacity(activity.isCapturing ? 0.4 : 1.0)
+                                .allowsHitTesting(!activity.isCapturing)
+                        }
+                    },
+                    zoom: {
+                        // Hidden in Dual format — both cameras are fixed and the dual
+                        // sub-toggle sits in the zoom pill's slot. Mirrors FR-SNAP-FLIP-04
+                        // (flip button is also hidden in Dual).
+                        if activeFormat != .dual {
+                            ZoomPillView(
+                                levels: availableZoomLevels,
+                                current: currentZoom,
+                                onSelect: { selectZoomLevel($0) }
+                            )
+                            .opacity(isZoomLocked ? 0.4 : 1.0)
+                            .allowsHitTesting(!isZoomLocked)
+                        }
+                    },
+                    ratio: {
+                        // Hidden in Dual (Dual has its own composition layouts via the
+                        // sub-toggle). Locked at 9:16 in Sequence/Clip per FR-SNAP-RATIO-04.
+                        if activeFormat != .dual {
+                            AspectRatioPillView(
+                                current: modeStore.effectiveAspectRatio(for: modeStore.mode, format: activeFormat),
+                                isLocked: activeFormat != .still,
+                                onTap: {
+                                    modeStore.cycleSnapAspectRatio()
+                                    layerStore.interact()
+                                }
+                            )
+                        }
+                    },
+                    draftsBadge: { EmptyView() }
+                )
+                // No `.ignoresSafeArea()` — keeps the chrome inside the safe area so its
+                // bottom-padding math shares a baseline with `shutterControl` below.
+            }
+
             // Tap-outside collapse catcher — sits above the preview but below the selector
             // + shutter so taps on those controls route normally. Any other tap collapses.
             if showFormatSelector {
@@ -106,7 +178,7 @@ struct PiqdCaptureView: View {
             VStack {
                 topHUD
                     .padding(.horizontal, 16)
-                    .padding(.top, 52)
+                    .padding(.top, PiqdTokens.Layout.statusBarOffset)
                 Spacer()
 
                 if showFormatSelector && modeStore.mode == .snap {
@@ -123,6 +195,16 @@ struct PiqdCaptureView: View {
                     dualMediaKindToggle
                         .padding(.bottom, 12)
                         .transition(.opacity)
+                }
+
+                // Piqd v0.4 — Subject guidance pill. Snap-only, hidden during recording
+                // and when the format selector is open (which would obscure it visually).
+                if dev.subjectGuidanceEnabled
+                    && modeStore.mode == .snap
+                    && !activity.isCapturing
+                    && !showFormatSelector {
+                    SubjectGuidancePillView(detector: container.subjectGuidance)
+                        .padding(.bottom, 12)
                 }
 
                 shutterControl
@@ -168,6 +250,18 @@ struct PiqdCaptureView: View {
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .opacity(0.001)
                         .accessibilityIdentifier("piqd-mode-pill-longhold-test")
+                    // Piqd v0.4 — XCUITest gesture-synthesis doesn't reach SwiftUI's
+                    // simultaneousGesture on the viewfinder catcher, so the chrome can't
+                    // be revealed by tapping the catcher in tests. This hidden button
+                    // calls `layerStore.tap()` directly. Mirrors the long-hold pattern.
+                    Button("layer1.tap") {
+                        if modeStore.mode == .snap && !activity.isCapturing {
+                            layerStore.tap()
+                        }
+                    }
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .opacity(0.001)
+                        .accessibilityIdentifier("piqd-layer1-tap-test")
                     Spacer()
                 }
                 .padding(.top, 140)
@@ -217,7 +311,58 @@ struct PiqdCaptureView: View {
             }
         }
         .background(.black)
-        .task { await startPreview() }
+        .task {
+            await startPreview()
+            refreshAvailableZoomLevels()
+            // Apply persisted backlight toggle after the device is configured.
+            container.captureAdapter.setBacklightCorrection(enabled: dev.backlightCorrectionEnabled)
+        }
+        .task {
+            // Piqd v0.4 — start the invisible-level sensor for the lifetime of the capture
+            // view. `MotionMonitor` is idempotent on start/stop.
+            container.motionMonitor.start()
+            container.vibeClassifier.start()
+            // Route primary preview frames into the subject-guidance detector. The
+            // detector throttles internally to ≤2fps and early-returns when stopped,
+            // so it's safe to leave the sink installed permanently.
+            container.captureAdapter.setPrimaryFrameSink { buffer in
+                // Portrait-locked viewfinder: back camera buffer is rotated 90° CW from
+                // the user's view (`.right`); front is mirrored (`.leftMirrored`).
+                let position = container.captureAdapter.currentCameraPosition()
+                let orientation: CGImagePropertyOrientation = position == .front ? .leftMirrored : .right
+                container.subjectGuidance.process(buffer, orientation: orientation)
+            }
+        }
+        .onDisappear {
+            container.motionMonitor.stop()
+            container.vibeClassifier.stop()
+            container.captureAdapter.setPrimaryFrameSink(nil)
+        }
+        .onChange(of: activity.isCapturing) { _, isCapturing in
+            // 30Hz idle / 5Hz during recording (UIUX §2.10).
+            container.motionMonitor.setRecording(isCapturing)
+            // Subject guidance is paused outright during any recording window
+            // (Sequence/Clip/Dual). UIUX §2.11 — no pill mid-capture.
+            if isCapturing {
+                container.subjectGuidance.stop()
+                // Vibe classifier also pauses mid-capture per UIUX §2.12 — the glyph
+                // shouldn't pulse over the safe-render border.
+                container.vibeClassifier.stop()
+            } else {
+                if modeStore.mode == .snap {
+                    container.subjectGuidance.start()
+                }
+                container.vibeClassifier.start()
+            }
+        }
+        .task(id: modeStore.mode) {
+            // Subject guidance is Snap-only.
+            if modeStore.mode == .snap && !activity.isCapturing {
+                container.subjectGuidance.start()
+            } else {
+                container.subjectGuidance.stop()
+            }
+        }
         .task(id: modeStore.mode) {
             await refreshRollCounter()
             await applyModeToSession(animated: true)
@@ -226,6 +371,9 @@ struct PiqdCaptureView: View {
         }
         .onChange(of: dev.dualLayout) { _, newLayout in
             container.captureAdapter.setDualLayout(newLayout)
+        }
+        .onChange(of: dev.backlightCorrectionEnabled) { _, enabled in
+            container.captureAdapter.setBacklightCorrection(enabled: enabled)
         }
         .onChange(of: modeStore.devMenuRequested) { _, newValue in
             if newValue {
@@ -272,9 +420,181 @@ struct PiqdCaptureView: View {
                         .frame(width: cropped.width, height: cropped.height)
                         .position(x: cropped.midX, y: cropped.midY)
                 }
+
+                // Piqd v0.4 — invisible level. Centered in the cropped viewfinder, mode-
+                // agnostic per UIUX §2.10. The line itself is `accessibilityHidden` and
+                // `allowsHitTesting(false)`, so it never blocks taps or pinches.
+                if dev.levelIndicatorEnabled {
+                    LevelIndicatorView(monitor: container.motionMonitor)
+                        .frame(width: cropped.width, height: cropped.height)
+                        .position(x: cropped.midX, y: cropped.midY)
+                }
+
+                // Piqd v0.4 — Vibe-hint glyph. Snap-only Layer 0 element (always visible
+                // when classifier emits `.social` and not recording). UIUX §2.12 — bottom-
+                // left of the viewfinder, 16pt.
+                if dev.vibeHintEnabled
+                    && modeStore.mode == .snap
+                    && !activity.isCapturing {
+                    VibeHintView(classifier: container.vibeClassifier)
+                        .position(
+                            x: cropped.minX + PiqdTokens.Spacing.md + 8,
+                            y: cropped.maxY - PiqdTokens.Spacing.md - 8
+                        )
+                }
+
+                // Piqd v0.4 — gesture catcher sized to the cropped preview only, so shutter
+                // and bottom-area controls are never intercepted. Only attached when Snap
+                // chrome is actionable.
+                if modeStore.mode == .snap && !activity.isCapturing && !showFormatSelector {
+                    Color.clear
+                        .frame(width: cropped.width, height: cropped.height * 0.7)
+                        .position(x: cropped.midX, y: cropped.minY + cropped.height * 0.35)
+                        .contentShape(Rectangle())
+                        .simultaneousGesture(viewfinderTapGesture)
+                        .simultaneousGesture(pinchGesture)
+                        // The accessibility frame for a Color.clear catcher is reported
+                        // at parent bounds, which would shadow Layer 1 leaves for
+                        // `isHittable` queries. Hide it from the a11y tree; XCUITest
+                        // drives the chrome via `piqd-layer1-tap-test` instead.
+                        .accessibilityHidden(true)
+                }
             }
         }
         .ignoresSafeArea()
+        // FR-SNAP-FLIP-02 — 200ms horizontal 3D flip animation on the preview.
+        .rotation3DEffect(.degrees(flipRotation), axis: (x: 0, y: 1, z: 0))
+    }
+
+    // MARK: - Piqd v0.4 — Layer 1 gestures
+
+    private var isZoomLocked: Bool {
+        // FR-SNAP-ZOOM-05 — pinch and pill ignored during Sequence capture.
+        modeStore.mode == .snap && activeFormat == .sequence && activity.isCapturing
+    }
+
+    private var viewfinderTapGesture: some Gesture {
+        TapGesture().onEnded { _ in
+            // Don't intercept taps during capture — Clip/Dual tap-toggle relies on the
+            // shutter receiving the second tap unobstructed (FR-CLIP-04 / Dual analogue).
+            guard modeStore.mode == .snap,
+                  !showFormatSelector,
+                  !activity.isCapturing else { return }
+            layerStore.tap()
+        }
+    }
+
+    private var pinchGesture: some Gesture {
+        MagnificationGesture()
+            .onChanged { value in
+                guard modeStore.mode == .snap, !isZoomLocked, !activity.isCapturing else { return }
+                if pinchBaseFactor == 0 { pinchBaseFactor = max(1.0, currentAdapterZoom()) }
+                let target = clampedZoomFactor(pinchBaseFactor * Double(value))
+                applyContinuousZoom(target)
+                checkLensBoundaryCrossing(from: lastPinchFactor, to: target)
+                lastPinchFactor = target
+                layerStore.interact()
+            }
+            .onEnded { _ in
+                pinchBaseFactor = currentAdapterZoom()
+                lastPinchFactor = pinchBaseFactor
+            }
+    }
+
+    private func currentAdapterZoom() -> Double {
+        container.captureAdapter.currentZoomFactor()
+    }
+
+    private func clampedZoomFactor(_ factor: Double) -> Double {
+        // Lens-swap model: each physical lens has its own native 1.0×; pinch is a
+        // digital ramp on the currently-active lens, NOT a cross-lens zoom. Min is
+        // always 1.0 (lens's natural state). Max:
+        //   • Front: cap at 2× per FR-SNAP-ZOOM-04 (front is single-lens, digital crop)
+        //   • Back: 2× when on the wide lens (pill's "2×" is digital crop on wide);
+        //          1× when on UW so pinch can't accidentally cross into the wide range
+        //          (use the pill to switch lenses).
+        let position = container.captureAdapter.currentZoomLevel()
+        let maxF: Double
+        if container.captureAdapter.currentCameraPosition() == .front {
+            maxF = 2.0
+        } else {
+            switch position {
+            case .ultraWide: maxF = 1.0    // pinch stays within UW's optical range
+            case .wide:      maxF = 2.0    // wide → digital crop up to "2×" pill mark
+            case .telephoto: maxF = 2.0    // already at 2× crop on wide; pinch is no-op
+            }
+        }
+        return max(1.0, min(factor, maxF))
+    }
+
+    private func applyContinuousZoom(_ factor: Double) {
+        do { try container.captureAdapter.setZoomContinuous(factor) }
+        catch { /* lock contention — drop frame */ }
+        currentZoom = nearestLevel(for: factor)
+    }
+
+    private func nearestLevel(for factor: Double) -> ZoomLevel {
+        let candidates = availableZoomLevels
+        return candidates.min(by: { abs($0.factor - factor) < abs($1.factor - factor) }) ?? .wide
+    }
+
+    private func checkLensBoundaryCrossing(from previous: Double, to next: Double) {
+        let boundaries = container.captureAdapter.lensSwitchOverFactors()
+        for b in boundaries {
+            if (previous < b && next >= b) || (previous > b && next <= b) {
+                let gen = UIImpactFeedbackGenerator(style: .light)
+                gen.impactOccurred()
+            }
+        }
+    }
+
+    private func selectZoomLevel(_ level: ZoomLevel) {
+        guard !isZoomLocked, availableZoomLevels.contains(level) else { return }
+        // Optimistic UI update — pill highlights immediately, lens swap completes ~150ms later.
+        currentZoom = level
+        pinchBaseFactor = 1.0
+        lastPinchFactor = 1.0
+        layerStore.interact()
+        Task {
+            do { try await container.captureAdapter.setZoom(level) }
+            catch { /* swap failed — leave pill state alone, user can retry */ }
+        }
+    }
+
+    private func refreshAvailableZoomLevels() {
+        availableZoomLevels = container.captureAdapter.availableZoomLevels()
+        if !availableZoomLevels.contains(currentZoom) {
+            currentZoom = .wide
+        }
+    }
+
+    // MARK: - Piqd v0.4 — Flip (FR-SNAP-FLIP-01..05)
+
+    private func handleFlip() {
+        guard !activity.isCapturing, !isFlipping else { return }
+        guard activeFormat != .dual else { return }   // FR-SNAP-FLIP-04
+        layerStore.interact()
+        isFlipping = true
+        // 3D flip animation runs in parallel with the actual session input swap.
+        // Animation duration = 200ms per FR-SNAP-FLIP-02; matches Apple Camera.
+        withAnimation(.easeInOut(duration: 0.20)) {
+            flipRotation += 180
+        }
+        Task {
+            do {
+                try await container.captureAdapter.switchCamera()
+                // FR-SNAP-FLIP-03 — zoom resets to 1× on flip. Refresh pill (front
+                // returns [.wide] only) and snap zoom factor back to 1×.
+                refreshAvailableZoomLevels()
+                currentZoom = .wide
+                pinchBaseFactor = 1.0
+                lastPinchFactor = 1.0
+                try? await container.captureAdapter.setZoom(.wide)
+            } catch {
+                // Swap failed — animation already ran; leave UI as-is, user can retry.
+            }
+            isFlipping = false
+        }
     }
 
     @ViewBuilder
@@ -485,6 +805,7 @@ struct PiqdCaptureView: View {
     private func presentFormatSelector() {
         guard modeStore.mode == .snap, !activity.isCapturing, !showFormatSelector else { return }
         withAnimation(.easeOut(duration: 0.22)) { showFormatSelector = true }
+        layerStore.enterFormatSelector()
         armSelectorIdleCollapse()
     }
 
@@ -493,6 +814,7 @@ struct PiqdCaptureView: View {
         selectorIdleCollapseTask?.cancel()
         selectorIdleCollapseTask = nil
         withAnimation(.easeIn(duration: 0.15)) { showFormatSelector = false }
+        layerStore.exitFormatSelector()
     }
 
     private func armSelectorIdleCollapse() {

@@ -10,25 +10,36 @@
 		020E6D490135E36043DF5C94 /* NiftyCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7BE3531A196107450CBD91C4 /* NiftyCore */; };
 		088CDD62BE70AF4599757BB9 /* CameraPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875613EC3011E66CBED946F2 /* CameraPreviewView.swift */; };
 		0ABB22A51E413F200C4BBC26 /* NiftyData in Frameworks */ = {isa = PBXBuildFile; productRef = D573630EDB426970D58ED8FD /* NiftyData */; };
-		287B14B998815214993450B2 /* FormatSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71D85D4225DB3739374D2BA5 /* FormatSelectorView.swift */; };
+		0DCFE6C8D27ECB3A9E20ACDB /* PiqdFormatSelectorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3963B9A68AB661E50D7CDC23 /* PiqdFormatSelectorUITests.swift */; };
+		2C786BA9BC6E5ABACDFE7F75 /* LevelIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EB723F969727586D105C88D /* LevelIndicatorView.swift */; };
 		34F2A72EE427A586D232B039 /* PiqdAppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 279D2B73905D44964F953E82 /* PiqdAppContainer.swift */; };
-		B1C2D3E4F5A6B7C8D9E0F1A2 /* PiqdNoopLabClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* PiqdNoopLabClient.swift */; };
 		3D7D0C29AC8EA7B0A03C1ED0 /* ModePill.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0869CC6219AD5B6332A432 /* ModePill.swift */; };
 		3F7E27FDD6AE38C30EE02A25 /* PiqdUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECCC3D31406AB1441602D61 /* PiqdUITests.swift */; };
-		532ED0C0AE4F0B54A4CE97E0 /* PiqdFormatSelectorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A0EB5730AF30F1041963E8 /* PiqdFormatSelectorUITests.swift */; };
-		66B9A387B228C409781AE007 /* ShutterButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984A18C460D85A3608186BE0 /* ShutterButtonView.swift */; };
+		46164088C16AD4E34D0DCCED /* AspectRatioPillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90BFD779E2394C3F9229763E /* AspectRatioPillView.swift */; };
+		468C20E6EDA5BB53E4E2B17C /* ZoomPillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF63B1FF2B4A3A86E9449A67 /* ZoomPillView.swift */; };
+		53C3B0C7EFEEE84F78F5344B /* LayerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EE62752FD6C97468537CD4 /* LayerStore.swift */; };
+		53C4175300A5B474A59DA960 /* FormatSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DB8554F1E135065F887A4B1 /* FormatSelectorView.swift */; };
+		5FA2FD8712E673FDC3A15B21 /* VibeHintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 056F5EA047FDDFF1FCA828A3 /* VibeHintView.swift */; };
 		7394563EE607E580E3F6E3DE /* PiqdDevSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 526A6B001D1391B841AD8985 /* PiqdDevSettingsView.swift */; };
 		85E708F3A5A20465F897563B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0BAFF4E03D6585CBBE2287DE /* Assets.xcassets */; };
+		8EA16B4D84458F157771E8F7 /* PiqdNoopLabClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F11DCE0B42F67D1C0EAC1AB /* PiqdNoopLabClient.swift */; };
+		94CCCCA0233947063EA09AB2 /* Layer1ChromeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29ACE7187F564AA13817E45 /* Layer1ChromeUITests.swift */; };
 		A234A41E017AC49A3D8C3E33 /* PiqdVaultDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63930AB65B928A8ADECA8569 /* PiqdVaultDebugView.swift */; };
 		A304FE9183DB16AD76CB606B /* PiqdCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07BA6A9EC78DB6D0CD539B1A /* PiqdCaptureView.swift */; };
 		A790EDBFEE6F54A6677F82CE /* ModeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31D36459944764E9C1ADA3B7 /* ModeStore.swift */; };
 		A7E62A1BB65ACF761CDB209F /* PiqdRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81525CAE3CAFA242F4BAE842 /* PiqdRootView.swift */; };
+		B034D68BB808F2238BD6D662 /* PiqdTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 664270B53ECFEFE407D4FFBD /* PiqdTokens.swift */; };
+		B675C2ABE5302FE722346BB1 /* ShutterButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 396A2EAFE0E468D2BF355379 /* ShutterButtonView.swift */; };
 		B701C53021FC457454E2D58A /* RollFullOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 935FF5B37E24F11CFF39BDB3 /* RollFullOverlay.swift */; };
+		BFB994F7DE99CF67C192D7E6 /* Layer1ChromeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D678696C9DE1ED70A65B819 /* Layer1ChromeView.swift */; };
+		C4FFDA98B0EE635F5C0C13E0 /* SubjectGuidancePillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A67B8FA7D189B56E3478C41 /* SubjectGuidancePillView.swift */; };
+		C80196DBF71EEC2C41910C1B /* FlipButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 786A4CB2DBD6FCAFD5C28F98 /* FlipButtonView.swift */; };
 		CB28F05D74DD0D5C9AEBDFFD /* AppConfig+Piqd.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDA6C4CB6BEA885C4EB002D5 /* AppConfig+Piqd.swift */; };
 		CB5D208C969455EA521B2984 /* GrainOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD77E57B74CA07FEF63AF2A /* GrainOverlayView.swift */; };
 		CB715841E8C07E00DD0B296D /* ModeSwitchSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCE21AD10981EF8FB776F62E /* ModeSwitchSheet.swift */; };
+		DB4DF48D566402CEC0574D04 /* SafeRenderBorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E77C262D9D3B480D3135943 /* SafeRenderBorderView.swift */; };
 		DF7C58D77E47FE795473145E /* FilmCounterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B0906DFD3AE95F1157FE0C /* FilmCounterView.swift */; };
-		E38806A3EF8D32C841C7E828 /* SafeRenderBorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5DBAEF6FB065B8AAE5C5D08 /* SafeRenderBorderView.swift */; };
+		EC6BAB19BFB802ED49B06F91 /* PreShutterChromeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F95CA5333F3D66780A1FB4D /* PreShutterChromeUITests.swift */; };
 		EDE1BB6F10A36A55541D80E8 /* PiqdApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C52C6ACC36E1E13C5273DAC /* PiqdApp.swift */; };
 		F6FC1FB523030A83898AE8ED /* DevSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81207B79722F7C3959ED7189 /* DevSettingsStore.swift */; };
 /* End PBXBuildFile section */
@@ -44,32 +55,43 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		056F5EA047FDDFF1FCA828A3 /* VibeHintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VibeHintView.swift; sourceTree = "<group>"; };
 		07BA6A9EC78DB6D0CD539B1A /* PiqdCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdCaptureView.swift; sourceTree = "<group>"; };
 		0BAFF4E03D6585CBBE2287DE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0E5ACDAD94AF840DC5D16F4F /* NiftyData */ = {isa = PBXFileReference; lastKnownFileType = folder; name = NiftyData; path = ../../NiftyData; sourceTree = SOURCE_ROOT; };
 		12AC20D64D4E0D2E6B3E03CE /* NiftyCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = NiftyCore; path = ../../NiftyCore; sourceTree = SOURCE_ROOT; };
 		1CD77E57B74CA07FEF63AF2A /* GrainOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrainOverlayView.swift; sourceTree = "<group>"; };
+		1E77C262D9D3B480D3135943 /* SafeRenderBorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeRenderBorderView.swift; sourceTree = "<group>"; };
 		279D2B73905D44964F953E82 /* PiqdAppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdAppContainer.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F6A7B8C9D0E1F2 /* PiqdNoopLabClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdNoopLabClient.swift; sourceTree = "<group>"; };
 		27B0906DFD3AE95F1157FE0C /* FilmCounterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmCounterView.swift; sourceTree = "<group>"; };
 		31D36459944764E9C1ADA3B7 /* ModeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeStore.swift; sourceTree = "<group>"; };
+		37EE62752FD6C97468537CD4 /* LayerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayerStore.swift; sourceTree = "<group>"; };
+		3963B9A68AB661E50D7CDC23 /* PiqdFormatSelectorUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdFormatSelectorUITests.swift; sourceTree = "<group>"; };
+		396A2EAFE0E468D2BF355379 /* ShutterButtonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShutterButtonView.swift; sourceTree = "<group>"; };
+		3EB723F969727586D105C88D /* LevelIndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelIndicatorView.swift; sourceTree = "<group>"; };
 		4C52C6ACC36E1E13C5273DAC /* PiqdApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdApp.swift; sourceTree = "<group>"; };
 		526A6B001D1391B841AD8985 /* PiqdDevSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdDevSettingsView.swift; sourceTree = "<group>"; };
+		5F11DCE0B42F67D1C0EAC1AB /* PiqdNoopLabClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdNoopLabClient.swift; sourceTree = "<group>"; };
+		5F95CA5333F3D66780A1FB4D /* PreShutterChromeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreShutterChromeUITests.swift; sourceTree = "<group>"; };
 		63930AB65B928A8ADECA8569 /* PiqdVaultDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdVaultDebugView.swift; sourceTree = "<group>"; };
-		71D85D4225DB3739374D2BA5 /* FormatSelectorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FormatSelectorView.swift; sourceTree = "<group>"; };
+		664270B53ECFEFE407D4FFBD /* PiqdTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdTokens.swift; sourceTree = "<group>"; };
 		77F3379F941C30CDDB421095 /* PiqdUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PiqdUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		786A4CB2DBD6FCAFD5C28F98 /* FlipButtonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlipButtonView.swift; sourceTree = "<group>"; };
+		7D678696C9DE1ED70A65B819 /* Layer1ChromeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Layer1ChromeView.swift; sourceTree = "<group>"; };
 		81207B79722F7C3959ED7189 /* DevSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevSettingsStore.swift; sourceTree = "<group>"; };
 		81525CAE3CAFA242F4BAE842 /* PiqdRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdRootView.swift; sourceTree = "<group>"; };
 		875613EC3011E66CBED946F2 /* CameraPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreviewView.swift; sourceTree = "<group>"; };
+		8A67B8FA7D189B56E3478C41 /* SubjectGuidancePillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubjectGuidancePillView.swift; sourceTree = "<group>"; };
+		8DB8554F1E135065F887A4B1 /* FormatSelectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormatSelectorView.swift; sourceTree = "<group>"; };
+		90BFD779E2394C3F9229763E /* AspectRatioPillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AspectRatioPillView.swift; sourceTree = "<group>"; };
 		935FF5B37E24F11CFF39BDB3 /* RollFullOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RollFullOverlay.swift; sourceTree = "<group>"; };
-		984A18C460D85A3608186BE0 /* ShutterButtonView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShutterButtonView.swift; sourceTree = "<group>"; };
-		A8A0EB5730AF30F1041963E8 /* PiqdFormatSelectorUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PiqdFormatSelectorUITests.swift; sourceTree = "<group>"; };
+		AF63B1FF2B4A3A86E9449A67 /* ZoomPillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomPillView.swift; sourceTree = "<group>"; };
 		BCE21AD10981EF8FB776F62E /* ModeSwitchSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeSwitchSheet.swift; sourceTree = "<group>"; };
 		CE0869CC6219AD5B6332A432 /* ModePill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModePill.swift; sourceTree = "<group>"; };
-		D6589D2BC87B34F2016DC55C /* Piqd.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Piqd.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		E5DBAEF6FB065B8AAE5C5D08 /* SafeRenderBorderView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SafeRenderBorderView.swift; sourceTree = "<group>"; };
+		D6589D2BC87B34F2016DC55C /* Piqd.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Piqd.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EDA6C4CB6BEA885C4EB002D5 /* AppConfig+Piqd.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppConfig+Piqd.swift"; sourceTree = "<group>"; };
 		EECCC3D31406AB1441602D61 /* PiqdUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdUITests.swift; sourceTree = "<group>"; };
+		F29ACE7187F564AA13817E45 /* Layer1ChromeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Layer1ChromeUITests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,8 +110,10 @@
 		0BAA57C7376D64E60980697E /* PiqdUITests */ = {
 			isa = PBXGroup;
 			children = (
+				F29ACE7187F564AA13817E45 /* Layer1ChromeUITests.swift */,
+				3963B9A68AB661E50D7CDC23 /* PiqdFormatSelectorUITests.swift */,
 				EECCC3D31406AB1441602D61 /* PiqdUITests.swift */,
-				A8A0EB5730AF30F1041963E8 /* PiqdFormatSelectorUITests.swift */,
+				5F95CA5333F3D66780A1FB4D /* PreShutterChromeUITests.swift */,
 			);
 			path = PiqdUITests;
 			sourceTree = "<group>";
@@ -97,6 +121,7 @@
 		2E3BF1D9D15549E5535D2341 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				664270B53ECFEFE407D4FFBD /* PiqdTokens.swift */,
 				B8D3EA3FE57C817B2DEE2E5E /* Capture */,
 				3690FEC75479E2B49C8E7F6A /* Debug */,
 			);
@@ -139,7 +164,7 @@
 				0BAFF4E03D6585CBBE2287DE /* Assets.xcassets */,
 				4C52C6ACC36E1E13C5273DAC /* PiqdApp.swift */,
 				279D2B73905D44964F953E82 /* PiqdAppContainer.swift */,
-				A1B2C3D4E5F6A7B8C9D0E1F2 /* PiqdNoopLabClient.swift */,
+				5F11DCE0B42F67D1C0EAC1AB /* PiqdNoopLabClient.swift */,
 				81525CAE3CAFA242F4BAE842 /* PiqdRootView.swift */,
 				2E3BF1D9D15549E5535D2341 /* UI */,
 			);
@@ -158,17 +183,25 @@
 		B8D3EA3FE57C817B2DEE2E5E /* Capture */ = {
 			isa = PBXGroup;
 			children = (
+				90BFD779E2394C3F9229763E /* AspectRatioPillView.swift */,
 				875613EC3011E66CBED946F2 /* CameraPreviewView.swift */,
 				27B0906DFD3AE95F1157FE0C /* FilmCounterView.swift */,
+				786A4CB2DBD6FCAFD5C28F98 /* FlipButtonView.swift */,
+				8DB8554F1E135065F887A4B1 /* FormatSelectorView.swift */,
 				1CD77E57B74CA07FEF63AF2A /* GrainOverlayView.swift */,
+				7D678696C9DE1ED70A65B819 /* Layer1ChromeView.swift */,
+				37EE62752FD6C97468537CD4 /* LayerStore.swift */,
+				3EB723F969727586D105C88D /* LevelIndicatorView.swift */,
 				CE0869CC6219AD5B6332A432 /* ModePill.swift */,
 				31D36459944764E9C1ADA3B7 /* ModeStore.swift */,
 				BCE21AD10981EF8FB776F62E /* ModeSwitchSheet.swift */,
 				07BA6A9EC78DB6D0CD539B1A /* PiqdCaptureView.swift */,
 				935FF5B37E24F11CFF39BDB3 /* RollFullOverlay.swift */,
-				984A18C460D85A3608186BE0 /* ShutterButtonView.swift */,
-				71D85D4225DB3739374D2BA5 /* FormatSelectorView.swift */,
-				E5DBAEF6FB065B8AAE5C5D08 /* SafeRenderBorderView.swift */,
+				1E77C262D9D3B480D3135943 /* SafeRenderBorderView.swift */,
+				396A2EAFE0E468D2BF355379 /* ShutterButtonView.swift */,
+				8A67B8FA7D189B56E3478C41 /* SubjectGuidancePillView.swift */,
+				056F5EA047FDDFF1FCA828A3 /* VibeHintView.swift */,
+				AF63B1FF2B4A3A86E9449A67 /* ZoomPillView.swift */,
 			);
 			path = Capture;
 			sourceTree = "<group>";
@@ -188,6 +221,8 @@
 				054E1850F83F4D129DA3D6F4 /* PBXTargetDependency */,
 			);
 			name = PiqdUITests;
+			packageProductDependencies = (
+			);
 			productName = PiqdUITests;
 			productReference = 77F3379F941C30CDDB421095 /* PiqdUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -223,8 +258,11 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					01CCD9B1C6D558C1A3E5AD33 = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = B7RFV75XV4;
 						TestTargetID = DF2DFDDD1833CDFC04FF577A;
+					};
+					DF2DFDDD1833CDFC04FF577A = {
+						DevelopmentTeam = B7RFV75XV4;
 					};
 				};
 			};
@@ -238,8 +276,8 @@
 			mainGroup = 3822B1AE891D4E3795F5D295;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				362ECF04869AF7522FCA1C54 /* XCLocalSwiftPackageReference "NiftyCore" */,
-				463D36884D693A4F80293757 /* XCLocalSwiftPackageReference "NiftyData" */,
+				362ECF04869AF7522FCA1C54 /* XCLocalSwiftPackageReference "../../NiftyCore" */,
+				463D36884D693A4F80293757 /* XCLocalSwiftPackageReference "../../NiftyData" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 910B5867154D2E36F7BA23AB /* Products */;
@@ -268,8 +306,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				94CCCCA0233947063EA09AB2 /* Layer1ChromeUITests.swift in Sources */,
+				0DCFE6C8D27ECB3A9E20ACDB /* PiqdFormatSelectorUITests.swift in Sources */,
 				3F7E27FDD6AE38C30EE02A25 /* PiqdUITests.swift in Sources */,
-				532ED0C0AE4F0B54A4CE97E0 /* PiqdFormatSelectorUITests.swift in Sources */,
+				EC6BAB19BFB802ED49B06F91 /* PreShutterChromeUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -278,24 +318,33 @@
 			buildActionMask = 2147483647;
 			files = (
 				CB28F05D74DD0D5C9AEBDFFD /* AppConfig+Piqd.swift in Sources */,
+				46164088C16AD4E34D0DCCED /* AspectRatioPillView.swift in Sources */,
 				088CDD62BE70AF4599757BB9 /* CameraPreviewView.swift in Sources */,
 				F6FC1FB523030A83898AE8ED /* DevSettingsStore.swift in Sources */,
 				DF7C58D77E47FE795473145E /* FilmCounterView.swift in Sources */,
+				C80196DBF71EEC2C41910C1B /* FlipButtonView.swift in Sources */,
+				53C4175300A5B474A59DA960 /* FormatSelectorView.swift in Sources */,
 				CB5D208C969455EA521B2984 /* GrainOverlayView.swift in Sources */,
+				BFB994F7DE99CF67C192D7E6 /* Layer1ChromeView.swift in Sources */,
+				53C3B0C7EFEEE84F78F5344B /* LayerStore.swift in Sources */,
+				2C786BA9BC6E5ABACDFE7F75 /* LevelIndicatorView.swift in Sources */,
 				3D7D0C29AC8EA7B0A03C1ED0 /* ModePill.swift in Sources */,
 				A790EDBFEE6F54A6677F82CE /* ModeStore.swift in Sources */,
 				CB715841E8C07E00DD0B296D /* ModeSwitchSheet.swift in Sources */,
 				EDE1BB6F10A36A55541D80E8 /* PiqdApp.swift in Sources */,
 				34F2A72EE427A586D232B039 /* PiqdAppContainer.swift in Sources */,
-				B1C2D3E4F5A6B7C8D9E0F1A2 /* PiqdNoopLabClient.swift in Sources */,
 				A304FE9183DB16AD76CB606B /* PiqdCaptureView.swift in Sources */,
 				7394563EE607E580E3F6E3DE /* PiqdDevSettingsView.swift in Sources */,
+				8EA16B4D84458F157771E8F7 /* PiqdNoopLabClient.swift in Sources */,
 				A7E62A1BB65ACF761CDB209F /* PiqdRootView.swift in Sources */,
+				B034D68BB808F2238BD6D662 /* PiqdTokens.swift in Sources */,
 				A234A41E017AC49A3D8C3E33 /* PiqdVaultDebugView.swift in Sources */,
 				B701C53021FC457454E2D58A /* RollFullOverlay.swift in Sources */,
-				66B9A387B228C409781AE007 /* ShutterButtonView.swift in Sources */,
-				287B14B998815214993450B2 /* FormatSelectorView.swift in Sources */,
-				E38806A3EF8D32C841C7E828 /* SafeRenderBorderView.swift in Sources */,
+				DB4DF48D566402CEC0574D04 /* SafeRenderBorderView.swift in Sources */,
+				B675C2ABE5302FE722346BB1 /* ShutterButtonView.swift in Sources */,
+				C4FFDA98B0EE635F5C0C13E0 /* SubjectGuidancePillView.swift in Sources */,
+				5FA2FD8712E673FDC3A15B21 /* VibeHintView.swift in Sources */,
+				468C20E6EDA5BB53E4E2B17C /* ZoomPillView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -345,7 +394,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = B7RFV75XV4;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -378,7 +427,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.hwcho99.piqd.uitests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hwcho99.niftyMomnt.piqd.uitests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
 				TEST_TARGET_NAME = Piqd;
@@ -392,7 +441,6 @@
 				CODE_SIGN_ENTITLEMENTS = Piqd/Piqd.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 9LVH98N9BS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Piqd/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -445,7 +493,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = B7RFV75XV4;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -481,7 +529,6 @@
 				CODE_SIGN_ENTITLEMENTS = Piqd/Piqd.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 9LVH98N9BS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Piqd/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -510,7 +557,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.hwcho99.piqd.uitests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hwcho99.niftyMomnt.piqd.uitests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
 				TEST_TARGET_NAME = Piqd;
@@ -550,11 +597,11 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		362ECF04869AF7522FCA1C54 /* XCLocalSwiftPackageReference "NiftyCore" */ = {
+		362ECF04869AF7522FCA1C54 /* XCLocalSwiftPackageReference "../../NiftyCore" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../../NiftyCore;
 		};
-		463D36884D693A4F80293757 /* XCLocalSwiftPackageReference "NiftyData" */ = {
+		463D36884D693A4F80293757 /* XCLocalSwiftPackageReference "../../NiftyData" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../../NiftyData;
 		};

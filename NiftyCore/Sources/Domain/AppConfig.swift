@@ -68,6 +68,7 @@ public struct FeatureSet: OptionSet, Sendable {
     public static let sequenceCapture   = FeatureSet(rawValue: 1 << 12)
     public static let p2pSharing        = FeatureSet(rawValue: 1 << 13)
     public static let iCloudRollPackage = FeatureSet(rawValue: 1 << 14)
+    public static let preShutterChrome  = FeatureSet(rawValue: 1 << 15) // Piqd v0.4 — Layer 1 chrome
 
     public static let all: FeatureSet = [
         .rollMode, .nudgeEngine, .moodMap, .liveActivity,

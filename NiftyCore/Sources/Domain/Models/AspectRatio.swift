@@ -29,6 +29,17 @@ public enum AspectRatio: String, CaseIterable, Sendable {
         }
     }
 
+    /// Piqd v0.4 — ratios the Snap aspect-ratio toggle cycles through. Order matters:
+    /// tapping the pill advances to the next entry, wrapping at the end.
+    public static let snapAllowed: [AspectRatio] = [.nineSixteen, .oneOne]
+
+    /// Returns the next ratio in `snapAllowed`, wrapping. Snap pill cycle behavior.
+    /// Returns `nineSixteen` if `self` is not in the Snap-allowed set.
+    public func nextSnapRatio() -> AspectRatio {
+        guard let idx = AspectRatio.snapAllowed.firstIndex(of: self) else { return .nineSixteen }
+        return AspectRatio.snapAllowed[(idx + 1) % AspectRatio.snapAllowed.count]
+    }
+
     /// Rect to crop from a source image of `size` to produce this aspect ratio,
     /// centered. Returns the full rect if the ratios are already equal within rounding.
     public func centerCropRect(in size: CGSize) -> CGRect {

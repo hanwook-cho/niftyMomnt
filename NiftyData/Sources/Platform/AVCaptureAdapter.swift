@@ -40,15 +40,131 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
     // is wired up in configureDualCameraSession(for:), not which session class is used.
 
     /// Shared session. The UI layer attaches an AVCaptureVideoPreviewLayer to this.
-    public let session: AVCaptureSession
+    /// Piqd v0.4 — became `var` so we can swap session class between plain
+    /// `AVCaptureSession` (for Still/Sequence/Clip — full 0.5×/1×/2× optical on triple)
+    /// and `AVCaptureMultiCamSession` (only when entering Dual format). Swap is driven
+    /// by `swapSessionClass(toMultiCam:)`.
+    public private(set) var session: AVCaptureSession
 
-    /// True when `session` is actually an `AVCaptureMultiCamSession`.
-    private let isDualCamSession: Bool
+    /// True when `session` is currently an `AVCaptureMultiCamSession`. Tracks the swap
+    /// state — was a `let`, now mutates on Dual entry/exit (Piqd v0.4).
+    private var isDualCamSession: Bool
 
     /// Retained so we can remove it cleanly without iterating session.inputs post-stopRunning.
     private var videoDeviceInput: AVCaptureDeviceInput?
+
+    /// Read-only accessor used by the v0.4 `+Zoom` extension to reach the active
+    /// video device without iterating session inputs. Internal-only.
+    internal var activeVideoDevice: AVCaptureDevice? { videoDeviceInput?.device }
+
+    /// Piqd v0.4 — picks the best available virtual back camera so the zoom pill can
+    /// drive optical lens switching at 0.5× / 1× / 2× via `virtualDeviceSwitchOverVideoZoomFactors`.
+    /// Falls back to the single wide-angle on devices/simulators without virtual hardware.
+    /// Used only on non-Dual capture paths; Dual multicam topology continues to use the
+    /// physical wide-angle on each side.
+    fileprivate nonisolated static func bestVideoDevice(position: AVCaptureDevice.Position) -> AVCaptureDevice? {
+        // Piqd v0.4 — initial input is always the physical wide-angle. Zoom-pill taps
+        // swap the input device per lens (UW / W / Tele). iOS 26 no longer exposes UW
+        // through virtual-device zoom factors, so virtual devices buy us nothing here.
+        AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position)
+    }
+
+    /// Piqd v0.4 — diagnostic helper logged after each (re)configuration so device-test
+    /// telemetry shows which physical device the zoom pill is actually driving.
+    internal func logActiveZoomCapabilities(context: String) {
+        guard let d = videoDeviceInput?.device else {
+            log.debug("[zoom] \(context): no video device")
+            return
+        }
+        let typeString = d.deviceType.rawValue
+        let minF = Double(d.minAvailableVideoZoomFactor)
+        let maxF = Double(d.maxAvailableVideoZoomFactor)
+        let switchOversString = String(describing: d.virtualDeviceSwitchOverVideoZoomFactors)
+        let zoomFactor = Double(d.videoZoomFactor)
+        log.info("[zoom] \(context) device=\(typeString) min=\(minF) max=\(maxF) zoom=\(zoomFactor) switchOvers=\(switchOversString)")
+
+        // Active format detail.
+        let af = d.activeFormat
+        let dims = CMVideoFormatDescriptionGetDimensions(af.formatDescription)
+        let afSecondaryNative = String(describing: af.secondaryNativeResolutionZoomFactors)
+        log.info("[zoom] \(context) activeFormat dims=\(dims.width)x\(dims.height) maxZoom=\(Double(af.videoMaxZoomFactor)) secondaryNativeZooms=\(afSecondaryNative)")
+
+        // Enumerate ALL formats — flag any whose `secondary` array stringifies to
+        // anything other than empty or "[4.0]". String-based filter avoids NSNumber
+        // bridging crashes seen on iOS 26.
+        let allFormats = d.formats
+        log.info("[zoom] \(context) totalFormats=\(allFormats.count)")
+        var interesting = 0
+        for (idx, format) in allFormats.enumerated() {
+            let secondaryStr = String(describing: format.secondaryNativeResolutionZoomFactors)
+            // Boring patterns: empty, "[]", "[4.0]", "[4]"
+            if secondaryStr == "()" || secondaryStr == "[]" || secondaryStr == "[4.0]"
+                || secondaryStr == "[4]" || secondaryStr.isEmpty || secondaryStr == "(\n)"
+                || secondaryStr == "(\n    4\n)" {
+                continue
+            }
+            let fd = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
+            log.info("[zoom] \(context) ★ fmt[\(idx)] dims=\(fd.width)x\(fd.height) max=\(Double(format.videoMaxZoomFactor)) secondary=\(secondaryStr)")
+            interesting += 1
+        }
+        log.info("[zoom] \(context) interestingFormatCount=\(interesting)")
+
+        // Discovery: enumerate every back-position device the system knows about, and
+        // for each list its `min`/`max` and switchOvers. Helps locate which virtual
+        // device, if any, exposes 0.5× on this iOS 26 / iPhone 17 Pro combo.
+        let allTypes: [AVCaptureDevice.DeviceType] = [
+            .builtInTripleCamera,
+            .builtInDualWideCamera,
+            .builtInDualCamera,
+            .builtInWideAngleCamera,
+            .builtInUltraWideCamera,
+            .builtInTelephotoCamera
+        ]
+        let discovery = AVCaptureDevice.DiscoverySession(
+            deviceTypes: allTypes, mediaType: .video, position: .back
+        )
+        log.info("[zoom] \(context) === back-camera discovery (\(discovery.devices.count) devices)")
+        for dev in discovery.devices {
+            let min = Double(dev.minAvailableVideoZoomFactor)
+            let max = Double(dev.maxAvailableVideoZoomFactor)
+            let so = String(describing: dev.virtualDeviceSwitchOverVideoZoomFactors)
+            log.info("[zoom] \(context) · \(dev.deviceType.rawValue) min=\(min) max=\(max) switchOvers=\(so)")
+        }
+    }
     private var photoOutput: AVCapturePhotoOutput?
     private var movieOutput: AVCaptureMovieFileOutput?
+
+    // MARK: - Primary preview frame tap (Piqd v0.4)
+    //
+    // Optional `AVCaptureVideoDataOutput` attached to the standard (non-Dual) session so
+    // pre-shutter assists like `SubjectGuidanceDetector` can read live preview frames.
+    // The output is `alwaysDiscardsLateVideoFrames = true` and the consumer is expected
+    // to throttle its own work (face detection runs at ≤ 2 fps); we don't lower the
+    // device's frame rate. Skipped on `AVCaptureMultiCamSession` (Dual format) — Dual
+    // already wires a secondary VideoDataOutput, and subject-guidance is Snap-only.
+    private var primaryVideoDataOutput: AVCaptureVideoDataOutput?
+    private lazy var primaryFrameDelegate = SecondaryFrameDelegate { [weak self] buffer in
+        guard let self else { return }
+        self.lockedSinkLock.lock()
+        let sink = self.primaryFrameSink
+        self.lockedSinkLock.unlock()
+        sink?(buffer)
+    }
+    private let primaryFrameQ = DispatchQueue(
+        label: "com.hwcho99.niftymomnt.primaryFrameQ",
+        qos: .userInitiated
+    )
+    private let lockedSinkLock = NSLock()
+    private var primaryFrameSink: ((CMSampleBuffer) -> Void)?
+
+    /// Install (or clear with `nil`) a closure that receives every primary preview frame
+    /// from the standard (non-Dual) session. Caller is expected to throttle. Replacing
+    /// the sink is atomic; no frames are dropped between swaps. Has no effect under Dual.
+    public func setPrimaryFrameSink(_ sink: ((CMSampleBuffer) -> Void)?) {
+        lockedSinkLock.lock()
+        primaryFrameSink = sink
+        lockedSinkLock.unlock()
+    }
     /// Secondary AVCaptureMovieFileOutput used only in Dual-video format. Non-nil ⇒
     /// `startRecording(mode:)` runs both outputs; `stopRecording()` awaits both.
     /// The MOV URL is stored in `secondaryMovieURL` so Stage B's compositor can pick it up.
@@ -153,14 +269,16 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
     /// while the session type remains correct from the start.
     private static func shouldUseDualCam(config: AppConfig) -> Bool {
         guard config.features.contains(.dualCamera) else {
-            log.info("AVCaptureAdapter init — dualCamera: DISABLED (feature flag .dualCamera not in config) → AVCaptureSession")
+            log.info("dualCamCapability — DISABLED (feature flag .dualCamera not in config)")
             return false
         }
         guard AVCaptureMultiCamSession.isMultiCamSupported else {
-            log.info("AVCaptureAdapter init — dualCamera: DISABLED (isMultiCamSupported=false — iPhone 13 Pro+ required) → AVCaptureSession")
+            log.info("dualCamCapability — DISABLED (isMultiCamSupported=false — iPhone 13 Pro+ required)")
             return false
         }
-        log.info("AVCaptureAdapter init — dualCamera: ENABLED (feature flag ✓ + hardware supports multi-cam ✓) → AVCaptureMultiCamSession")
+        // Piqd v0.4 — capability check only. The session class is plain AVCaptureSession
+        // by default; MultiCam is created lazily on Dual entry via `swapSessionClass`.
+        log.info("dualCamCapability — ENABLED (feature flag ✓ + hardware multicam ✓); session class will swap on Dual entry")
         return true
     }
 
@@ -169,16 +287,14 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
 
     public init(config: AppConfig) {
         self.config = config
-        let dual = Self.shouldUseDualCam(config: config)
-        if dual {
-            self.session = AVCaptureMultiCamSession()
-            self.isDualCamSession = true
-            log.info("AVCaptureAdapter — initialized with AVCaptureMultiCamSession (dual-camera enabled)")
-        } else {
-            self.session = AVCaptureSession()
-            self.isDualCamSession = false
-            log.debug("AVCaptureAdapter — initialized with standard AVCaptureSession")
-        }
+        // Piqd v0.4 — always init with plain AVCaptureSession so non-Dual formats get
+        // full optical 0.5×/1×/2× on triple-camera devices (MultiCam constraints drop
+        // ultra-wide on triple in multicam topology). Session class swaps to MultiCam
+        // lazily on Dual entry via `swapSessionClass(toMultiCam:)`.
+        self.session = AVCaptureSession()
+        self.isDualCamSession = false
+        let dualCapable = Self.shouldUseDualCam(config: config)
+        log.info("AVCaptureAdapter — initialized with AVCaptureSession (dualCapable=\(dualCapable); MultiCam class spawned only on Dual entry)")
         // locationProvider.start() is called from startSession() — after the app window
         // is active — so the system location permission prompt fires correctly.
     }
@@ -593,6 +709,7 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
                     secondaryVideoOutput = nil
                     secondaryMovieOutput = nil
                     secondaryPhotoOutput = nil
+                    primaryVideoDataOutput = nil
                     videoDeviceInput = nil
                     secondaryVideoInput = nil
                     audioDeviceInput = nil
@@ -619,8 +736,13 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
             stateSubject.send(.ready(mode: mode))
             return
         }
-        guard mode != currentMode else { return }
-        log.debug("switchMode \(self.currentMode.rawValue) → \(mode.rawValue)")
+        // Piqd v0.4 — `isSessionConfigured == false` means a fresh session (typically
+        // post-`swapSessionClass`); we MUST run the reconfigure path even if `mode`
+        // matches the previously-configured mode.
+        if isSessionConfigured {
+            guard mode != currentMode else { return }
+        }
+        log.debug("switchMode \(self.currentMode.rawValue) → \(mode.rawValue) (isSessionConfigured=\(self.isSessionConfigured))")
 
         let wasVideoMode = isVideoMode(currentMode)
         let willBeVideoMode = isVideoMode(mode)
@@ -727,7 +849,7 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
                 }
 
                 guard
-                    let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: newPosition),
+                    let device = AVCaptureAdapter.bestVideoDevice(position: newPosition),
                     let input = try? AVCaptureDeviceInput(device: device),
                     session.canAddInput(input)
                 else {
@@ -846,9 +968,10 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
             session.sessionPreset = resolvedPreset(for: mode)
         }
 
-        // Video input (camera)
+        // Video input (camera) — uses best available virtual device on back so the zoom
+        // pill can drive optical lens switching (Piqd v0.4). Falls back to wide-angle.
         guard
-            let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: currentPosition),
+            let device = AVCaptureAdapter.bestVideoDevice(position: currentPosition),
             let input = try? AVCaptureDeviceInput(device: device),
             session.canAddInput(input)
         else {
@@ -858,6 +981,7 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
         session.addInput(input)
         videoDeviceInput = input
         log.debug("configureSession — primary input added: \(input.device.localizedName)")
+        logActiveZoomCapabilities(context: "configureSession.\(mode.rawValue)")
 
         // Output — photo or movie
         if isVideoMode(mode) {
@@ -878,6 +1002,24 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
                     log.debug("configureSession — Live Photo capture enabled")
                 }
                 log.debug("configureSession — AVCapturePhotoOutput added")
+            }
+        }
+
+        // Piqd v0.4 — primary preview frame tap for pre-shutter assists (subject guidance,
+        // backlight detection, etc.). Skipped on MultiCam (Dual) — see field doc.
+        if !isDualCamSession {
+            let videoOut = AVCaptureVideoDataOutput()
+            videoOut.alwaysDiscardsLateVideoFrames = true
+            videoOut.videoSettings = [
+                kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
+            ]
+            if session.canAddOutput(videoOut) {
+                session.addOutput(videoOut)
+                videoOut.setSampleBufferDelegate(primaryFrameDelegate, queue: primaryFrameQ)
+                primaryVideoDataOutput = videoOut
+                log.debug("configureSession — primary AVCaptureVideoDataOutput added (frame-tap)")
+            } else {
+                log.warning("configureSession — canAddOutput(primary VideoDataOutput) false; skipping frame-tap")
             }
         }
     }
@@ -909,19 +1051,34 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
             log.debug("configureDualCameraSession — configuration committed")
         }
 
-        // ── Primary: back wide-angle → AVCapturePhotoOutput ──────────────────
-
-        guard
-            let primaryDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-            let primaryInput = try? AVCaptureDeviceInput(device: primaryDevice),
-            multiSession.canAddInput(primaryInput)
-        else {
-            log.error("configureDualCameraSession — could not create primary back-wide input")
+        // ── Primary: back virtual device → AVCapturePhotoOutput ──────────────
+        // Piqd v0.4 — Dual format uses physical wide-angle on the back. Virtual devices
+        // in the multicam topology have heavy format constraints; wide-angle is the most
+        // compatible and the zoom pill is hidden in Dual anyway, so optical lens switching
+        // isn't needed here. (Non-Dual formats run on a plain `AVCaptureSession` and pick
+        // up the full virtual triple/dual-wide for 0.5×/1×/2× — see `swapSessionClass`.)
+        let candidateTypes: [AVCaptureDevice.DeviceType] = [
+            .builtInWideAngleCamera
+        ]
+        var resolvedDevice: AVCaptureDevice?
+        var resolvedInput: AVCaptureDeviceInput?
+        for type in candidateTypes {
+            guard let d = AVCaptureDevice.default(type, for: .video, position: .back),
+                  let i = try? AVCaptureDeviceInput(device: d),
+                  multiSession.canAddInput(i) else { continue }
+            resolvedDevice = d
+            resolvedInput = i
+            log.debug("configureDualCameraSession — primary candidate accepted: \(String(describing: type))")
+            break
+        }
+        guard let primaryDevice = resolvedDevice, let primaryInput = resolvedInput else {
+            log.error("configureDualCameraSession — could not create primary back input")
             throw CaptureError.sessionFailed
         }
         multiSession.addInput(primaryInput)
         videoDeviceInput = primaryInput
         log.debug("configureDualCameraSession — primary input: \(primaryDevice.localizedName)")
+        logActiveZoomCapabilities(context: "configureDualCameraSession.\(mode.rawValue)")
 
         let photoOut = AVCapturePhotoOutput()
         guard multiSession.canAddOutput(photoOut) else {
@@ -1005,6 +1162,10 @@ public final class AVCaptureAdapter: CaptureEngineProtocol {
         if let movieOutput {
             session.removeOutput(movieOutput)
             self.movieOutput = nil
+        }
+        if let primaryVideoDataOutput {
+            session.removeOutput(primaryVideoDataOutput)
+            self.primaryVideoDataOutput = nil
         }
         isSessionConfigured = false
     }
@@ -1417,11 +1578,14 @@ public extension AVCaptureAdapter {
         case dualCamUnavailable
     }
 
-    /// True iff `.dual` is a legal selection on this device + this adapter's session.
+    /// True iff `.dual` is a legal selection on this device + this adapter's config.
     /// UI should read this to disable/hide the Dual segment; `CaptureActivityStore`
-    /// mirrors it for XCUITests (UI11).
+    /// mirrors it for XCUITests (UI11). Piqd v0.4 — checks hardware capability + feature
+    /// flag rather than current session class (which may be plain right now and swap to
+    /// MultiCam lazily on Dual entry).
     var isDualFormatSupported: Bool {
-        AVCaptureMultiCamSession.isMultiCamSupported && isSessionMultiCam
+        AVCaptureMultiCamSession.isMultiCamSupported
+            && config.features.contains(.dualCamera)
     }
 
     /// Reconfigure the capture session for the given Snap-Mode format. Single-commit via
@@ -1431,6 +1595,19 @@ public extension AVCaptureAdapter {
                    dualKind: DualMediaKind = .video,
                    dualLayout: DualLayout = .pip,
                    gestureTime: Double = CACurrentMediaTime()) async throws {
+        // Piqd v0.4 — swap session class to plain AVCaptureSession for non-Dual formats
+        // (so triple-camera devices expose full 0.5×/1×/2× optical) and to MultiCam only
+        // when entering Dual. Idempotent: returns false when already in the right class.
+        let didSwap = await swapSessionClass(toMultiCam: format == .dual)
+
+        // After a swap, the new session is empty — go through the FULL build path
+        // instead of the surgical reconfigure path which assumes existing inputs.
+        if didSwap && format != .dual {
+            let targetMode: CaptureMode = (format == .clip) ? .clip : .still
+            try await rebuildPlainSession(for: targetMode)
+            return
+        }
+
         switch format {
         case .still, .sequence:
             try await reconfigureSession(to: .still, gestureTime: gestureTime)
@@ -1449,7 +1626,155 @@ public extension AVCaptureAdapter {
             case .still:
                 try await configureDualStillSession(gestureTime: gestureTime)
             }
+            // Piqd v0.4 — after a session-class swap, the freshly-created MultiCam
+            // session needs an explicit startRunning. The dual configure methods only
+            // do begin/commitConfiguration and historically relied on the pre-existing
+            // session already being running.
+            if didSwap {
+                await ensureRunning(forMode: .clip)
+            }
         }
+    }
+
+    /// Piqd v0.4 — swap the back primary video input to a different physical lens
+    /// (`.builtInUltraWideCamera` / `.builtInWideAngleCamera` / `.builtInTelephotoCamera`).
+    /// Used by the zoom pill to deliver 0.5×/1×/2× as actual lens swaps. iOS 26 no longer
+    /// auto-exposes UW via virtual-device zoom factors — manual input swap is required.
+    /// ~150ms per swap (begin/commit + format negotiation).
+    func swapBackInput(to newDevice: AVCaptureDevice) async throws {
+        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+            sessionQueue.async { [self] in
+                do {
+                    session.beginConfiguration()
+                    if let oldInput = videoDeviceInput {
+                        session.removeInput(oldInput)
+                    }
+                    let newInput = try AVCaptureDeviceInput(device: newDevice)
+                    guard session.canAddInput(newInput) else {
+                        // Restore old input on failure.
+                        if let oldInput = videoDeviceInput, session.canAddInput(oldInput) {
+                            session.addInput(oldInput)
+                        }
+                        session.commitConfiguration()
+                        cont.resume(throwing: CaptureError.sessionFailed)
+                        return
+                    }
+                    session.addInput(newInput)
+                    self.videoDeviceInput = newInput
+                    self.currentPosition = newDevice.position
+                    session.commitConfiguration()
+                    log.info("swapBackInput — \(newDevice.localizedName) (\(newDevice.deviceType.rawValue))")
+                    cont.resume()
+                } catch {
+                    log.error("swapBackInput — failed: \(error.localizedDescription)")
+                    session.commitConfiguration()
+                    cont.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    /// Piqd v0.4 — start the current session if not already running. Used after a session
+    /// swap to MultiCam since `configureDualVideoSession`/`configureDualStillSession` only
+    /// reconfigure topology, not lifecycle.
+    fileprivate func ensureRunning(forMode mode: CaptureMode) async {
+        await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+            sessionQueue.async { [self] in
+                if !self.session.isRunning {
+                    self.session.startRunning()
+                    log.info("ensureRunning — startRunning called; running=\(self.session.isRunning)")
+                }
+                cont.resume()
+            }
+        }
+        await MainActor.run { stateSubject.send(.ready(mode: mode)) }
+    }
+
+    /// Piqd v0.4 — replace the current session with one of the right class. Runs on the
+    /// session queue. Tears down all input/output references on the old session and
+    /// re-attaches the preview layer to the new one. Returns true if a swap actually
+    /// happened (caller may need to fully rebuild rather than surgically reconfigure).
+    /// Idempotent — returns false when the session is already in the requested class.
+    @discardableResult
+    func swapSessionClass(toMultiCam needsMultiCam: Bool) async -> Bool {
+        guard needsMultiCam != isDualCamSession else { return false }
+        let dualCapable = Self.shouldUseDualCam(config: config)
+        if needsMultiCam && !dualCapable {
+            log.warning("swapSessionClass — requested MultiCam but device/config doesn't support it; staying on plain session")
+            return false
+        }
+        return await withCheckedContinuation { (cont: CheckedContinuation<Bool, Never>) in
+            sessionQueue.async { [self] in
+                let wasRunning = session.isRunning
+                if wasRunning {
+                    log.info("swapSessionClass — stopping current session before swap (was running)")
+                    session.stopRunning()
+                }
+                // Drop input/output refs — the old session is about to be discarded.
+                session.beginConfiguration()
+                for out in session.outputs { session.removeOutput(out) }
+                for inp in session.inputs { session.removeInput(inp) }
+                for conn in session.connections { session.removeConnection(conn) }
+                session.commitConfiguration()
+                videoDeviceInput = nil
+                audioDeviceInput = nil
+                photoOutput = nil
+                movieOutput = nil
+                secondaryVideoInput = nil
+                secondaryVideoOutput = nil
+                secondaryMovieOutput = nil
+                secondaryPhotoOutput = nil
+                primaryVideoDataOutput = nil
+                isSessionConfigured = false
+
+                let newSession: AVCaptureSession = needsMultiCam
+                    ? AVCaptureMultiCamSession()
+                    : AVCaptureSession()
+                self.session = newSession
+                self.isDualCamSession = needsMultiCam
+                log.info("swapSessionClass — created new \(needsMultiCam ? "AVCaptureMultiCamSession" : "AVCaptureSession")")
+
+                // Re-attach preview layer to the new session on main. Under MultiCam the
+                // explicit preview connection is wired inside `configureDualVideoSession`;
+                // under plain we use auto-connect via `layer.session = newSession`.
+                if let layer = primaryPreviewLayer {
+                    DispatchQueue.main.sync {
+                        layer.session = nil
+                        if needsMultiCam {
+                            layer.setSessionWithNoConnection(newSession)
+                        } else {
+                            layer.session = newSession
+                        }
+                    }
+                }
+                cont.resume(returning: true)
+            }
+        }
+    }
+
+    /// Piqd v0.4 — full rebuild of a freshly-swapped plain `AVCaptureSession`. Mirrors the
+    /// configure path used by `startSession` (configureSession + startRunning) without
+    /// the auth/location work that already ran at app launch. Used after `swapSessionClass`
+    /// returns true and the target format is non-Dual.
+    fileprivate func rebuildPlainSession(for mode: CaptureMode) async throws {
+        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+            sessionQueue.async { [self] in
+                do {
+                    try configureSession(for: mode)
+                    self.isSessionConfigured = true
+                    self.currentMode = mode
+                    if !self.session.isRunning {
+                        self.session.startRunning()
+                    }
+                    log.info("rebuildPlainSession — session running for mode=\(mode.rawValue) inputs=\(self.session.inputs.count) outputs=\(self.session.outputs.count)")
+                    cont.resume()
+                } catch {
+                    log.error("rebuildPlainSession — failed: \(error.localizedDescription)")
+                    cont.resume(throwing: error)
+                }
+            }
+        }
+        await MainActor.run { stateSubject.send(.ready(mode: mode)) }
     }
 
     /// Updates the layout used by the next Dual capture without reconfiguring the session.

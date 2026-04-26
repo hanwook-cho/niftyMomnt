@@ -13,9 +13,13 @@ struct PiqdRootView: View {
             PiqdCaptureView(container: container)
                 .ignoresSafeArea()
 
+            // Debug-only ladybug. Moved to top-left in v0.4 to not collide with the
+            // Layer-1 flip button at top-right, and offset below the status bar so it
+            // doesn't sit under the Dynamic Island. Drafts badge (top-left in Layer 1)
+            // is still EmptyView in v0.4 — by v0.5 we'll need a different escape hatch
+            // (the 5-tap mode-pill gesture already opens dev settings).
             VStack {
                 HStack {
-                    Spacer()
                     Button {
                         showDebugVault = true
                     } label: {
@@ -25,7 +29,9 @@ struct PiqdRootView: View {
                             .padding(12)
                     }
                     .accessibilityIdentifier("piqd.debug.open")
+                    Spacer()
                 }
+                .padding(.top, PiqdTokens.Layout.statusBarOffset)
                 Spacer()
             }
         }

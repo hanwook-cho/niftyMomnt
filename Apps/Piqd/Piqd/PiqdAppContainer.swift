@@ -32,6 +32,15 @@ public final class PiqdAppContainer {
     public let storyEngine: StoryEngine
     public let sequenceFrameCapturer: any SequenceFrameCapturer
     public let makeSequenceTicker: @Sendable () -> any SequenceTicker
+    // Piqd v0.4 — invisible level. Singleton sensor, started lazily by the view that
+    // first subscribes (PiqdCaptureView's LevelIndicatorView).
+    public let motionMonitor: MotionMonitor
+    /// Piqd v0.4 — face-rect → "Step back for the full vibe" pipeline. Snap-only consumer
+    /// (PiqdCaptureView gates on mode + format + recording state).
+    public let subjectGuidance: SubjectGuidanceDetector
+    /// Piqd v0.4 — `VibeClassifying` injection seam. Ships as `StubVibeClassifier`
+    /// (always `.quiet`). Real CoreML scene classifier lands in a later version.
+    public let vibeClassifier: any VibeClassifying
 
     public init(
         config: AppConfig,
@@ -47,7 +56,10 @@ public final class PiqdAppContainer {
         captureActivity: CaptureActivityStore,
         storyEngine: StoryEngine,
         sequenceFrameCapturer: any SequenceFrameCapturer,
-        makeSequenceTicker: @escaping @Sendable () -> any SequenceTicker
+        makeSequenceTicker: @escaping @Sendable () -> any SequenceTicker,
+        motionMonitor: MotionMonitor,
+        subjectGuidance: SubjectGuidanceDetector,
+        vibeClassifier: any VibeClassifying
     ) {
         self.config = config
         self.captureUseCase = captureUseCase
@@ -63,5 +75,8 @@ public final class PiqdAppContainer {
         self.storyEngine = storyEngine
         self.sequenceFrameCapturer = sequenceFrameCapturer
         self.makeSequenceTicker = makeSequenceTicker
+        self.motionMonitor = motionMonitor
+        self.subjectGuidance = subjectGuidance
+        self.vibeClassifier = vibeClassifier
     }
 }

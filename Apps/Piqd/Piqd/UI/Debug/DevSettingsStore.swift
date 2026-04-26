@@ -77,6 +77,32 @@ public final class DevSettingsStore {
         didSet { defaults.set(dualLayout.rawValue, forKey: Self.keyDualLayout) }
     }
 
+    // MARK: - Piqd v0.4 knobs (Pre-shutter chrome)
+
+    /// Backlight EV bias toggle. Default ON. Disable to verify base AE behavior. §7.4.
+    public var backlightCorrectionEnabled: Bool {
+        didSet { persist(\.backlightCorrectionEnabled, Self.keyBacklightEnabled, backlightCorrectionEnabled) }
+    }
+
+    /// Invisible level toggle. Default ON. Disable for screen-recordings or when the line
+    /// is distracting during dev work.
+    public var levelIndicatorEnabled: Bool {
+        didSet { persist(\.levelIndicatorEnabled, Self.keyLevelEnabled, levelIndicatorEnabled) }
+    }
+
+    /// Subject-guidance pill toggle. Default ON. Disable to verify capture behavior
+    /// without face-detection running.
+    public var subjectGuidanceEnabled: Bool {
+        didSet { persist(\.subjectGuidanceEnabled, Self.keyGuidanceEnabled, subjectGuidanceEnabled) }
+    }
+
+    /// Vibe-hint glyph toggle. Default ON. Stub classifier emits `.quiet` only, so the
+    /// glyph stays hidden in production v0.4 anyway — this is for forcing emit fixtures
+    /// from the dev menu.
+    public var vibeHintEnabled: Bool {
+        didSet { persist(\.vibeHintEnabled, Self.keyVibeEnabled, vibeHintEnabled) }
+    }
+
     // MARK: - Storage
 
     private let defaults: UserDefaults
@@ -91,6 +117,10 @@ public final class DevSettingsStore {
     private static let keyForceAsmFail = "forceSequenceAssemblyFailure"
     private static let keyForceDualUnavail = "forceDualCamUnavailable"
     private static let keyDualLayout = "dualLayout"
+    private static let keyBacklightEnabled = "backlightCorrectionEnabled"
+    private static let keyLevelEnabled = "levelIndicatorEnabled"
+    private static let keyGuidanceEnabled = "subjectGuidanceEnabled"
+    private static let keyVibeEnabled = "vibeHintEnabled"
 
     // MARK: - Init
 
@@ -158,6 +188,28 @@ public final class DevSettingsStore {
         self.forceSequenceAssemblyFailure = forceAsmFail
         self.forceDualCamUnavailable = forceDualUnavail
         self.dualLayout = DualLayout(rawValue: dualLayoutRaw) ?? .pip
+
+        // Piqd v0.4 — pre-shutter chrome toggles default ON.
+        var backlight = (defaults.object(forKey: Self.keyBacklightEnabled) as? Bool) ?? true
+        var level     = (defaults.object(forKey: Self.keyLevelEnabled) as? Bool) ?? true
+        var guidance  = (defaults.object(forKey: Self.keyGuidanceEnabled) as? Bool) ?? true
+        var vibe      = (defaults.object(forKey: Self.keyVibeEnabled) as? Bool) ?? true
+        if let v = Self.readBool(environment: environment, launchArguments: launchArguments, key: "PIQD_DEV_BACKLIGHT_CORRECTION") {
+            backlight = v
+        }
+        if let v = Self.readBool(environment: environment, launchArguments: launchArguments, key: "PIQD_DEV_LEVEL_INDICATOR") {
+            level = v
+        }
+        if let v = Self.readBool(environment: environment, launchArguments: launchArguments, key: "PIQD_DEV_SUBJECT_GUIDANCE") {
+            guidance = v
+        }
+        if let v = Self.readBool(environment: environment, launchArguments: launchArguments, key: "PIQD_DEV_VIBE_HINT") {
+            vibe = v
+        }
+        self.backlightCorrectionEnabled = backlight
+        self.levelIndicatorEnabled = level
+        self.subjectGuidanceEnabled = guidance
+        self.vibeHintEnabled = vibe
     }
 
     public func resetDefaults() {
@@ -171,6 +223,10 @@ public final class DevSettingsStore {
         forceSequenceAssemblyFailure = false
         forceDualCamUnavailable = false
         dualLayout = .pip
+        backlightCorrectionEnabled = true
+        levelIndicatorEnabled = true
+        subjectGuidanceEnabled = true
+        vibeHintEnabled = true
     }
 
     // MARK: - Helpers

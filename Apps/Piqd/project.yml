@@ -8,7 +8,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.9"
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: "B7RFV75XV4"
     IPHONEOS_DEPLOYMENT_TARGET: "26.0"
 packages:
   NiftyCore:
@@ -30,7 +30,7 @@ targets:
       - package: NiftyData
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.hwcho99.piqd
+        PRODUCT_BUNDLE_IDENTIFIER: com.hwcho99.niftyMomnt.piqd
         INFOPLIST_FILE: Piqd/Info.plist
         GENERATE_INFOPLIST_FILE: "NO"
         CODE_SIGN_ENTITLEMENTS: Piqd/Piqd.entitlements
@@ -50,7 +50,7 @@ targets:
       - target: Piqd
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.hwcho99.piqd.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: com.hwcho99.niftyMomnt.piqd.uitests
         TEST_TARGET_NAME: Piqd
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: "YES"

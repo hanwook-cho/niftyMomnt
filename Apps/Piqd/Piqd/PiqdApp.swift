@@ -37,7 +37,7 @@ struct PiqdApp: App {
             UserDefaults(suiteName: "piqd")?.set(forced, forKey: "piqd.captureMode")
         }
 
-        let config = AppConfig.piqd_v0_3
+        let config = AppConfig.piqd_v0_4
 
         // Piqd v0.2 — dev knobs (loaded once at launch; XCUITest can seed via PIQD_DEV_*).
         let devSettings = DevSettingsStore()
@@ -113,7 +113,10 @@ struct PiqdApp: App {
             captureActivity: captureActivity,
             storyEngine: storyEngine,
             sequenceFrameCapturer: captureAdapter,
-            makeSequenceTicker: { DispatchSourceTimerTicker() }
+            makeSequenceTicker: { DispatchSourceTimerTicker() },
+            motionMonitor: MotionMonitor(),
+            subjectGuidance: SubjectGuidanceDetector(),
+            vibeClassifier: StubVibeClassifier()
         )
     }
 

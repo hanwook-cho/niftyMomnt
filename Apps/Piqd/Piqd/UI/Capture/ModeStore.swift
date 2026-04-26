@@ -24,6 +24,11 @@ public final class ModeStore {
     /// through v0.8; Roll Live Photo arrives in v0.9). Defaults to `.still` on first launch.
     public private(set) var snapFormat: CaptureFormat
 
+    /// Piqd v0.4 — last-used Snap aspect ratio (9:16 or 1:1). Persisted. Cycle drive by
+    /// the Layer 1 ratio pill. Sequence/Clip/Dual force 9:16 regardless of stored value
+    /// — the store records the user preference; consumer applies the format gate.
+    public private(set) var snapAspectRatio: AspectRatio
+
     /// Format that should actually drive the camera session for the given mode.
     /// Roll always forces `.still`; Snap returns the user's last-selected Snap format.
     public func effectiveFormat(for mode: CaptureMode) -> CaptureFormat {
@@ -50,6 +55,7 @@ public final class ModeStore {
 
     private static let modeKey = "piqd.captureMode"
     private static let snapFormatKey = "piqd.lastSnapFormat"
+    private static let snapAspectRatioKey = "piqd.snap.aspectRatio"
 
     // MARK: - Init
 
@@ -74,6 +80,13 @@ public final class ModeStore {
         } else {
             self.snapFormat = defaultSnapFormat
         }
+        if let raw = defaults.string(forKey: Self.snapAspectRatioKey),
+           let saved = AspectRatio(rawValue: raw),
+           AspectRatio.snapAllowed.contains(saved) {
+            self.snapAspectRatio = saved
+        } else {
+            self.snapAspectRatio = .nineSixteen
+        }
     }
 
     // MARK: - Mode switching
@@ -90,6 +103,28 @@ public final class ModeStore {
         guard newFormat != snapFormat else { return }
         snapFormat = newFormat
         defaults.set(newFormat.rawValue, forKey: Self.snapFormatKey)
+    }
+
+    /// Cycle the Snap aspect ratio (9:16 → 1:1 → 9:16). No-op outside Snap. v0.4.
+    public func cycleSnapAspectRatio() {
+        guard mode == .snap else { return }
+        let next = snapAspectRatio.nextSnapRatio()
+        guard next != snapAspectRatio else { return }
+        snapAspectRatio = next
+        defaults.set(next.rawValue, forKey: Self.snapAspectRatioKey)
+    }
+
+    /// Effective ratio used for preview crop and capture-time crop. Snap-Sequence /
+    /// Snap-Clip / Snap-Dual force 9:16 (per FR-SNAP-RATIO-04). Roll uses 4:3 default.
+    public func effectiveAspectRatio(for mode: CaptureMode, format: CaptureFormat) -> AspectRatio {
+        switch mode {
+        case .snap:
+            return format == .still ? snapAspectRatio : .nineSixteen
+        case .roll:
+            return .fourThree
+        default:
+            return .fourThree
+        }
     }
 
     // MARK: - Dev-menu tap gesture

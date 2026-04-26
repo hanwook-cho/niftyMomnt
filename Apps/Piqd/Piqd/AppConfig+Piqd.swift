@@ -76,4 +76,26 @@ extension AppConfig {
             )
         )
     )
+
+    /// v0.4 — Pre-shutter Layer 1 chrome. Adds the layered chrome system + zoom pill,
+    /// camera flip, aspect ratio toggle, invisible level, subject guidance, backlight
+    /// correction, and vibe hint glyph (stub classifier). No new asset types or capture
+    /// formats relative to v0.3. Sharing + drafts + iCloud still gated off.
+    /// See piqd_interim_v0.4_plan.md.
+    static let piqd_v0_4 = AppConfig(
+        appVariant: .piqd,
+        assetTypes: [.still, .sequence, .clip, .dual],
+        aiModes: .onDevice,
+        features: [.snapMode, .rollMode, .sequenceCapture, .dualCamera, .preShutterChrome],
+        sharing: SharingConfig(maxCircleSize: 0, labEnabled: false),
+        storage: StorageConfig(
+            smartArchiveEnabled: false,
+            iCloudSyncEnabled: false,
+            clipQuality: ClipQualityConfig(
+                maxResolution: .uhd4K,
+                maxFrameRate: 60,
+                proOnlyHighFPS: true
+            )
+        )
+    )
 }
