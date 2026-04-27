@@ -102,6 +102,34 @@ struct PiqdDevSettingsView: View {
                         .accessibilityIdentifier("piqd-dev-vibe-toggle")
                 }
 
+                Section("Drafts (v0.5)") {
+                    Toggle("Drafts tray enabled", isOn: $store.draftsTrayEnabled)
+                        .accessibilityIdentifier("piqd-dev-drafts-toggle")
+                    Stepper(
+                        "Purge interval: \(store.draftPurgeIntervalSeconds)s",
+                        value: $store.draftPurgeIntervalSeconds,
+                        in: 5...600,
+                        step: 5
+                    )
+                    .accessibilityIdentifier("piqd-dev-drafts-purge-interval")
+                    HStack {
+                        Text("Fake-now offset")
+                        Spacer()
+                        Text("\(Int(store.draftFakeNowOffsetSeconds / 3600))h")
+                            .foregroundStyle(.secondary)
+                    }
+                    Slider(
+                        value: $store.draftFakeNowOffsetSeconds,
+                        in: 0...(25 * 3600),
+                        step: 60
+                    )
+                    .accessibilityIdentifier("piqd-dev-drafts-fake-now")
+                    Button("Reset fake-now to 0") {
+                        store.draftFakeNowOffsetSeconds = 0
+                    }
+                    .accessibilityIdentifier("piqd-dev-drafts-fake-now-reset")
+                }
+
                 Section {
                     Button("Reset to defaults", role: .destructive) {
                         store.resetDefaults()

@@ -36,6 +36,8 @@ struct PiqdCaptureView: View {
 
     // Piqd v0.3 — format selector + shutter state.
     @State private var showFormatSelector = false
+    /// Piqd v0.5 — drafts tray sheet presentation (FR-SNAP-DRAFT-03).
+    @State private var showDraftsTray = false
     @State private var selectorIdleCollapseTask: Task<Void, Never>?
     @State private var shutterState: ShutterState = .idle
     @State private var sequenceFrameIndex: Int = 0
@@ -158,7 +160,20 @@ struct PiqdCaptureView: View {
                             )
                         }
                     },
-                    draftsBadge: { EmptyView() }
+                    draftsBadge: {
+                        // Piqd v0.5 — Snap Mode only; the badge view itself returns
+                        // EmptyView when state == .hidden, so an empty drafts list
+                        // also renders nothing.
+                        if modeStore.mode == .snap {
+                            UnsentBadgeView(
+                                state: container.draftsBindings.badgeState,
+                                onTap: {
+                                    showDraftsTray = true
+                                    layerStore.interact()
+                                }
+                            )
+                        }
+                    }
                 )
                 // No `.ignoresSafeArea()` — keeps the chrome inside the safe area so its
                 // bottom-padding math shares a baseline with `shutterControl` below.
@@ -262,6 +277,22 @@ struct PiqdCaptureView: View {
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .opacity(0.001)
                         .accessibilityIdentifier("piqd-layer1-tap-test")
+                    // Piqd v0.5 — seeds a deterministic Snap-mode drafts row without
+                    // exercising the camera pipeline. Tap repeatedly for multiple rows.
+                    Button("drafts.fake-capture") {
+                        Task {
+                            let asset = Asset(
+                                type: .still,
+                                capturedAt: Date(),
+                                duration: nil,
+                                isPrivate: false
+                            )
+                            await container.draftsBindings.enroll(asset: asset)
+                        }
+                    }
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .opacity(0.001)
+                        .accessibilityIdentifier("piqd-drafts-fake-capture")
                     Spacer()
                 }
                 .padding(.top, 140)
@@ -393,6 +424,20 @@ struct PiqdCaptureView: View {
         }
         .sheet(isPresented: $showDevSettings) {
             PiqdDevSettingsView(store: dev, onClose: { showDevSettings = false })
+        }
+        // Piqd v0.5 — drafts tray bottom sheet (PRD §5.5).
+        .sheet(isPresented: $showDraftsTray, onDismiss: {
+            // Restart Layer 1 idle clock so chrome auto-retreats after the sheet closes.
+            layerStore.interact()
+        }) {
+            DraftsTraySheetView(
+                bindings: container.draftsBindings,
+                exporter: container.photoLibraryExporter,
+                shareHandoff: container.shareHandoff,
+                resolveURL: { id, type in
+                    await container.vaultRepository.snapAssetURL(id: id, type: type)
+                }
+            )
         }
     }
 
@@ -961,6 +1006,18 @@ struct PiqdCaptureView: View {
         }
     }
 
+    /// Piqd v0.5 — enroll a Snap-mode capture in the drafts tray. No-op for Roll.
+    /// Called from every Snap completion site (Still / Sequence / Clip / Dual) after
+    /// the vault write returns. Best-effort: a drafts insert failure must not
+    /// surface to the user; the asset bytes are already safe in the vault.
+    private func enrollDraftIfNeeded(asset: Asset, mode: CaptureMode) async {
+        guard DraftEnrollmentPolicy.shouldEnroll(mode: mode) else { return }
+        // `draftsBindings.enroll` writes through to the GRDB repo AND updates
+        // the in-memory store + bumps `now`, so the unsent badge appears within
+        // one render frame.
+        await container.draftsBindings.enroll(asset: asset)
+    }
+
     private func captureStill() async {
         isCapturing = true
         shutterState = .pressing
@@ -983,6 +1040,7 @@ struct PiqdCaptureView: View {
                 encoder: container.imageEncoder,
                 locked: false
             )
+            await enrollDraftIfNeeded(asset: asset, mode: .snap)
             withAnimation(.easeOut(duration: 0.15)) { flashAssetID = asset.id.uuidString }
             try? await Task.sleep(nanoseconds: 200_000_000)
             withAnimation(.easeIn(duration: 0.15)) { flashAssetID = nil }
@@ -1111,6 +1169,9 @@ struct PiqdCaptureView: View {
                 sequenceAssembledURL: strip.assembledVideoURL
             )
             try await container.vaultManager.saveVideoFile(asset, sourceURL: strip.assembledVideoURL)
+            // Piqd v0.5 — Sequence is Snap-only (PRD §5.4); enroll once shareReady is implied
+            // by `assembleSequence` returning successfully.
+            await enrollDraftIfNeeded(asset: asset, mode: .snap)
             // Create a Moment wrapping the sequence asset so it surfaces in the vault grid.
             // CaptureMomentUseCase's still path runs classification/ambient/geocode/merge — none
             // of that applies to a pre-assembled sequence MP4 here, so we stamp a minimal
@@ -1212,6 +1273,9 @@ struct PiqdCaptureView: View {
 
         do {
             let asset = try await container.captureUseCase.stopVideoRecording(config: container.config)
+            // Piqd v0.5 — Clip + Dual are Snap-only formats (PRD §5.4); the only path that
+            // reaches this completion is a Snap-mode recording.
+            await enrollDraftIfNeeded(asset: asset, mode: .snap)
             withAnimation(.easeOut(duration: 0.15)) { flashAssetID = asset.id.uuidString }
             try? await Task.sleep(nanoseconds: 200_000_000)
             withAnimation(.easeIn(duration: 0.15)) { flashAssetID = nil }
@@ -1235,6 +1299,8 @@ struct PiqdCaptureView: View {
             fileExtension: "jpg",
             locked: locked
         )
+        // Piqd v0.5 — UI-test stubs respect the same enrollment rule as live captures.
+        await enrollDraftIfNeeded(asset: asset, mode: locked ? .roll : .snap)
         let moment = Moment(
             id: UUID(),
             label: "UI Test",

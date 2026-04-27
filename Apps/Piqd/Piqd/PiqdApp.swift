@@ -37,7 +37,7 @@ struct PiqdApp: App {
             UserDefaults(suiteName: "piqd")?.set(forced, forKey: "piqd.captureMode")
         }
 
-        let config = AppConfig.piqd_v0_4
+        let config = AppConfig.piqd_v0_5
 
         // Piqd v0.2 — dev knobs (loaded once at launch; XCUITest can seed via PIQD_DEV_*).
         let devSettings = DevSettingsStore()
@@ -99,10 +99,27 @@ struct PiqdApp: App {
             sequenceAssembler: sequenceAssembler
         )
 
+        // Piqd v0.5 — drafts tray persistence. GRDB file lives at
+        // `Documents/{ns}/drafts.sqlite` per `DraftsRepository`.
+        let draftsRepository = DraftsRepository(config: config)
+        let draftPurgeScheduler = DraftPurgeScheduler(
+            drafts: draftsRepository,
+            vault: vaultRepo
+        )
+        // Capture devSettings weakly via a closure — Debug builds honor the fake-now
+        // offset; Release returns 0 unconditionally (`effectiveFakeNowOffset` gates).
+        let draftsBindings = DraftsStoreBindings(
+            repo: draftsRepository,
+            nowOffsetProvider: { [weak devSettings] in
+                devSettings?.effectiveFakeNowOffset ?? 0
+            }
+        )
+
         container = PiqdAppContainer(
             config: config,
             captureUseCase: captureUseCase,
             vaultManager: vaultManager,
+            vaultRepository: vaultRepo,
             graphManager: graphManager,
             captureSession: captureAdapter.session,
             captureAdapter: captureAdapter,
@@ -116,13 +133,33 @@ struct PiqdApp: App {
             makeSequenceTicker: { DispatchSourceTimerTicker() },
             motionMonitor: MotionMonitor(),
             subjectGuidance: SubjectGuidanceDetector(),
-            vibeClassifier: StubVibeClassifier()
+            vibeClassifier: StubVibeClassifier(),
+            draftsRepository: draftsRepository,
+            photoLibraryExporter: PhotoLibraryExporter(),
+            shareHandoff: ShareHandoffCoordinator(),
+            draftPurgeScheduler: draftPurgeScheduler,
+            draftsBindings: draftsBindings
         )
     }
+
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
             PiqdRootView(container: container)
+                .task {
+                    // Piqd v0.5 — hydrate drafts on cold launch + sweep before first render.
+                    await container.draftsBindings.hydrate()
+                    _ = try? await container.draftPurgeScheduler.sweep()
+                    await container.draftsBindings.refreshFromRepo()
+                }
+                .onChange(of: scenePhase) { _, newPhase in
+                    guard newPhase == .active else { return }
+                    Task {
+                        _ = try? await container.draftPurgeScheduler.sweep()
+                        await container.draftsBindings.refreshFromRepo()
+                    }
+                }
         }
     }
 }

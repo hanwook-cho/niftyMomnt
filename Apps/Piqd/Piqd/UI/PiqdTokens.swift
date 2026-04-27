@@ -18,6 +18,10 @@ enum PiqdTokens {
         static let snapChromeSubtle = SwiftUI.Color.white.opacity(0.55)
         /// White at 70% — invisible level line.
         static let levelLine = SwiftUI.Color.white.opacity(0.70)
+        /// Drafts tray amber — timer label at <1h remaining (UIUX §2.14, FR-SNAP-DRAFT-05).
+        static let rollAmber = SwiftUI.Color(red: 0xC9 / 255.0, green: 0x7B / 255.0, blue: 0x2A / 255.0)
+        /// Drafts tray red / Snap-record red — timer at <15min, urgent badge tint, "send →" red text.
+        static let recordRed = SwiftUI.Color(red: 0xE5 / 255.0, green: 0x37 / 255.0, blue: 0x2A / 255.0)
     }
 
     enum Spacing {
@@ -30,6 +34,8 @@ enum PiqdTokens {
     enum Shape {
         /// Mode indicator, zoom pill, ratio pill, badges. UIUX §1.
         static let pillRadius: CGFloat = 14
+        /// Drafts tray thumbnails. UIUX §1.5.
+        static let thumbRadius: CGFloat = 8
     }
 
     enum Animation {

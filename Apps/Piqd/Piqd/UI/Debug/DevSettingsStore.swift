@@ -103,6 +103,39 @@ public final class DevSettingsStore {
         didSet { persist(\.vibeHintEnabled, Self.keyVibeEnabled, vibeHintEnabled) }
     }
 
+    // MARK: - Piqd v0.5 knobs (Drafts tray)
+
+    /// Master toggle for the drafts tray feature. Default ON. Disable to verify
+    /// that legacy capture flows still pass without a drafts row landing.
+    public var draftsTrayEnabled: Bool {
+        didSet { persist(\.draftsTrayEnabled, Self.keyDraftsEnabled, draftsTrayEnabled) }
+    }
+
+    /// Test-only clock offset (seconds) added to "now" everywhere DraftsStoreBindings
+    /// reads it. UI tests use this to advance into urgency thresholds without waiting
+    /// 23+ hours. Default 0. Range: any signed value (positive shifts clock forward).
+    /// Compiled out in Release: see `effectiveFakeNowOffset` below.
+    public var draftFakeNowOffsetSeconds: Double {
+        didSet { persist(\.draftFakeNowOffsetSeconds, Self.keyDraftFakeNow, draftFakeNowOffsetSeconds) }
+    }
+
+    /// Foreground purge sweep cadence. Default 60s; range 5…600. Lower for tests
+    /// that want the sweep to run inside an XCUITest poll window.
+    public var draftPurgeIntervalSeconds: Int {
+        didSet { persist(\.draftPurgeIntervalSeconds, Self.keyDraftPurgeInterval, draftPurgeIntervalSeconds) }
+    }
+
+    /// Returns the effective offset in Release builds (always 0) vs. Debug
+    /// (the persisted value). Keeps a clock-injection knob from leaking into
+    /// production builds.
+    public var effectiveFakeNowOffset: TimeInterval {
+        #if DEBUG
+        return draftFakeNowOffsetSeconds
+        #else
+        return 0
+        #endif
+    }
+
     // MARK: - Storage
 
     private let defaults: UserDefaults
@@ -121,6 +154,9 @@ public final class DevSettingsStore {
     private static let keyLevelEnabled = "levelIndicatorEnabled"
     private static let keyGuidanceEnabled = "subjectGuidanceEnabled"
     private static let keyVibeEnabled = "vibeHintEnabled"
+    private static let keyDraftsEnabled = "draftsTrayEnabled"
+    private static let keyDraftFakeNow = "draftFakeNowOffsetSeconds"
+    private static let keyDraftPurgeInterval = "draftPurgeIntervalSeconds"
 
     // MARK: - Init
 
@@ -210,6 +246,23 @@ public final class DevSettingsStore {
         self.levelIndicatorEnabled = level
         self.subjectGuidanceEnabled = guidance
         self.vibeHintEnabled = vibe
+
+        // Piqd v0.5 — drafts tray dev knobs.
+        var draftsEnabled = (defaults.object(forKey: Self.keyDraftsEnabled) as? Bool) ?? true
+        var draftFakeNow  = (defaults.object(forKey: Self.keyDraftFakeNow) as? Double) ?? 0
+        var draftPurge    = (defaults.object(forKey: Self.keyDraftPurgeInterval) as? Int) ?? 60
+        if let v = Self.readBool(environment: environment, launchArguments: launchArguments, key: "PIQD_DEV_DRAFTS_TRAY") {
+            draftsEnabled = v
+        }
+        if let v = Self.readDouble(environment: environment, launchArguments: launchArguments, key: "PIQD_DEV_FAKE_NOW_OFFSET") {
+            draftFakeNow = v
+        }
+        if let v = Self.readInt(environment: environment, launchArguments: launchArguments, key: "PIQD_DEV_PURGE_INTERVAL") {
+            draftPurge = v
+        }
+        self.draftsTrayEnabled = draftsEnabled
+        self.draftFakeNowOffsetSeconds = draftFakeNow
+        self.draftPurgeIntervalSeconds = max(5, min(600, draftPurge))
     }
 
     public func resetDefaults() {
@@ -227,6 +280,9 @@ public final class DevSettingsStore {
         levelIndicatorEnabled = true
         subjectGuidanceEnabled = true
         vibeHintEnabled = true
+        draftsTrayEnabled = true
+        draftFakeNowOffsetSeconds = 0
+        draftPurgeIntervalSeconds = 60
     }
 
     // MARK: - Helpers

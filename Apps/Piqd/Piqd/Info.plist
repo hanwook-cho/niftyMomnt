@@ -24,6 +24,8 @@
 	<string>Piqd uses your camera to capture Snaps.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Piqd uses the microphone for future Clip capture. Not used in this build.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Piqd saves captured Snaps to your photo library when you choose to export or save.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

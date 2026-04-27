@@ -492,8 +492,12 @@ Visual:
   Color:         PiqdTokens.Color.snapChrome
 
 Position:
-  Same Y as mode indicator pill
-  X = modePillLeadingEdge − PiqdTokens.Spacing.md − badgeWidth
+  Bottom-left of Layer 1, vertically aligned with the shutter row
+  Y = safeAreaBottom + PiqdTokens.Layout.shutterBottomPadding
+  X = safeAreaLeading + PiqdTokens.Spacing.md
+  (Revised in v0.5 — earlier draft placed the badge "left of mode pill, same Y"
+   but that collided with the mode pill's HUD-rendered position. Bottom-left
+   sits closer to the user's thumb and avoids any chrome overlap.)
 
 Behavior:
   Tap: opens drafts tray as bottom sheet
@@ -719,7 +723,7 @@ Appears (220ms slide up + fade):
   Zoom pill:          horizontally centered, Y = safeAreaTop + safeAreaHeight × 0.88
   Aspect ratio pill:  right of zoom pill, same Y
   Flip button:        top-right safe area
-  Unsent badge:       left of mode pill, same Y (only if drafts exist)
+  Unsent badge:       bottom-left, vertically aligned with shutter row (only if drafts exist; v0.5 revision)
   Invisible level:    horizontal center (if device tilted)
 
 Auto-retreat: 3 seconds idle → all Layer 1 chrome fades out (150ms)

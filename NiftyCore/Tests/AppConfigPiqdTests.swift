@@ -105,6 +105,28 @@ final class AppConfigPiqdTests: XCTestCase {
         XCTAssertFalse(piqdV03().features.contains(.preShutterChrome))
     }
 
+    // MARK: - v0.5 mask — Drafts Tray
+
+    func test_piqd_v0_5_addsDraftsTrayOnly() {
+        // v0.5 = v0.4 + exactly { .draftsTray }. No asset-type or capture-format change.
+        let v4 = piqdV04()
+        let v5 = piqdV05()
+
+        let newFeatures = v5.features.subtracting(v4.features)
+        XCTAssertEqual(newFeatures, [.draftsTray])
+        XCTAssertTrue(v5.features.isSuperset(of: v4.features))
+
+        XCTAssertEqual(v5.assetTypes, v4.assetTypes)
+        XCTAssertEqual(v5.sharing.maxCircleSize, v4.sharing.maxCircleSize)
+        XCTAssertFalse(v5.storage.iCloudSyncEnabled)
+        XCTAssertFalse(v5.storage.smartArchiveEnabled)
+    }
+
+    func test_piqd_v0_5_draftsTrayFlagSet() {
+        XCTAssertTrue(piqdV05().features.contains(.draftsTray))
+        XCTAssertFalse(piqdV04().features.contains(.draftsTray))
+    }
+
     // MARK: - v0.1 mask
 
     func test_piqd_v0_1_onlySnapMode() {
@@ -144,17 +166,19 @@ final class AppConfigPiqdTests: XCTestCase {
         let allFlags: [FeatureSet] = [
             .rollMode, .nudgeEngine, .moodMap, .liveActivity, .journalSuggest,
             .trustedSharing, .widgetKit, .photoFix, .soundStamp, .l4c, .dualCamera,
-            .snapMode, .sequenceCapture, .p2pSharing, .iCloudRollPackage, .preShutterChrome
+            .snapMode, .sequenceCapture, .p2pSharing, .iCloudRollPackage, .preShutterChrome,
+            .draftsTray
         ]
         let raws = allFlags.map { $0.rawValue }
         XCTAssertEqual(Set(raws).count, raws.count, "FeatureSet raw values must be unique")
 
-        // Piqd flags occupy bits 11–15.
+        // Piqd flags occupy bits 11–16.
         XCTAssertEqual(FeatureSet.snapMode.rawValue,          1 << 11)
         XCTAssertEqual(FeatureSet.sequenceCapture.rawValue,   1 << 12)
         XCTAssertEqual(FeatureSet.p2pSharing.rawValue,        1 << 13)
         XCTAssertEqual(FeatureSet.iCloudRollPackage.rawValue, 1 << 14)
         XCTAssertEqual(FeatureSet.preShutterChrome.rawValue,  1 << 15)
+        XCTAssertEqual(FeatureSet.draftsTray.rawValue,        1 << 16)
     }
 
     // MARK: - Helpers
@@ -224,6 +248,26 @@ final class AppConfigPiqdTests: XCTestCase {
             assetTypes: [.still, .sequence, .clip, .dual],
             aiModes: .onDevice,
             features: [.snapMode, .rollMode, .sequenceCapture, .dualCamera, .preShutterChrome],
+            sharing: SharingConfig(maxCircleSize: 0, labEnabled: false),
+            storage: StorageConfig(
+                smartArchiveEnabled: false,
+                iCloudSyncEnabled: false,
+                clipQuality: ClipQualityConfig(
+                    maxResolution: .uhd4K,
+                    maxFrameRate: 60,
+                    proOnlyHighFPS: true
+                )
+            )
+        )
+    }
+
+    private func piqdV05() -> AppConfig {
+        AppConfig(
+            appVariant: .piqd,
+            assetTypes: [.still, .sequence, .clip, .dual],
+            aiModes: .onDevice,
+            features: [.snapMode, .rollMode, .sequenceCapture, .dualCamera,
+                       .preShutterChrome, .draftsTray],
             sharing: SharingConfig(maxCircleSize: 0, labEnabled: false),
             storage: StorageConfig(
                 smartArchiveEnabled: false,

@@ -12,6 +12,9 @@ public final class PiqdAppContainer {
     public let config: AppConfig
     public let captureUseCase: CaptureMomentUseCase
     public let vaultManager: VaultManager
+    /// Concrete repository — exposed so Piqd-only views (drafts tray) can call
+    /// methods like `snapAssetURL(id:type:)` that aren't part of `VaultProtocol`.
+    public let vaultRepository: VaultRepository
     public let graphManager: GraphManager
     public let captureSession: AVCaptureSession
     /// Concrete adapter — exposed so views can call imperative methods that aren't part of
@@ -41,11 +44,24 @@ public final class PiqdAppContainer {
     /// Piqd v0.4 — `VibeClassifying` injection seam. Ships as `StubVibeClassifier`
     /// (always `.quiet`). Real CoreML scene classifier lands in a later version.
     public let vibeClassifier: any VibeClassifying
+    /// Piqd v0.5 — drafts tray persistence. GRDB-backed `DraftsRepository` in production;
+    /// `InMemoryDraftsRepository` for UI-test seams.
+    public let draftsRepository: any DraftsRepositoryProtocol
+    /// Piqd v0.5 — iOS Photos save target.
+    public let photoLibraryExporter: any PhotoLibraryExporterProtocol
+    /// Piqd v0.5 — interim "send →" sheet wrapper. Replaced by Trusted Circle in v0.6.
+    public let shareHandoff: ShareHandoffCoordinator
+    /// Piqd v0.5 — foreground-only purge sweep. Triggered on app launch, on
+    /// `willEnterForegroundNotification`, and (when extended) on the active timer.
+    public let draftPurgeScheduler: DraftPurgeScheduler
+    /// Piqd v0.5 — @Observable bridge that drives badge + tray UI.
+    public let draftsBindings: DraftsStoreBindings
 
     public init(
         config: AppConfig,
         captureUseCase: CaptureMomentUseCase,
         vaultManager: VaultManager,
+        vaultRepository: VaultRepository,
         graphManager: GraphManager,
         captureSession: AVCaptureSession,
         captureAdapter: AVCaptureAdapter,
@@ -59,11 +75,17 @@ public final class PiqdAppContainer {
         makeSequenceTicker: @escaping @Sendable () -> any SequenceTicker,
         motionMonitor: MotionMonitor,
         subjectGuidance: SubjectGuidanceDetector,
-        vibeClassifier: any VibeClassifying
+        vibeClassifier: any VibeClassifying,
+        draftsRepository: any DraftsRepositoryProtocol,
+        photoLibraryExporter: any PhotoLibraryExporterProtocol,
+        shareHandoff: ShareHandoffCoordinator,
+        draftPurgeScheduler: DraftPurgeScheduler,
+        draftsBindings: DraftsStoreBindings
     ) {
         self.config = config
         self.captureUseCase = captureUseCase
         self.vaultManager = vaultManager
+        self.vaultRepository = vaultRepository
         self.graphManager = graphManager
         self.captureSession = captureSession
         self.captureAdapter = captureAdapter
@@ -78,5 +100,10 @@ public final class PiqdAppContainer {
         self.motionMonitor = motionMonitor
         self.subjectGuidance = subjectGuidance
         self.vibeClassifier = vibeClassifier
+        self.draftsRepository = draftsRepository
+        self.photoLibraryExporter = photoLibraryExporter
+        self.shareHandoff = shareHandoff
+        self.draftPurgeScheduler = draftPurgeScheduler
+        self.draftsBindings = draftsBindings
     }
 }

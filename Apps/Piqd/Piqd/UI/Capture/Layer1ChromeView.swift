@@ -34,17 +34,19 @@ struct Layer1ChromeView<TopRight: View, ZoomSlot: View, RatioSlot: View, BadgeSl
             .padding(.top, PiqdTokens.Layout.statusBarOffset)
             .padding(.trailing, PiqdTokens.Spacing.md)
 
-            // Top-left slot — drafts badge (currently empty in v0.4).
-            VStack {
-                HStack {
-                    draftsBadge()
-                        .allowsHitTesting(isRevealed)
-                    Spacer()
-                }
+            // Drafts badge — bottom-left, vertically aligned with the shutter row.
+            // Deviates from UIUX §2.8 (which spec'd "left of mode pill") because the
+            // top-left slot collided with the mode pill's HUD-rendered position.
+            // Bottom-left also sits closer to the user's thumb. Revisit in v0.6
+            // onboarding work.
+            HStack {
+                draftsBadge()
+                    .allowsHitTesting(isRevealed)
                 Spacer()
             }
-            .padding(.top, PiqdTokens.Layout.statusBarOffset)
-            .padding(.leading, PiqdTokens.Spacing.md)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+            .padding(.bottom, PiqdTokens.Layout.shutterBottomPadding)
+            .padding(.horizontal, PiqdTokens.Spacing.md)
 
             // Bottom-center slot — zoom pill + ratio pill, just above the shutter.
             VStack {

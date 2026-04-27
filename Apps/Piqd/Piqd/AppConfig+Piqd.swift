@@ -98,4 +98,27 @@ extension AppConfig {
             )
         )
     )
+
+    /// v0.5 — Drafts Tray + iOS share hand-off. Adds the `.draftsTray` flag to v0.4 with no
+    /// asset-type or capture-format change. Snap captures land in a 24h-expiry local drafts
+    /// table; "save" exports to iOS Photos; "send →" routes to `UIActivityViewController`
+    /// (interim until v0.6 Trusted Circle). Roll Mode unaffected.
+    /// See piqd_interim_v0.5_plan.md.
+    static let piqd_v0_5 = AppConfig(
+        appVariant: .piqd,
+        assetTypes: [.still, .sequence, .clip, .dual],
+        aiModes: .onDevice,
+        features: [.snapMode, .rollMode, .sequenceCapture, .dualCamera,
+                   .preShutterChrome, .draftsTray],
+        sharing: SharingConfig(maxCircleSize: 0, labEnabled: false),
+        storage: StorageConfig(
+            smartArchiveEnabled: false,
+            iCloudSyncEnabled: false,
+            clipQuality: ClipQualityConfig(
+                maxResolution: .uhd4K,
+                maxFrameRate: 60,
+                proOnlyHighFPS: true
+            )
+        )
+    )
 }

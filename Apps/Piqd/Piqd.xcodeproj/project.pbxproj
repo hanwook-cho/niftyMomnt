@@ -10,8 +10,11 @@
 		020E6D490135E36043DF5C94 /* NiftyCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7BE3531A196107450CBD91C4 /* NiftyCore */; };
 		088CDD62BE70AF4599757BB9 /* CameraPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875613EC3011E66CBED946F2 /* CameraPreviewView.swift */; };
 		0ABB22A51E413F200C4BBC26 /* NiftyData in Frameworks */ = {isa = PBXBuildFile; productRef = D573630EDB426970D58ED8FD /* NiftyData */; };
+		0D7E81A7D41901A6CE466204 /* DraftRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FEFE5775EFC731B82C7BCD /* DraftRowView.swift */; };
 		0DCFE6C8D27ECB3A9E20ACDB /* PiqdFormatSelectorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3963B9A68AB661E50D7CDC23 /* PiqdFormatSelectorUITests.swift */; };
+		27FBB593ACDAF28E0C25E0DD /* DraftsTraySheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BF437DF7C5EB6C3F84248FE /* DraftsTraySheetView.swift */; };
 		2C786BA9BC6E5ABACDFE7F75 /* LevelIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EB723F969727586D105C88D /* LevelIndicatorView.swift */; };
+		335CAAB2432F8FE4F6DC028B /* ShareHandoffCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F20ED2E883AAC7C884CB8B /* ShareHandoffCoordinator.swift */; };
 		34F2A72EE427A586D232B039 /* PiqdAppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 279D2B73905D44964F953E82 /* PiqdAppContainer.swift */; };
 		3D7D0C29AC8EA7B0A03C1ED0 /* ModePill.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0869CC6219AD5B6332A432 /* ModePill.swift */; };
 		3F7E27FDD6AE38C30EE02A25 /* PiqdUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECCC3D31406AB1441602D61 /* PiqdUITests.swift */; };
@@ -21,7 +24,9 @@
 		53C4175300A5B474A59DA960 /* FormatSelectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DB8554F1E135065F887A4B1 /* FormatSelectorView.swift */; };
 		5FA2FD8712E673FDC3A15B21 /* VibeHintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 056F5EA047FDDFF1FCA828A3 /* VibeHintView.swift */; };
 		7394563EE607E580E3F6E3DE /* PiqdDevSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 526A6B001D1391B841AD8985 /* PiqdDevSettingsView.swift */; };
+		783DA18CDA74A83D0362202B /* DraftsStoreBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C32FE30410C8BA65F82BC43 /* DraftsStoreBindings.swift */; };
 		85E708F3A5A20465F897563B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0BAFF4E03D6585CBBE2287DE /* Assets.xcassets */; };
+		87C77175B4E3123453A9ABF1 /* Layer1LayoutAuditUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABDEC2DC356A6E26D1147706 /* Layer1LayoutAuditUITests.swift */; };
 		8EA16B4D84458F157771E8F7 /* PiqdNoopLabClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F11DCE0B42F67D1C0EAC1AB /* PiqdNoopLabClient.swift */; };
 		94CCCCA0233947063EA09AB2 /* Layer1ChromeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29ACE7187F564AA13817E45 /* Layer1ChromeUITests.swift */; };
 		A234A41E017AC49A3D8C3E33 /* PiqdVaultDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63930AB65B928A8ADECA8569 /* PiqdVaultDebugView.swift */; };
@@ -37,11 +42,14 @@
 		CB28F05D74DD0D5C9AEBDFFD /* AppConfig+Piqd.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDA6C4CB6BEA885C4EB002D5 /* AppConfig+Piqd.swift */; };
 		CB5D208C969455EA521B2984 /* GrainOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD77E57B74CA07FEF63AF2A /* GrainOverlayView.swift */; };
 		CB715841E8C07E00DD0B296D /* ModeSwitchSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCE21AD10981EF8FB776F62E /* ModeSwitchSheet.swift */; };
+		CD4C945AD402FA6BFE921540 /* SilentLoopingPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08F7F2D5EF13C1898A77F744 /* SilentLoopingPlayerView.swift */; };
+		CDDC664371CBF109380D5E6F /* DraftsTrayUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7330F533C39908BD8E5F2323 /* DraftsTrayUITests.swift */; };
 		DB4DF48D566402CEC0574D04 /* SafeRenderBorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E77C262D9D3B480D3135943 /* SafeRenderBorderView.swift */; };
 		DF7C58D77E47FE795473145E /* FilmCounterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B0906DFD3AE95F1157FE0C /* FilmCounterView.swift */; };
 		EC6BAB19BFB802ED49B06F91 /* PreShutterChromeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F95CA5333F3D66780A1FB4D /* PreShutterChromeUITests.swift */; };
 		EDE1BB6F10A36A55541D80E8 /* PiqdApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C52C6ACC36E1E13C5273DAC /* PiqdApp.swift */; };
 		F6FC1FB523030A83898AE8ED /* DevSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81207B79722F7C3959ED7189 /* DevSettingsStore.swift */; };
+		FDD7EF1F6B467977C8A96519 /* UnsentBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 774863710F03017DBD2E31EE /* UnsentBadgeView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +65,7 @@
 /* Begin PBXFileReference section */
 		056F5EA047FDDFF1FCA828A3 /* VibeHintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VibeHintView.swift; sourceTree = "<group>"; };
 		07BA6A9EC78DB6D0CD539B1A /* PiqdCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdCaptureView.swift; sourceTree = "<group>"; };
+		08F7F2D5EF13C1898A77F744 /* SilentLoopingPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentLoopingPlayerView.swift; sourceTree = "<group>"; };
 		0BAFF4E03D6585CBBE2287DE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0E5ACDAD94AF840DC5D16F4F /* NiftyData */ = {isa = PBXFileReference; lastKnownFileType = folder; name = NiftyData; path = ../../NiftyData; sourceTree = SOURCE_ROOT; };
 		12AC20D64D4E0D2E6B3E03CE /* NiftyCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = NiftyCore; path = ../../NiftyCore; sourceTree = SOURCE_ROOT; };
@@ -75,6 +84,10 @@
 		5F95CA5333F3D66780A1FB4D /* PreShutterChromeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreShutterChromeUITests.swift; sourceTree = "<group>"; };
 		63930AB65B928A8ADECA8569 /* PiqdVaultDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdVaultDebugView.swift; sourceTree = "<group>"; };
 		664270B53ECFEFE407D4FFBD /* PiqdTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdTokens.swift; sourceTree = "<group>"; };
+		6BF437DF7C5EB6C3F84248FE /* DraftsTraySheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftsTraySheetView.swift; sourceTree = "<group>"; };
+		6C32FE30410C8BA65F82BC43 /* DraftsStoreBindings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftsStoreBindings.swift; sourceTree = "<group>"; };
+		7330F533C39908BD8E5F2323 /* DraftsTrayUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftsTrayUITests.swift; sourceTree = "<group>"; };
+		774863710F03017DBD2E31EE /* UnsentBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnsentBadgeView.swift; sourceTree = "<group>"; };
 		77F3379F941C30CDDB421095 /* PiqdUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PiqdUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		786A4CB2DBD6FCAFD5C28F98 /* FlipButtonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlipButtonView.swift; sourceTree = "<group>"; };
 		7D678696C9DE1ED70A65B819 /* Layer1ChromeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Layer1ChromeView.swift; sourceTree = "<group>"; };
@@ -85,13 +98,16 @@
 		8DB8554F1E135065F887A4B1 /* FormatSelectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormatSelectorView.swift; sourceTree = "<group>"; };
 		90BFD779E2394C3F9229763E /* AspectRatioPillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AspectRatioPillView.swift; sourceTree = "<group>"; };
 		935FF5B37E24F11CFF39BDB3 /* RollFullOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RollFullOverlay.swift; sourceTree = "<group>"; };
+		ABDEC2DC356A6E26D1147706 /* Layer1LayoutAuditUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Layer1LayoutAuditUITests.swift; sourceTree = "<group>"; };
 		AF63B1FF2B4A3A86E9449A67 /* ZoomPillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomPillView.swift; sourceTree = "<group>"; };
 		BCE21AD10981EF8FB776F62E /* ModeSwitchSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeSwitchSheet.swift; sourceTree = "<group>"; };
 		CE0869CC6219AD5B6332A432 /* ModePill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModePill.swift; sourceTree = "<group>"; };
+		D1FEFE5775EFC731B82C7BCD /* DraftRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftRowView.swift; sourceTree = "<group>"; };
 		D6589D2BC87B34F2016DC55C /* Piqd.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Piqd.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EDA6C4CB6BEA885C4EB002D5 /* AppConfig+Piqd.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppConfig+Piqd.swift"; sourceTree = "<group>"; };
 		EECCC3D31406AB1441602D61 /* PiqdUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiqdUITests.swift; sourceTree = "<group>"; };
 		F29ACE7187F564AA13817E45 /* Layer1ChromeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Layer1ChromeUITests.swift; sourceTree = "<group>"; };
+		F5F20ED2E883AAC7C884CB8B /* ShareHandoffCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareHandoffCoordinator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,7 +126,9 @@
 		0BAA57C7376D64E60980697E /* PiqdUITests */ = {
 			isa = PBXGroup;
 			children = (
+				7330F533C39908BD8E5F2323 /* DraftsTrayUITests.swift */,
 				F29ACE7187F564AA13817E45 /* Layer1ChromeUITests.swift */,
+				ABDEC2DC356A6E26D1147706 /* Layer1LayoutAuditUITests.swift */,
 				3963B9A68AB661E50D7CDC23 /* PiqdFormatSelectorUITests.swift */,
 				EECCC3D31406AB1441602D61 /* PiqdUITests.swift */,
 				5F95CA5333F3D66780A1FB4D /* PreShutterChromeUITests.swift */,
@@ -185,6 +203,9 @@
 			children = (
 				90BFD779E2394C3F9229763E /* AspectRatioPillView.swift */,
 				875613EC3011E66CBED946F2 /* CameraPreviewView.swift */,
+				D1FEFE5775EFC731B82C7BCD /* DraftRowView.swift */,
+				6C32FE30410C8BA65F82BC43 /* DraftsStoreBindings.swift */,
+				6BF437DF7C5EB6C3F84248FE /* DraftsTraySheetView.swift */,
 				27B0906DFD3AE95F1157FE0C /* FilmCounterView.swift */,
 				786A4CB2DBD6FCAFD5C28F98 /* FlipButtonView.swift */,
 				8DB8554F1E135065F887A4B1 /* FormatSelectorView.swift */,
@@ -198,8 +219,11 @@
 				07BA6A9EC78DB6D0CD539B1A /* PiqdCaptureView.swift */,
 				935FF5B37E24F11CFF39BDB3 /* RollFullOverlay.swift */,
 				1E77C262D9D3B480D3135943 /* SafeRenderBorderView.swift */,
+				F5F20ED2E883AAC7C884CB8B /* ShareHandoffCoordinator.swift */,
 				396A2EAFE0E468D2BF355379 /* ShutterButtonView.swift */,
+				08F7F2D5EF13C1898A77F744 /* SilentLoopingPlayerView.swift */,
 				8A67B8FA7D189B56E3478C41 /* SubjectGuidancePillView.swift */,
+				774863710F03017DBD2E31EE /* UnsentBadgeView.swift */,
 				056F5EA047FDDFF1FCA828A3 /* VibeHintView.swift */,
 				AF63B1FF2B4A3A86E9449A67 /* ZoomPillView.swift */,
 			);
@@ -306,7 +330,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CDDC664371CBF109380D5E6F /* DraftsTrayUITests.swift in Sources */,
 				94CCCCA0233947063EA09AB2 /* Layer1ChromeUITests.swift in Sources */,
+				87C77175B4E3123453A9ABF1 /* Layer1LayoutAuditUITests.swift in Sources */,
 				0DCFE6C8D27ECB3A9E20ACDB /* PiqdFormatSelectorUITests.swift in Sources */,
 				3F7E27FDD6AE38C30EE02A25 /* PiqdUITests.swift in Sources */,
 				EC6BAB19BFB802ED49B06F91 /* PreShutterChromeUITests.swift in Sources */,
@@ -321,6 +347,9 @@
 				46164088C16AD4E34D0DCCED /* AspectRatioPillView.swift in Sources */,
 				088CDD62BE70AF4599757BB9 /* CameraPreviewView.swift in Sources */,
 				F6FC1FB523030A83898AE8ED /* DevSettingsStore.swift in Sources */,
+				0D7E81A7D41901A6CE466204 /* DraftRowView.swift in Sources */,
+				783DA18CDA74A83D0362202B /* DraftsStoreBindings.swift in Sources */,
+				27FBB593ACDAF28E0C25E0DD /* DraftsTraySheetView.swift in Sources */,
 				DF7C58D77E47FE795473145E /* FilmCounterView.swift in Sources */,
 				C80196DBF71EEC2C41910C1B /* FlipButtonView.swift in Sources */,
 				53C4175300A5B474A59DA960 /* FormatSelectorView.swift in Sources */,
@@ -341,8 +370,11 @@
 				A234A41E017AC49A3D8C3E33 /* PiqdVaultDebugView.swift in Sources */,
 				B701C53021FC457454E2D58A /* RollFullOverlay.swift in Sources */,
 				DB4DF48D566402CEC0574D04 /* SafeRenderBorderView.swift in Sources */,
+				335CAAB2432F8FE4F6DC028B /* ShareHandoffCoordinator.swift in Sources */,
 				B675C2ABE5302FE722346BB1 /* ShutterButtonView.swift in Sources */,
+				CD4C945AD402FA6BFE921540 /* SilentLoopingPlayerView.swift in Sources */,
 				C4FFDA98B0EE635F5C0C13E0 /* SubjectGuidancePillView.swift in Sources */,
+				FDD7EF1F6B467977C8A96519 /* UnsentBadgeView.swift in Sources */,
 				5FA2FD8712E673FDC3A15B21 /* VibeHintView.swift in Sources */,
 				468C20E6EDA5BB53E4E2B17C /* ZoomPillView.swift in Sources */,
 			);

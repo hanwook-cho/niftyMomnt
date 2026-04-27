@@ -231,6 +231,39 @@ public actor VaultRepository: VaultProtocol {
         try? FileManager.default.removeItem(at: derivURL)
     }
 
+    /// Piqd v0.5 — resolves the on-disk URL for a Snap-mode asset, reading the
+    /// sidecar to pick up the recorded `storageExtension` (e.g. `.heic` for
+    /// HEICEncoder-routed stills) when present, otherwise falling back to the
+    /// default extension for the type. Returns `nil` for Roll-mode assets and
+    /// when no bytes exist on disk. Used by the drafts tray for thumbnail
+    /// loading, MP4 looping playback, and the iOS share-sheet hand-off.
+    public func snapAssetURL(id assetID: UUID, type: AssetType) -> URL? {
+        let metaData = try? Data(contentsOf: metaURL(for: assetID))
+        let record = metaData.flatMap { try? JSONDecoder().decode(AssetRecord.self, from: $0) }
+        if record?.locked == true { return nil }
+        let url = resolvedFileURL(for: assetID, type: type, record: record)
+        guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+        return url
+    }
+
+    /// Piqd v0.5 — Snap-only deletion driven by the drafts-tray purge sweep.
+    /// Refuses to touch Roll-mode bytes (sidecar `locked == true`); the locked Roll
+    /// vault has its own lifecycle (9 PM unlock → archive). Missing sidecar is a
+    /// no-op so the purger is idempotent on retries.
+    public func purgeSnapAsset(id assetID: UUID) async throws {
+        let metaURL = metaURL(for: assetID)
+        guard let metaData = try? Data(contentsOf: metaURL),
+              let record = try? JSONDecoder().decode(AssetRecord.self, from: metaData)
+        else {
+            log.debug("purgeSnapAsset — no sidecar for \(assetID.uuidString); idempotent no-op")
+            return
+        }
+        if record.locked == true {
+            throw VaultError.rollAssetNotPurgeable
+        }
+        try await delete(assetID)
+    }
+
     public func delete(_ assetID: UUID) async throws {
         let metaURL = metaURL(for: assetID)
         let record = (try? Data(contentsOf: metaURL)).flatMap {
@@ -549,4 +582,6 @@ public enum VaultError: Error, Equatable {
     case photoLibraryAccessDenied
     case photoLibraryExportFailed
     case unsupportedPhotoLibraryExport
+    /// Piqd v0.5 — `purgeSnapAsset(id:)` was called on a Roll-mode asset.
+    case rollAssetNotPurgeable
 }
