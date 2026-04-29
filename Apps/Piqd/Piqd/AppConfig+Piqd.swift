@@ -121,4 +121,28 @@ extension AppConfig {
             )
         )
     )
+
+    /// v0.6 — Trusted Circle foundation. Adds `.trustedCircle` (Curve25519 identity, trusted friends
+    /// list, QR + custom-scheme `piqd://invite/<token>` flow) and `.onboarding` (O0–O4 first-launch
+    /// flow + first-Roll storage warning) to v0.5. `maxCircleSize` opens to 10 (FR-CIRCLE-01). No
+    /// asset-type or capture-format change. P2P transport still deferred — Drafts "send →" stays
+    /// on `UIActivityViewController` until v0.7.
+    /// See piqd_interim_v0.6_plan.md.
+    static let piqd_v0_6 = AppConfig(
+        appVariant: .piqd,
+        assetTypes: [.still, .sequence, .clip, .dual],
+        aiModes: .onDevice,
+        features: [.snapMode, .rollMode, .sequenceCapture, .dualCamera,
+                   .preShutterChrome, .draftsTray, .trustedCircle, .onboarding],
+        sharing: SharingConfig(maxCircleSize: 10, labEnabled: false),
+        storage: StorageConfig(
+            smartArchiveEnabled: false,
+            iCloudSyncEnabled: false,
+            clipQuality: ClipQualityConfig(
+                maxResolution: .uhd4K,
+                maxFrameRate: 60,
+                proOnlyHighFPS: true
+            )
+        )
+    )
 }

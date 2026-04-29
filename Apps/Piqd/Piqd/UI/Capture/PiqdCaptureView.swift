@@ -38,6 +38,13 @@ struct PiqdCaptureView: View {
     @State private var showFormatSelector = false
     /// Piqd v0.5 — drafts tray sheet presentation (FR-SNAP-DRAFT-03).
     @State private var showDraftsTray = false
+    // Piqd v0.6 — gear-icon action menu + Settings navigation.
+    @State private var showSettingsMenu = false
+    @State private var showSettings = false
+    // Mirror of `container.firstRollWarningGate.isPresented`. Held as @State
+    // because cross-@Observable property observation through `container` was
+    // unreliable for sheet binding under XCUITest.
+    @State private var showFirstRollWarning = false
     @State private var selectorIdleCollapseTask: Task<Void, Never>?
     @State private var shutterState: ShutterState = .idle
     @State private var sequenceFrameIndex: Int = 0
@@ -119,23 +126,37 @@ struct PiqdCaptureView: View {
                     .accessibilityIdentifier("piqd.captureIndicator")
             }
 
-            // Piqd v0.4 — Layer 1 chrome (Snap only). Sits above preview, below format
+            // Piqd v0.4 — Layer 1 chrome. Sits above preview, below format
             // selector + shutter so those controls remain interactive when revealed.
-            if modeStore.mode == .snap {
-                Layer1ChromeView(
+            // Piqd v0.6 — also mounted in Roll mode so flip + gear are reachable.
+            // Slot internals self-gate: zoom/ratio/draftsBadge are Snap-only;
+            // flip + gear appear in both modes; in Roll the top-right stack
+            // is offset to sit below the always-visible FilmCounter.
+            Layer1ChromeView(
                     isRevealed: layerStore.state == .revealed,
                     topRight: {
-                        // FR-SNAP-FLIP-04 — hidden (not just disabled) in Dual format.
-                        if activeFormat != .dual {
-                            FlipButtonView(onTap: handleFlip)
-                                .opacity(activity.isCapturing ? 0.4 : 1.0)
-                                .allowsHitTesting(!activity.isCapturing)
+                        // Snap-only stack: flip + gear inside Layer 1 chrome.
+                        // FlipButton hidden in Dual (FR-SNAP-FLIP-04). Roll
+                        // renders these elsewhere as always-visible siblings
+                        // (see `rollAlwaysVisibleChrome`).
+                        if modeStore.mode == .snap {
+                            VStack(spacing: 12) {
+                                if activeFormat != .dual {
+                                    FlipButtonView(onTap: handleFlip)
+                                        .opacity(activity.isCapturing ? 0.4 : 1.0)
+                                        .allowsHitTesting(!activity.isCapturing)
+                                }
+                                GearIconView(onTap: { showSettingsMenu = true })
+                                    .opacity(activity.isCapturing ? 0.4 : 1.0)
+                                    .allowsHitTesting(!activity.isCapturing)
+                            }
                         }
                     },
                     zoom: {
-                        // Hidden in Dual format — both cameras are fixed and the dual
-                        // sub-toggle sits in the zoom pill's slot. Mirrors FR-SNAP-FLIP-04
-                        // (flip button is also hidden in Dual).
+                        // Available in both modes (UIUX §4.2 — Roll Layer 1 includes
+                        // zoom pill at same Y as Snap). Hidden in Snap-Dual where the
+                        // sub-toggle replaces the pill. Roll's `activeFormat` is
+                        // always `.still`, so the Dual check is vacuously true there.
                         if activeFormat != .dual {
                             ZoomPillView(
                                 levels: availableZoomLevels,
@@ -147,9 +168,8 @@ struct PiqdCaptureView: View {
                         }
                     },
                     ratio: {
-                        // Hidden in Dual (Dual has its own composition layouts via the
-                        // sub-toggle). Locked at 9:16 in Sequence/Clip per FR-SNAP-RATIO-04.
-                        if activeFormat != .dual {
+                        // Snap-only. Hidden in Dual; locked at 9:16 in Sequence/Clip per FR-SNAP-RATIO-04.
+                        if modeStore.mode == .snap && activeFormat != .dual {
                             AspectRatioPillView(
                                 current: modeStore.effectiveAspectRatio(for: modeStore.mode, format: activeFormat),
                                 isLocked: activeFormat != .still,
@@ -174,10 +194,9 @@ struct PiqdCaptureView: View {
                             )
                         }
                     }
-                )
-                // No `.ignoresSafeArea()` — keeps the chrome inside the safe area so its
-                // bottom-padding math shares a baseline with `shutterControl` below.
-            }
+            )
+            // No `.ignoresSafeArea()` — keeps the chrome inside the safe area so its
+            // bottom-padding math shares a baseline with `shutterControl` below.
 
             // Tap-outside collapse catcher — sits above the preview but below the selector
             // + shutter so taps on those controls route normally. Any other tap collapses.
@@ -293,6 +312,13 @@ struct PiqdCaptureView: View {
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .opacity(0.001)
                         .accessibilityIdentifier("piqd-drafts-fake-capture")
+                    // Diagnostic hook: bypass handleShutter and call the gate
+                    // directly. Lets the warning test isolate sheet-presentation
+                    // issues from shutter-routing issues.
+                    // Piqd v0.6 — XCUITest hook bypassing both Layer 1 reveal
+                    // and the menu sheet. Goes straight to PiqdSettingsView.
+                    // The action-menu intermediary is exercised via manual
+                    // checklist (sheet presentation is racy in XCUITest).
                     Spacer()
                 }
                 .padding(.top, 140)
@@ -347,6 +373,11 @@ struct PiqdCaptureView: View {
             refreshAvailableZoomLevels()
             // Apply persisted backlight toggle after the device is configured.
             container.captureAdapter.setBacklightCorrection(enabled: dev.backlightCorrectionEnabled)
+            // XCUITest hook: auto-open Settings on launch. Lets tests skip the
+            // gear→menu→sheet stack which is racy under XCUITest on iOS 26.
+            if ProcessInfo.processInfo.environment["PIQD_DEV_OPEN_SETTINGS_ON_LAUNCH"] == "1" {
+                showSettings = true
+            }
         }
         .task {
             // Piqd v0.4 — start the invisible-level sensor for the lifetime of the capture
@@ -439,6 +470,69 @@ struct PiqdCaptureView: View {
                 }
             )
         }
+        // Piqd v0.6 — first-Roll storage warning (FR-STORAGE-08).
+        // Non-interactive-dismiss; the only exit is the "Got it" button.
+        .sheet(isPresented: $showFirstRollWarning, onDismiss: {
+            // Acknowledge if dismissed via "Got it" — the sheet view sets
+            // `gate.acknowledge()` which flips our local state via the
+            // `.onChange` below.
+        }) {
+            FirstRollStorageWarningSheet(
+                gate: container.firstRollWarningGate,
+                onAcknowledge: { showFirstRollWarning = false }
+            )
+        }
+        // Piqd v0.6 — gear-icon action menu. UIUX §8: "Settings" + "Inbox"
+        // (Inbox disabled until v0.7). Custom sheet (vs. confirmationDialog)
+        // because confirmationDialog presentation was racy under XCUITest on
+        // iOS 26.
+        .sheet(isPresented: $showSettingsMenu) {
+            VStack(spacing: 0) {
+                Button {
+                    showSettingsMenu = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        showSettings = true
+                    }
+                } label: {
+                    HStack {
+                        Image(systemName: "gearshape").frame(width: 24)
+                        Text("Settings")
+                        Spacer()
+                    }
+                    .padding(.vertical, 16)
+                    .padding(.horizontal, 24)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("piqd.layer1.gear.menu.settings")
+
+                Divider()
+
+                HStack {
+                    Image(systemName: "tray").frame(width: 24)
+                    Text("Inbox (coming soon)")
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(.vertical, 16)
+                .padding(.horizontal, 24)
+                .accessibilityIdentifier("piqd.layer1.gear.menu.inbox")
+
+                Spacer()
+            }
+            .presentationDetents([.height(160)])
+        }
+        .sheet(isPresented: $showSettings) {
+            NavigationStack {
+                PiqdSettingsView(container: container)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Done") { showSettings = false }
+                                .accessibilityIdentifier("piqd.settings.done")
+                        }
+                    }
+            }
+        }
     }
 
     // MARK: - Subviews
@@ -489,8 +583,11 @@ struct PiqdCaptureView: View {
                 }
 
                 // Piqd v0.4 — gesture catcher sized to the cropped preview only, so shutter
-                // and bottom-area controls are never intercepted. Only attached when Snap
-                // chrome is actionable.
+                // and bottom-area controls are never intercepted. Snap-only — in Roll the
+                // gear/flip are rendered always-visible as siblings of Layer1ChromeView
+                // so no tap-to-reveal is needed there. (Re-enabling the catcher in Roll
+                // double-fires `layerStore.tap()` when XCUITest taps the layer1-tap-test
+                // hook button, retreating Layer 1 immediately.)
                 if modeStore.mode == .snap && !activity.isCapturing && !showFormatSelector {
                     Color.clear
                         .frame(width: cropped.width, height: cropped.height * 0.7)
@@ -522,9 +619,11 @@ struct PiqdCaptureView: View {
         TapGesture().onEnded { _ in
             // Don't intercept taps during capture — Clip/Dual tap-toggle relies on the
             // shutter receiving the second tap unobstructed (FR-CLIP-04 / Dual analogue).
-            guard modeStore.mode == .snap,
-                  !showFormatSelector,
-                  !activity.isCapturing else { return }
+            // Snap-only: Roll's gear/flip render outside Layer 1 (always-visible),
+            // so Roll-mode viewfinder taps need do nothing. (Re-enabling Roll here
+            // also breaks XCUITest's `piqd-layer1-tap-test` button — both paths
+            // would call `layerStore.tap()` simultaneously and double-toggle.)
+            guard modeStore.mode == .snap, !showFormatSelector, !activity.isCapturing else { return }
             layerStore.tap()
         }
     }
@@ -532,7 +631,9 @@ struct PiqdCaptureView: View {
     private var pinchGesture: some Gesture {
         MagnificationGesture()
             .onChanged { value in
-                guard modeStore.mode == .snap, !isZoomLocked, !activity.isCapturing else { return }
+                // Piqd v0.6 — relaxed Snap-only gate to match UIUX §4.2
+                // (Roll Layer 1 includes the zoom pill at the same Y as Snap).
+                guard !isZoomLocked, !activity.isCapturing else { return }
                 if pinchBaseFactor == 0 { pinchBaseFactor = max(1.0, currentAdapterZoom()) }
                 let target = clampedZoomFactor(pinchBaseFactor * Double(value))
                 applyContinuousZoom(target)
@@ -660,7 +761,7 @@ struct PiqdCaptureView: View {
 
     @ViewBuilder
     private var topHUD: some View {
-        HStack(alignment: .center) {
+        HStack(alignment: .top) {
             ModePill(
                 mode: modeStore.mode,
                 holdDuration: dev.longHoldDurationSeconds,
@@ -671,7 +772,17 @@ struct PiqdCaptureView: View {
             )
             Spacer()
             if modeStore.mode == .roll {
-                FilmCounterView(used: rollUsed, limit: rollLimit)
+                // Roll top-right cluster: FilmCounter on top, Flip + Gear
+                // below (always visible — no Layer 1 reveal needed in Roll).
+                VStack(alignment: .trailing, spacing: 12) {
+                    FilmCounterView(used: rollUsed, limit: rollLimit)
+                    FlipButtonView(onTap: handleFlip)
+                        .opacity(activity.isCapturing ? 0.4 : 1.0)
+                        .allowsHitTesting(!activity.isCapturing)
+                    GearIconView(onTap: { showSettingsMenu = true })
+                        .opacity(activity.isCapturing ? 0.4 : 1.0)
+                        .allowsHitTesting(!activity.isCapturing)
+                }
             }
         }
     }
@@ -1000,8 +1111,15 @@ struct PiqdCaptureView: View {
             return
         }
 
-        // Roll — always Still, gated by the daily counter.
+        // Roll — always Still, gated by the daily counter. Piqd v0.6 also
+        // gates the FIRST tap on the storage-warning sheet (FR-STORAGE-08);
+        // the sheet appears, the in-flight tap is consumed, and the user
+        // taps shutter again to capture.
         if modeStore.mode == .roll {
+            if container.firstRollWarningGate.interceptShutterTap(mode: .roll) {
+                showFirstRollWarning = true
+                return
+            }
             await captureRollStill()
         }
     }

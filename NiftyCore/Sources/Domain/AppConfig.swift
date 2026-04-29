@@ -70,6 +70,8 @@ public struct FeatureSet: OptionSet, Sendable {
     public static let iCloudRollPackage = FeatureSet(rawValue: 1 << 14)
     public static let preShutterChrome  = FeatureSet(rawValue: 1 << 15) // Piqd v0.4 — Layer 1 chrome
     public static let draftsTray        = FeatureSet(rawValue: 1 << 16) // Piqd v0.5 — Drafts tray + iOS share hand-off
+    public static let trustedCircle     = FeatureSet(rawValue: 1 << 17) // Piqd v0.6 — Curve25519 identity + trusted friends list + invite flow
+    public static let onboarding        = FeatureSet(rawValue: 1 << 18) // Piqd v0.6 — Onboarding O0–O4 + first-Roll storage warning
 
     public static let all: FeatureSet = [
         .rollMode, .nudgeEngine, .moodMap, .liveActivity,

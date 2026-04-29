@@ -20,6 +20,17 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.piqd.invite</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>piqd</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Piqd uses your camera to capture Snaps.</string>
 	<key>NSMicrophoneUsageDescription</key>

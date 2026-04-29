@@ -37,7 +37,7 @@ struct PiqdApp: App {
             UserDefaults(suiteName: "piqd")?.set(forced, forKey: "piqd.captureMode")
         }
 
-        let config = AppConfig.piqd_v0_5
+        let config = AppConfig.piqd_v0_6
 
         // Piqd v0.2 — dev knobs (loaded once at launch; XCUITest can seed via PIQD_DEV_*).
         let devSettings = DevSettingsStore()
@@ -115,6 +115,77 @@ struct PiqdApp: App {
             }
         )
 
+        // Piqd v0.6 — identity, trusted circle, invite coordinator.
+        let keychainStore = KeychainStore()
+        // One-shot circle wipe trigger: deletes `circle.sqlite` + the Keychain
+        // identity entry BEFORE the repo + service open them, so both come up
+        // empty on this launch. Drain after firing.
+        if devSettings.circleClearAll {
+            try? keychainStore.delete(forKey: CryptoKitIdentityKeyService.primaryKey)
+            let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let circleDB = docs.appendingPathComponent(config.namespace ?? "", isDirectory: true)
+                .appendingPathComponent("circle.sqlite")
+            try? FileManager.default.removeItem(at: circleDB)
+            devSettings.circleClearAll = false
+        }
+        let identityKeyService = CryptoKitIdentityKeyService(store: keychainStore)
+        let trustedFriendsRepository = TrustedFriendsRepository(config: config)
+        // XCUITest seed: pre-populate one friend so tests can exercise the
+        // friends-list rendering + remove flow without driving the full
+        // accept-an-invite path.
+        if let name = env["PIQD_DEV_SEED_FRIEND_NAME"], !name.isEmpty {
+            let pubKey = Data(repeating: 0xAB, count: 32)
+            let friend = Friend(
+                displayName: name,
+                publicKey: pubKey,
+                addedAt: Date(),
+                lastActivityAt: nil
+            )
+            Task { try? await trustedFriendsRepository.insert(friend) }
+        }
+        let ownerProfile = OwnerProfile()
+        let inviteCoordinator = InviteCoordinator(
+            identity: identityKeyService,
+            repo: trustedFriendsRepository,
+            ownerSenderID: { ownerProfile.senderID },
+            ownerDisplayName: { ownerProfile.displayName }
+        )
+        let incomingInviteState = IncomingInviteState(coordinator: inviteCoordinator)
+        // Piqd v0.6 — Debug-only seed: hand a base64 invite payload to the state
+        // as if the user just opened a `piqd://invite/<seed>` deep link. Lets
+        // XCUITest exercise Accept/Decline without scanning a real QR.
+        if let seed = devSettings.effectiveInviteTokenSeed,
+           let url = URL(string: "piqd://invite/\(seed)") {
+            incomingInviteState.queuedURL = url
+        }
+
+        // Piqd v0.6 — onboarding coordinator. Honors devSettings.onboardingForceShow
+        // (set via launch arg `PIQD_DEV_ONBOARDING_RESET=1` or the dev settings
+        // toggle). One-shot — drained after consumption so onboarding doesn't
+        // re-show on every subsequent launch.
+        let forceOnboardingShow = devSettings.onboardingForceShow
+        // XCUITest-only bypass: pre-set the completion flag so the app boots
+        // straight into capture without driving the four onboarding screens.
+        // In `UI_TEST_MODE=1` we DEFAULT to bypassing onboarding so that all
+        // pre-v0.6 UI tests continue to pass without per-test env changes.
+        // `PIQD_DEV_ONBOARDING_RESET=1` overrides this to force the screens.
+        let uiTestMode = env["UI_TEST_MODE"] == "1"
+        let forceOnboardingComplete =
+            env["PIQD_DEV_ONBOARDING_COMPLETE"] == "1" ||
+            (uiTestMode && env["PIQD_DEV_ONBOARDING_RESET"] != "1")
+        let onboardingCoordinator = OnboardingCoordinator(
+            forceShow: forceOnboardingShow,
+            forceComplete: forceOnboardingComplete
+        )
+        if forceOnboardingShow { devSettings.onboardingForceShow = false }
+
+        // Piqd v0.6 — first-Roll storage warning gate (FR-STORAGE-08).
+        // One-shot trigger via launch arg `PIQD_DEV_ROLL_WARNING_RESET=1` or
+        // the dev settings toggle.
+        let forceRollWarningShow = devSettings.firstRollWarningForceShow
+        let firstRollWarningGate = FirstRollWarningGate(forceShow: forceRollWarningShow)
+        if forceRollWarningShow { devSettings.firstRollWarningForceShow = false }
+
         container = PiqdAppContainer(
             config: config,
             captureUseCase: captureUseCase,
@@ -138,7 +209,14 @@ struct PiqdApp: App {
             photoLibraryExporter: PhotoLibraryExporter(),
             shareHandoff: ShareHandoffCoordinator(),
             draftPurgeScheduler: draftPurgeScheduler,
-            draftsBindings: draftsBindings
+            draftsBindings: draftsBindings,
+            identityKeyService: identityKeyService,
+            trustedFriendsRepository: trustedFriendsRepository,
+            ownerProfile: ownerProfile,
+            inviteCoordinator: inviteCoordinator,
+            incomingInviteState: incomingInviteState,
+            onboardingCoordinator: onboardingCoordinator,
+            firstRollWarningGate: firstRollWarningGate
         )
     }
 
@@ -152,12 +230,30 @@ struct PiqdApp: App {
                     await container.draftsBindings.hydrate()
                     _ = try? await container.draftPurgeScheduler.sweep()
                     await container.draftsBindings.refreshFromRepo()
+                    // Piqd v0.6 — warm the identity keypair so O3's QR is instantly
+                    // available. Lazy-generates on first call; no-op afterward.
+                    _ = try? await container.identityKeyService.currentKey()
                 }
                 .onChange(of: scenePhase) { _, newPhase in
                     guard newPhase == .active else { return }
                     Task {
                         _ = try? await container.draftPurgeScheduler.sweep()
                         await container.draftsBindings.refreshFromRepo()
+                    }
+                }
+                .onOpenURL { url in
+                    // Piqd v0.6 — `piqd://invite/<token>` deep-link entry. Cold-launch
+                    // URLs flow through the same handler via SwiftUI's bridging of
+                    // UIScene's `openURLContexts`. Defers presentation if onboarding
+                    // hasn't reached O3 yet — PiqdRootView drains the queue when the
+                    // gate opens (see `.onChange` blocks there).
+                    Task { @MainActor in
+                        let onb = container.onboardingCoordinator
+                        if onb.isComplete || onb.step == .invite {
+                            await container.incomingInviteState.handle(url: url)
+                        } else {
+                            container.incomingInviteState.queuedURL = url
+                        }
                     }
                 }
         }

@@ -136,6 +136,48 @@ public final class DevSettingsStore {
         #endif
     }
 
+    // MARK: - Piqd v0.6 knobs (Trusted Circle + onboarding)
+
+    /// One-shot trigger: when ON, the next launch wipes the onboarding
+    /// completion flag so O0 re-shows. PiqdApp.init also clears this back to
+    /// `false` on read so the reset only fires once.
+    public var onboardingForceShow: Bool {
+        didSet { persist(\.onboardingForceShow, Self.keyOnboardingForceShow, onboardingForceShow) }
+    }
+
+    /// One-shot trigger: when ON, the next launch wipes the first-Roll
+    /// storage warning flag so the sheet re-arms. Cleared on read.
+    public var firstRollWarningForceShow: Bool {
+        didSet { persist(\.firstRollWarningForceShow, Self.keyRollWarningForceShow, firstRollWarningForceShow) }
+    }
+
+    /// One-shot trigger: when ON, the next launch deletes `circle.sqlite` and
+    /// wipes the Curve25519 keypair from the Keychain. Cleared on read.
+    public var circleClearAll: Bool {
+        didSet { persist(\.circleClearAll, Self.keyCircleClear, circleClearAll) }
+    }
+
+    /// Test-only seed for the IncomingInviteState. When set (#if DEBUG), the
+    /// app on launch decodes this base64 invite payload and surfaces the
+    /// IncomingInviteSheet — lets XCUITest exercise the accept flow without
+    /// scanning a real QR. Compiled out in Release.
+    public var inviteTokenSeed: String? {
+        didSet {
+            #if DEBUG
+            defaults.set(inviteTokenSeed, forKey: Self.keyInviteTokenSeed)
+            #endif
+        }
+    }
+
+    /// Returns the seeded invite token in Debug builds; always `nil` in Release.
+    public var effectiveInviteTokenSeed: String? {
+        #if DEBUG
+        return inviteTokenSeed
+        #else
+        return nil
+        #endif
+    }
+
     // MARK: - Storage
 
     private let defaults: UserDefaults
@@ -157,6 +199,11 @@ public final class DevSettingsStore {
     private static let keyDraftsEnabled = "draftsTrayEnabled"
     private static let keyDraftFakeNow = "draftFakeNowOffsetSeconds"
     private static let keyDraftPurgeInterval = "draftPurgeIntervalSeconds"
+    // Piqd v0.6 keys
+    private static let keyOnboardingForceShow = "onboardingForceShow"
+    private static let keyRollWarningForceShow = "firstRollWarningForceShow"
+    private static let keyCircleClear = "circleClearAll"
+    private static let keyInviteTokenSeed = "inviteTokenSeed"
 
     // MARK: - Init
 
@@ -263,6 +310,34 @@ public final class DevSettingsStore {
         self.draftsTrayEnabled = draftsEnabled
         self.draftFakeNowOffsetSeconds = draftFakeNow
         self.draftPurgeIntervalSeconds = max(5, min(600, draftPurge))
+
+        // Piqd v0.6 — circle / onboarding one-shot triggers + invite seed.
+        var onbForce  = (defaults.object(forKey: Self.keyOnboardingForceShow) as? Bool) ?? false
+        var rollForce = (defaults.object(forKey: Self.keyRollWarningForceShow) as? Bool) ?? false
+        var circleClear = (defaults.object(forKey: Self.keyCircleClear) as? Bool) ?? false
+        if let v = Self.readBool(environment: environment, launchArguments: launchArguments, key: "PIQD_DEV_ONBOARDING_RESET") {
+            onbForce = v
+        }
+        if let v = Self.readBool(environment: environment, launchArguments: launchArguments, key: "PIQD_DEV_ROLL_WARNING_RESET") {
+            rollForce = v
+        }
+        if let v = Self.readBool(environment: environment, launchArguments: launchArguments, key: "PIQD_DEV_CIRCLE_CLEAR") {
+            circleClear = v
+        }
+        self.onboardingForceShow = onbForce
+        self.firstRollWarningForceShow = rollForce
+        self.circleClearAll = circleClear
+
+        #if DEBUG
+        var seed = defaults.string(forKey: Self.keyInviteTokenSeed)
+        if let s = environment["PIQD_DEV_INVITE_TOKEN"] ?? Self.argValue(launchArguments, flag: "-PIQD_DEV_INVITE_TOKEN"),
+           !s.isEmpty {
+            seed = s
+        }
+        self.inviteTokenSeed = seed
+        #else
+        self.inviteTokenSeed = nil
+        #endif
     }
 
     public func resetDefaults() {
@@ -283,6 +358,10 @@ public final class DevSettingsStore {
         draftsTrayEnabled = true
         draftFakeNowOffsetSeconds = 0
         draftPurgeIntervalSeconds = 60
+        onboardingForceShow = false
+        firstRollWarningForceShow = false
+        circleClearAll = false
+        inviteTokenSeed = nil
     }
 
     // MARK: - Helpers

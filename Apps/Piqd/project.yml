@@ -48,9 +48,25 @@ targets:
       - PiqdUITests
     dependencies:
       - target: Piqd
+      - package: NiftyCore
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.hwcho99.niftyMomnt.piqd.uitests
         TEST_TARGET_NAME: Piqd
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: "YES"
+  PiqdTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - PiqdTests
+    dependencies:
+      - target: Piqd
+      - package: NiftyCore
+      - package: NiftyData
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.hwcho99.niftyMomnt.piqd.tests
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: "YES"

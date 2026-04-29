@@ -130,6 +130,18 @@ struct PiqdDevSettingsView: View {
                     .accessibilityIdentifier("piqd-dev-drafts-fake-now-reset")
                 }
 
+                Section("Circle (v0.6)") {
+                    Toggle("Re-show onboarding next launch", isOn: $store.onboardingForceShow)
+                        .accessibilityIdentifier("piqd-dev-onboarding-force")
+                    Toggle("Re-show first-Roll warning next launch", isOn: $store.firstRollWarningForceShow)
+                        .accessibilityIdentifier("piqd-dev-roll-warning-force")
+                    Toggle("Wipe friends + keypair next launch", isOn: $store.circleClearAll)
+                        .accessibilityIdentifier("piqd-dev-circle-clear")
+                    Text("Each toggle fires once on the next cold launch and clears itself.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section {
                     Button("Reset to defaults", role: .destructive) {
                         store.resetDefaults()

@@ -56,6 +56,20 @@ public final class PiqdAppContainer {
     public let draftPurgeScheduler: DraftPurgeScheduler
     /// Piqd v0.5 — @Observable bridge that drives badge + tray UI.
     public let draftsBindings: DraftsStoreBindings
+    /// Piqd v0.6 — Curve25519 identity service. Concrete impl backed by KeychainStore.
+    public let identityKeyService: any IdentityKeyServiceProtocol
+    /// Piqd v0.6 — local trusted friends list (`circle.sqlite`).
+    public let trustedFriendsRepository: any TrustedFriendsRepositoryProtocol
+    /// Piqd v0.6 — owner profile (senderID + displayName) used by InviteCoordinator.
+    public let ownerProfile: OwnerProfile
+    /// Piqd v0.6 — composes identity + repo + codec. `myInviteToken/URL`, `accept`, `acceptURL`.
+    public let inviteCoordinator: any InviteCoordinatorProtocol
+    /// Piqd v0.6 — bridges `piqd://invite/...` URL arrivals to the IncomingInviteSheet.
+    public let incomingInviteState: IncomingInviteState
+    /// Piqd v0.6 — drives the O0–O3 onboarding flow + persists completion.
+    public let onboardingCoordinator: OnboardingCoordinator
+    /// Piqd v0.6 — one-shot Roll-mode storage warning (FR-STORAGE-08).
+    public let firstRollWarningGate: FirstRollWarningGate
 
     public init(
         config: AppConfig,
@@ -80,7 +94,14 @@ public final class PiqdAppContainer {
         photoLibraryExporter: any PhotoLibraryExporterProtocol,
         shareHandoff: ShareHandoffCoordinator,
         draftPurgeScheduler: DraftPurgeScheduler,
-        draftsBindings: DraftsStoreBindings
+        draftsBindings: DraftsStoreBindings,
+        identityKeyService: any IdentityKeyServiceProtocol,
+        trustedFriendsRepository: any TrustedFriendsRepositoryProtocol,
+        ownerProfile: OwnerProfile,
+        inviteCoordinator: any InviteCoordinatorProtocol,
+        incomingInviteState: IncomingInviteState,
+        onboardingCoordinator: OnboardingCoordinator,
+        firstRollWarningGate: FirstRollWarningGate
     ) {
         self.config = config
         self.captureUseCase = captureUseCase
@@ -105,5 +126,12 @@ public final class PiqdAppContainer {
         self.shareHandoff = shareHandoff
         self.draftPurgeScheduler = draftPurgeScheduler
         self.draftsBindings = draftsBindings
+        self.identityKeyService = identityKeyService
+        self.trustedFriendsRepository = trustedFriendsRepository
+        self.ownerProfile = ownerProfile
+        self.inviteCoordinator = inviteCoordinator
+        self.incomingInviteState = incomingInviteState
+        self.onboardingCoordinator = onboardingCoordinator
+        self.firstRollWarningGate = firstRollWarningGate
     }
 }
