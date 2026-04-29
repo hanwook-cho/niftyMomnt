@@ -368,13 +368,15 @@ struct PiqdCaptureView: View {
             }
         }
         .background(.black)
-        .task {
+        .task(id: container.onboardingCoordinator.isComplete) {
+            // Defer camera bring-up until onboarding completes. Otherwise the
+            // permission prompt fires during O0 (blocking the Continue tap)
+            // and PiqdCaptureView's preview competes with O1/O2's own
+            // preview layers attached to the same session.
+            guard container.onboardingCoordinator.isComplete else { return }
             await startPreview()
             refreshAvailableZoomLevels()
-            // Apply persisted backlight toggle after the device is configured.
             container.captureAdapter.setBacklightCorrection(enabled: dev.backlightCorrectionEnabled)
-            // XCUITest hook: auto-open Settings on launch. Lets tests skip the
-            // gear→menu→sheet stack which is racy under XCUITest on iOS 26.
             if ProcessInfo.processInfo.environment["PIQD_DEV_OPEN_SETTINGS_ON_LAUNCH"] == "1" {
                 showSettings = true
             }

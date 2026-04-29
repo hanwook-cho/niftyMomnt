@@ -22,8 +22,17 @@ struct O1SnapTeachView: View {
 
     var body: some View {
         ZStack {
-            CameraPreviewView(session: container.captureSession)
-                .ignoresSafeArea()
+            // Plan §7.12 — O1/O2 use simulated capture (no live AVCaptureSession
+            // attach) so we don't double-attach preview layers and disrupt the
+            // primary preview after Start shooting. Background is the
+            // viewfinder-aesthetic placeholder until v0.7 brings real preview
+            // into onboarding via a dedicated lightweight session.
+            LinearGradient(
+                colors: [Color(white: 0.10), Color(white: 0.04)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
             // Brief white flash on shutter tap
             Color.white
@@ -37,7 +46,6 @@ struct O1SnapTeachView: View {
                 bottomOverlay
             }
         }
-        .background(Color.black)
         // No `.accessibilityIdentifier` on the root — would mask per-leaf IDs.
     }
 

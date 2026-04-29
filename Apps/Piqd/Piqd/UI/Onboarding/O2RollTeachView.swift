@@ -15,10 +15,17 @@ struct O2RollTeachView: View {
 
     var body: some View {
         ZStack {
-            CameraPreviewView(session: container.captureSession)
-                .ignoresSafeArea()
+            // Plan §7.12 — simulated capture; warm-toned placeholder so the
+            // grain overlay reads against a Roll-aesthetic background.
+            LinearGradient(
+                colors: [Color(red: 0.20, green: 0.13, blue: 0.07),
+                         Color(red: 0.10, green: 0.06, blue: 0.03)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
-            // Roll-mode grain
+            // Roll-mode grain (visual only — the teach-by-doing aesthetic).
             GrainOverlayView(intensity: 0.40, density: 2200)
                 .ignoresSafeArea()
 
@@ -43,7 +50,6 @@ struct O2RollTeachView: View {
                 bottomOverlay
             }
         }
-        .background(Color.black)
         // No `.accessibilityIdentifier` on the root — would mask per-leaf IDs.
     }
 

@@ -51,8 +51,11 @@ struct PiqdRootView: View {
             // FIRST (always-mounted) child; the conditional only adds an
             // overlay when needed.
             if !onboarding.isComplete {
+                // No `.ignoresSafeArea()` here — each onboarding screen extends
+                // its own background under the safe area via `Color.ignoresSafeArea()`,
+                // while content (e.g. O3's QR panel) respects the safe area so
+                // the Dynamic Island doesn't clip it.
                 OnboardingRootView(container: container)
-                    .ignoresSafeArea()
                     .transition(.opacity)
             }
 
