@@ -148,7 +148,11 @@ struct PiqdApp: App {
             identity: identityKeyService,
             repo: trustedFriendsRepository,
             ownerSenderID: { ownerProfile.senderID },
-            ownerDisplayName: { ownerProfile.displayName }
+            ownerDisplayName: { ownerProfile.displayName },
+            // Stable per-install nonce + createdAt so the QR is byte-identical
+            // across launches (same keypair → same payload → same pixels).
+            nonceGenerator: { ownerProfile.inviteNonce },
+            now: { ownerProfile.inviteCreatedAt }
         )
         let incomingInviteState = IncomingInviteState(coordinator: inviteCoordinator)
         // Piqd v0.6 — Debug-only seed: hand a base64 invite payload to the state
